@@ -13,7 +13,8 @@ except ImportError:
     import unittest  # noqa
 
 import struct
-
+import itertools
+import math
 from cassandra.cqltypes import lookup_casstype
 from cassandra.protocol import MAX_SUPPORTED_VERSION
 from dse.cqltypes import PointType, LineStringType, PolygonType, WKBGeometryType
@@ -99,3 +100,159 @@ class GeoTypes(unittest.TestCase):
             # specifically use assertFalse(eq) to make sure we're using the geo __eq__ operator
             self.assertFalse(geo == object())
 
+
+class WKTTest(unittest.TestCase):
+
+    def test_line_parse(self):
+        """
+        This test exercises the parsing logic our LINESTRING WKT object
+        @since 1.2
+        @jira_ticket PYTHON-641
+        @test_category dse geometric
+        @expected_result We should be able to form LINESTRINGS objects from properly formatted WKT strings
+        """
+
+        # Test simple line string
+        ls = "LINESTRING (1.0 2.0, 3.0 4.0, 5.0 6.0)"
+        lo = LineString.from_wkt(ls)
+        lo_expected_cords = ([1.0, 2.0], [3.0, 4.0], [5.0, 6.0])
+        self.assertEqual(lo.coords, lo_expected_cords)
+
+        # Test very long line string
+        long_ls = self._construct_line_string(10000)
+        long_lo = LineString.from_wkt(long_ls)
+        self.assertEqual(len(long_lo.coords), 10000)
+        self.assertEqual(long_lo.coords, self._construct_line_string_expected_cords(10000))
+
+        # Test line string with negative numbers
+        ls = "LINESTRING (-1.3 1.2, 3.23 -4.54, 1.34 -9.26)"
+        lo = LineString.from_wkt(ls)
+        lo_expected_cords = ([-1.3, 1.2], [3.23, -4.54], [1.34, -9.26])
+        self.assertEqual(lo.coords, lo_expected_cords)
+
+        # Test bad line strings
+        bls = "LINESTRIN (1.0 2.0, 3.0 4.0, 5.0 6.0)"
+        with self.assertRaises(ValueError):
+            blo = LineString.from_wkt(bls)
+        bls = "LINESTRING (1.0 2.0 3.0 4.0 5.0"
+        with self.assertRaises(ValueError):
+            blo = LineString.from_wkt(bls)
+
+        # Test with NAN
+        ls = "LINESTRING (NAN NAN, NAN NAN)"
+        lo = LineString.from_wkt(ls)
+        self.assertEqual(len(lo.coords), 2)
+        for cords in lo.coords:
+            for cord in cords:
+                self.assertTrue(math.isnan(cord))
+
+    def test_point_parse(self):
+        """
+        This test exercises the parsing logic our POINT WKT object
+        @since 1.2
+        @jira_ticket PYTHON-641
+        @test_category dse geometric
+        @expected_result We should be able to form POINT objects from properly formatted WKT strings
+        """
+
+        # Test basic point
+        ps = "POINT (1.0 2.0)"
+        po = Point.from_wkt(ps)
+        self.assertEqual(po.x, 1.0)
+        self.assertEqual(po.y, 2.0)
+
+        # Test bad point strings
+        bps = "POIN (1.0 2.0)"
+        with self.assertRaises(ValueError):
+            bpo = Point.from_wkt(bps)
+        bps = "POINT (1.0 2.0 3.0 4.0 5.0"
+        with self.assertRaises(ValueError):
+            bpo = Point.from_wkt(bps)
+
+        # Points get truncated automatically
+        tps = "POINT (9.0 2.0 3.0 4.0 5.0)"
+        tpo = Point.from_wkt(tps)
+        self.assertEqual(tpo.x, 9.0)
+        self.assertEqual(tpo.y, 2.0)
+
+        # Test point with NAN
+        ps = "POINT (NAN NAN)"
+        po = Point.from_wkt(ps)
+        self.assertTrue(math.isnan(po.x))
+        self.assertTrue(math.isnan(po.y))
+
+    def test_polygon_parse(self):
+        """
+        This test exercises the parsing logic our POLYGON WKT object
+        @since 1.2
+        @jira_ticket PYTHON-641
+        @test_category dse geometric
+        @expected_result We should be able to form POLYGON objects from properly formatted WKT strings
+        """
+
+        example_poly_string = 'POLYGON ((10.1 10.0, 110.0 10.0, 110.0 110.0, 10.0 110.0, 10.0 10.0), (20.0 20.0, 20.0 30.0, 30.0 30.0, 30.0 20.0, 20.0 20.0), (40.0 20.0, 40.0 30.0, 50.0 30.0, 50.0 20.0, 40.0 20.0))'
+        poly_obj = Polygon.from_wkt(example_poly_string)
+        expected_ex_coords = ([10.1, 10.0], [110.0, 10.0], [110.0, 110.0], [10.0, 110.0], [10.0, 10.0])
+        expected_in_coords_1 = ([20.0, 20.0], [20.0, 30.0], [30.0, 30.0], [30.0, 20.0], [20.0, 20.0])
+        expected_in_coords_2 = ([40.0, 20.0], [40.0, 30.0], [50.0, 30.0], [50.0, 20.0], [40.0, 20.0])
+        self.assertEqual(poly_obj.exterior.coords, expected_ex_coords)
+        self.assertEqual(len(poly_obj.interiors), 2)
+        self.assertEqual(poly_obj.interiors[0].coords, expected_in_coords_1)
+        self.assertEqual(poly_obj.interiors[1].coords, expected_in_coords_2)
+
+        # Test with very long polygon
+        long_poly_string = self._construct_polygon_string(10000)
+        long_poly_obj = Polygon.from_wkt(long_poly_string)
+        self.assertEqual(len(long_poly_obj.exterior.coords), 10000)
+        self.assertEqual(long_poly_obj.exterior.coords, self._construct_line_string_expected_cords(10000))
+
+        # Test bad polygon strings
+        bps = "POLYGONE ((30 10, 40 40, 20 40, 10 20, 30 10))"
+        with self.assertRaises(ValueError):
+            bpo = Polygon.from_wkt(bps)
+        bps = "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10)"
+        with self.assertRaises(ValueError):
+            bpo = Polygon.from_wkt(bps)
+
+        # Polygons get truncated automatically
+        ps = "POLYGON ((30 10, 40 40, 20, 10 20, 30))"
+        po = Polygon.from_wkt(ps)
+        expected_ex_coords = ([30.0, 10.0], [40.0, 40.0], [20.0], [10.0, 20.0], [30.0])
+        self.assertEqual(po.exterior.coords, expected_ex_coords)
+
+        # Test Polygon with NAN
+        ps = "POLYGON ((NAN NAN, NAN NAN, NAN NAN, NAN, NAN))"
+        po = Polygon.from_wkt(ps)
+        for cords in po.exterior.coords:
+            for cord in cords:
+                self.assertTrue(math.isnan(cord))
+
+    def _construct_line_string(self, num_of_points):
+        # Constructs a arbitrarily long line string
+        step = 1
+        ls = "LINESTRING ("
+        for i in self._seq(0, num_of_points*step, step):
+            ls += str(i)+" "+str(i)+', '
+        return ls.rstrip(', ')+")"
+
+    def _construct_line_string_expected_cords(self, num_of_points):
+        # Constructs the corresponding expected coordinates for a linge string, and polygon string
+        coords = []
+        step = 1
+        for i in self._seq(0, num_of_points*step, step):
+            coords.append([i, i])
+        return tuple(coords)
+
+    def _seq(self, start, end, step):
+        # Generates a sequences that allows for increments of decminal resolution
+        assert(step != 0)
+        sample_count = abs(end - start) / step
+        return itertools.islice(itertools.count(start, step), sample_count)
+
+    def _construct_polygon_string(self, num_of_points):
+        # Constructs a arbitrarily long polygpn string
+        step = 1
+        ls = "POLYGON (("
+        for i in self._seq(0, num_of_points*step, step):
+            ls += str(i)+" "+str(i)+', '
+        return ls.rstrip(', ')+"))"
