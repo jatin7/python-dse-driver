@@ -10,7 +10,7 @@ import logging
 
 from dse.cluster import EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT
 from dse.graph import (SimpleGraphStatement)
-from tests.integration import BasicGraphUnitTestCase, use_singledc_wth_graph_and_spark, generate_classic, find_spark_master
+from tests.dsetest.integration import BasicGraphUnitTestCase, use_singledc_wth_graph_and_spark, generate_classic, find_spark_master
 log = logging.getLogger(__name__)
 
 

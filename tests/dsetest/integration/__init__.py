@@ -17,13 +17,15 @@ import os
 import time
 import requests
 from os.path import expanduser
-
+from uuid import UUID
+from decimal import Decimal
 from ccmlib import common
-
+import datetime
 from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT, EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT
 from integration import PROTOCOL_VERSION, get_server_versions, BasicKeyspaceUnitTestCase, drop_keyspace_shutdown_cluster, get_cluster, get_node, teardown_package as base_teardown
 from integration import use_singledc, use_single_node, wait_for_node_socket
 from cassandra.protocol import ServerError
+from dse.util import Point, LineString, Polygon
 
 home = expanduser('~')
 
@@ -32,6 +34,27 @@ ADS_HOME = os.getenv('ADS_HOME', home)
 MAKE_STRICT = "schema.config().option('graph.schema_mode').set('production')"
 MAKE_NON_STRICT = "schema.config().option('graph.schema_mode').set('development')"
 ALLOW_SCANS = "schema.config().option('graph.allow_scan').set('true')"
+
+# A map of common types and their corresponding groovy decleration for use in schema creation and inseration
+TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
+            "point2": ["Point()", Point(-5, .0)],
+            "linestring1": ["Linestring()", LineString(((1.0, 2.0), (3.0, 4.0), (9871234.0, 1235487215.0)))],
+            "linestring2": ["Linestring()", LineString()],
+            "polygon1": ["Polygon()", Polygon([(10.0, 10.0), (110.0, 10.0), (110., 110.0), (10., 110.0), (10., 10.0)], [[(20., 20.0), (20., 30.0), (30., 30.0), (30., 20.0), (20., 20.0)], [(40., 20.0), (40., 30.0), (50., 30.0), (50., 20.0), (40., 20.0)]])],
+            "polygon2": ["Polygon()", Polygon()],
+            "smallint1": ["Smallint()", 1],
+            "varint1": ["Varint()", 6000000L],
+            "bigint1": ["Bigint()", 10000L],
+            "int1": ["Int()", 100],
+            "float1": ["Float()", .5],
+            "double1": ["Double()", .3415681],
+            "uuid1": ["Uuid()", UUID('12345678123456781234567812345678')],
+            "decimal1": ["Decimal()", Decimal(10)],
+            "duration1": ["Duration()", datetime.timedelta(milliseconds=1)],
+            "inet1": ["Inet()", "127.0.0.1"],
+            "blob": ["Blob()",  bytearray(b"Hello World")],
+            "timestamp": ["Timestamp()", datetime.datetime.now().replace(microsecond=0)]
+            }
 
 
 def find_spark_master(session):
@@ -207,6 +230,21 @@ class BasicGeometricUnitTestCase(BasicKeyspaceUnitTestCase):
         cls.session.execute(cluster_table)
 
 
+def generate_line_graph(length):
+        query_parts = []
+        query_parts.append(ALLOW_SCANS+';')
+        query_parts.append("schema.propertyKey('index').Int().ifNotExists().create();")
+        query_parts.append("schema.propertyKey('distance').Int().ifNotExists().create();")
+        query_parts.append("schema.vertexLabel('lp').properties('index').ifNotExists().create();")
+        query_parts.append("schema.edgeLabel('goesTo').properties('distance').connection('lp', 'lp').ifNotExists().create();")
+        for index in range(0, length):
+            query_parts.append('''Vertex vertex{0} = graph.addVertex(label, 'lp', 'index', {0}); '''.format(index))
+            if index is not 0:
+                query_parts.append('''vertex{0}.addEdge('goesTo', vertex{1}, 'distance', 5); '''.format(index-1, index))
+        final_graph_generation_statement = "".join(query_parts)
+        return final_graph_generation_statement
+
+
 def generate_classic(session):
     to_run = [MAKE_STRICT, ALLOW_SCANS, '''schema.propertyKey('name').Text().ifNotExists().create();
             schema.propertyKey('age').Int().ifNotExists().create();
@@ -244,3 +282,102 @@ def generate_classic(session):
             count += 1
 
 
+def generate_multi_field_graph(session):
+        to_run = [ALLOW_SCANS,
+                  '''schema.propertyKey('shortvalue').Smallint().ifNotExists().create();
+                     schema.vertexLabel('shortvertex').properties('shortvalue').ifNotExists().create();
+                     short s1 = 5000; graph.addVertex(label, "shortvertex", "shortvalue", s1);''',
+                  '''schema.propertyKey('intvalue').Int().ifNotExists().create();
+                     schema.vertexLabel('intvertex').properties('intvalue').ifNotExists().create();
+                     int i1 = 1000000000; graph.addVertex(label, "intvertex", "intvalue", i1);''',
+                  '''schema.propertyKey('intvalue2').Int().ifNotExists().create();
+                     schema.vertexLabel('intvertex2').properties('intvalue2').ifNotExists().create();
+                     Integer i2 = 100000000; graph.addVertex(label, "intvertex2", "intvalue2", i2);''',
+                  '''schema.propertyKey('longvalue').Bigint().ifNotExists().create();
+                     schema.vertexLabel('longvertex').properties('longvalue').ifNotExists().create();
+                     long l1 = 9223372036854775807; graph.addVertex(label, "longvertex", "longvalue", l1);''',
+                  '''schema.propertyKey('longvalue2').Bigint().ifNotExists().create();
+                     schema.vertexLabel('longvertex2').properties('longvalue2').ifNotExists().create();
+                     Long l2 = 100000000000000000L; graph.addVertex(label, "longvertex2", "longvalue2", l2);''',
+                  '''schema.propertyKey('floatvalue').Float().ifNotExists().create();
+                     schema.vertexLabel('floatvertex').properties('floatvalue').ifNotExists().create();
+                     float f1 = 3.5f; graph.addVertex(label, "floatvertex", "floatvalue", f1);''',
+                  '''schema.propertyKey('doublevalue').Double().ifNotExists().create();
+                     schema.vertexLabel('doublevertex').properties('doublevalue').ifNotExists().create();
+                     double d1 = 3.5e40; graph.addVertex(label, "doublevertex", "doublevalue", d1);''',
+                  '''schema.propertyKey('doublevalue2').Double().ifNotExists().create();
+                     schema.vertexLabel('doublevertex2').properties('doublevalue2').ifNotExists().create();
+                     Double d2 = 3.5e40d; graph.addVertex(label, "doublevertex2", "doublevalue2", d2);''']
+
+        for run in to_run:
+            session.execute_graph(run)
+
+
+def generate_type_graph_schema(session, prime_schema=True):
+    """
+    This method will prime the schema for all types in the TYPE_MAP
+    """
+
+    session.execute_graph(ALLOW_SCANS)
+    if(prime_schema):
+        for key in TYPE_MAP.keys():
+
+            vertex_label = key
+            prop_name = key+"value"
+            insert_string = ""
+            insert_string += "schema.propertyKey('{0}').{1}.ifNotExists().create();".format(prop_name, TYPE_MAP[key][0])
+            insert_string += "schema.vertexLabel('{0}').properties('{1}').ifNotExists().create();".format(vertex_label, prop_name)
+            session.execute_graph(insert_string)
+    else:
+        session.execute_graph(MAKE_NON_STRICT)
+
+
+def generate_address_book_graph(session, size):
+    to_run = [ALLOW_SCANS,
+              "schema.propertyKey('name').Text().create()\n" +
+              "schema.propertyKey('coordinates').Point().create()\n" +
+              "schema.propertyKey('city').Text().create()\n" +
+              "schema.propertyKey('state').Text().create()\n" +
+              "schema.propertyKey('description').Text().create()\n" +
+              "schema.vertexLabel('person').properties('name', 'coordinates', 'city', 'state', 'description').create()\n" +
+              "schema.vertexLabel('person').index('search').search().by('name').asString().by('coordinates').by('description').asText().add()",
+              "g.addV('person').property('name', 'Paul Thomas Joe').property('city', 'Rochester').property('state', 'MN').property('coordinates', Geo.point(-92.46295, 44.0234)).property('description', 'Lives by the hospital')",
+              "g.addV('person').property('name', 'George Bill Steve').property('city', 'Minneapolis').property('state', 'MN').property('coordinates', Geo.point(-93.266667, 44.093333)).property('description', 'A cold dude')",
+              "g.addV('person').property('name', 'James Paul Smith').property('city', 'Chicago').property('state', 'IL').property('coordinates', Geo.point(-87.684722, 41.836944)).property('description', 'Likes to hang out')",
+              "g.addV('person').property('name', 'Jill Alice').property('city', 'Atlanta').property('state', 'GA').property('coordinates', Geo.point(-84.39, 33.755)).property('description', 'Enjoys a nice cold coca cola')"]
+
+    for run in to_run:
+        session.execute_graph(run)
+
+
+def generate_large_complex_graph(session, size):
+        to_run = '''schema.config().option('graph.schema_mode').set('development');
+            int size = 2000;
+            List ids = new ArrayList();
+            schema.propertyKey('ts').Int().single().ifNotExists().create();
+            schema.propertyKey('sin').Int().single().ifNotExists().create();
+            schema.propertyKey('cos').Int().single().ifNotExists().create();
+            schema.propertyKey('ii').Int().single().ifNotExists().create();
+            schema.vertexLabel('lcg').properties('ts', 'sin', 'cos', 'ii').ifNotExists().create();
+            schema.edgeLabel('linked').connection('lcg', 'lcg').ifNotExists().create();
+            Vertex v = graph.addVertex(label, 'lcg');
+            v.property("ts", 100001);
+            v.property("sin", 0);
+            v.property("cos", 1);
+            v.property("ii", 0);
+            ids.add(v.id());
+            Random rand = new Random();
+            for (int ii = 1; ii < size; ii++) {
+                v = graph.addVertex(label, 'lcg');
+                v.property("ii", ii);
+                v.property("ts", 100001 + ii);
+                v.property("sin", Math.sin(ii/5.0));
+                v.property("cos", Math.cos(ii/5.0));
+                Vertex u = g.V(ids.get(rand.nextInt(ids.size()))).next();
+                v.addEdge("linked", u);
+                ids.add(u.id());
+                ids.add(v.id());
+            }
+            g.V().count();'''
+        prof = session.execution_profile_clone_update(EXEC_PROFILE_GRAPH_DEFAULT, request_timeout=32)
+        session.execute_graph(to_run, execution_profile=prof)
