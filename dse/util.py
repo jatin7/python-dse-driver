@@ -13,6 +13,16 @@ from geomet import wkt
 _nan = float('nan')
 
 
+def list_contents_to_tuple(to_convert):
+    if isinstance(to_convert, list):
+        for n, i in enumerate(to_convert):
+            if isinstance(to_convert[n], list):
+                to_convert[n] = tuple(to_convert[n])
+        return tuple(to_convert)
+    else:
+        return to_convert
+
+
 class Point(object):
     """
     Represents a point geometry for DSE
@@ -115,6 +125,8 @@ class LineString(object):
         if geom['type'] != 'LineString':
             raise ValueError("Invalid WKT geometry type. Expected 'LineString', got '{0}': '{1}'".format(geom['type'], s))
 
+        geom['coordinates'] = list_contents_to_tuple(geom['coordinates'])
+
         return LineString(coords=geom['coordinates'])
 
 
@@ -122,7 +134,7 @@ class _LinearRing(object):
     # no validation, no implicit closing; just used for poly composition, to
     # mimic that of shapely.geometry.Polygon
     def __init__(self, coords=tuple()):
-        self.coords = tuple(coords)
+        self.coords = list_contents_to_tuple(coords)
 
     def __eq__(self, other):
         return isinstance(other, _LinearRing) and self.coords == other.coords

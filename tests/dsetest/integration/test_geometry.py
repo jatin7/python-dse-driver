@@ -8,7 +8,7 @@
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 
-from tests.integration import BasicGeometricUnitTestCase, use_single_node_with_graph
+from tests.dsetest.integration import BasicGeometricUnitTestCase, use_single_node_with_graph
 from cassandra.util import OrderedMap, sortedset
 from collections import namedtuple
 
