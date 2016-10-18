@@ -12,6 +12,7 @@ try:
 except ImportError:
     import unittest  # noqa
 
+import sys
 import re
 import os
 import time
@@ -36,6 +37,16 @@ MAKE_NON_STRICT = "schema.config().option('graph.schema_mode').set('development'
 ALLOW_SCANS = "schema.config().option('graph.allow_scan').set('true')"
 
 # A map of common types and their corresponding groovy decleration for use in schema creation and inseration
+MAX_LONG = 9223372036854775807
+MIN_LONG = -9223372036854775808
+ZERO_LONG = 0
+
+if sys.version_info < (3, 0):
+    MAX_LONG = long(MAX_LONG)
+    MIN_LONG = long(MIN_LONG)
+    ZERO_LONG = long(ZERO_LONG)
+
+
 TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
             "point2": ["Point()", Point(-5, .0)],
             "linestring1": ["Linestring()", LineString(((1.0, 2.0), (3.0, 4.0), (9871234.0, 1235487215.0)))],
@@ -43,8 +54,10 @@ TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
             "polygon1": ["Polygon()", Polygon([(10.0, 10.0), (110.0, 10.0), (110., 110.0), (10., 110.0), (10., 10.0)], [[(20., 20.0), (20., 30.0), (30., 30.0), (30., 20.0), (20., 20.0)], [(40., 20.0), (40., 30.0), (50., 30.0), (50., 20.0), (40., 20.0)]])],
             "polygon2": ["Polygon()", Polygon()],
             "smallint1": ["Smallint()", 1],
-            "varint1": ["Varint()", 6000000L],
-            "bigint1": ["Bigint()", 10000L],
+            "varint1": ["Varint()", 2147483647],
+            "bigint1": ["Bigint()", MAX_LONG],
+            "bigint2": ["Bigint()", MIN_LONG],
+            "bigint2": ["Bigint()", ZERO_LONG],
             "int1": ["Int()", 100],
             "float1": ["Float()", .5],
             "double1": ["Double()", .3415681],
