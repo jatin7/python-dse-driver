@@ -6,3 +6,4 @@ PyYAML
 pure-sasl>=0.2.0
 kerberos
 requests
+packaging

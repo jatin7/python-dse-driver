@@ -115,7 +115,7 @@ class WKTTest(unittest.TestCase):
         # Test simple line string
         ls = "LINESTRING (1.0 2.0, 3.0 4.0, 5.0 6.0)"
         lo = LineString.from_wkt(ls)
-        lo_expected_cords = ([1.0, 2.0], [3.0, 4.0], [5.0, 6.0])
+        lo_expected_cords = ((1.0, 2.0), (3.0, 4.0), (5.0, 6.0))
         self.assertEqual(lo.coords, lo_expected_cords)
 
         # Test very long line string
@@ -127,7 +127,7 @@ class WKTTest(unittest.TestCase):
         # Test line string with negative numbers
         ls = "LINESTRING (-1.3 1.2, 3.23 -4.54, 1.34 -9.26)"
         lo = LineString.from_wkt(ls)
-        lo_expected_cords = ([-1.3, 1.2], [3.23, -4.54], [1.34, -9.26])
+        lo_expected_cords = ((-1.3, 1.2), (3.23, -4.54), (1.34, -9.26))
         self.assertEqual(lo.coords, lo_expected_cords)
 
         # Test bad line strings
@@ -192,9 +192,9 @@ class WKTTest(unittest.TestCase):
 
         example_poly_string = 'POLYGON ((10.1 10.0, 110.0 10.0, 110.0 110.0, 10.0 110.0, 10.0 10.0), (20.0 20.0, 20.0 30.0, 30.0 30.0, 30.0 20.0, 20.0 20.0), (40.0 20.0, 40.0 30.0, 50.0 30.0, 50.0 20.0, 40.0 20.0))'
         poly_obj = Polygon.from_wkt(example_poly_string)
-        expected_ex_coords = ([10.1, 10.0], [110.0, 10.0], [110.0, 110.0], [10.0, 110.0], [10.0, 10.0])
-        expected_in_coords_1 = ([20.0, 20.0], [20.0, 30.0], [30.0, 30.0], [30.0, 20.0], [20.0, 20.0])
-        expected_in_coords_2 = ([40.0, 20.0], [40.0, 30.0], [50.0, 30.0], [50.0, 20.0], [40.0, 20.0])
+        expected_ex_coords = ((10.1, 10.0), (110.0, 10.0), (110.0, 110.0), (10.0, 110.0), (10.0, 10.0))
+        expected_in_coords_1 = ((20.0, 20.0), (20.0, 30.0), (30.0, 30.0), (30.0, 20.0), (20.0, 20.0))
+        expected_in_coords_2 = ((40.0, 20.0), (40.0, 30.0), (50.0, 30.0), (50.0, 20.0), (40.0, 20.0))
         self.assertEqual(poly_obj.exterior.coords, expected_ex_coords)
         self.assertEqual(len(poly_obj.interiors), 2)
         self.assertEqual(poly_obj.interiors[0].coords, expected_in_coords_1)
@@ -204,20 +204,22 @@ class WKTTest(unittest.TestCase):
         long_poly_string = self._construct_polygon_string(10000)
         long_poly_obj = Polygon.from_wkt(long_poly_string)
         self.assertEqual(len(long_poly_obj.exterior.coords), 10000)
+        #for expected, recieved in zip(self._construct_line_string_expected_cords(10000), long_poly_obj.exterior.coords):
+        #    self.assertEqual(expected, recieved)
         self.assertEqual(long_poly_obj.exterior.coords, self._construct_line_string_expected_cords(10000))
 
         # Test bad polygon strings
         bps = "POLYGONE ((30 10, 40 40, 20 40, 10 20, 30 10))"
         with self.assertRaises(ValueError):
             bpo = Polygon.from_wkt(bps)
-        bps = "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10)"
+        bps = "POLYGON (30 10, 40 40, 20 40, 10 20, 30 10)"
         with self.assertRaises(ValueError):
             bpo = Polygon.from_wkt(bps)
 
         # Polygons get truncated automatically
         ps = "POLYGON ((30 10, 40 40, 20, 10 20, 30))"
         po = Polygon.from_wkt(ps)
-        expected_ex_coords = ([30.0, 10.0], [40.0, 40.0], [20.0], [10.0, 20.0], [30.0])
+        expected_ex_coords = ((30.0, 10.0), (40.0, 40.0), (20.0,), (10.0, 20.0), (30.0,))
         self.assertEqual(po.exterior.coords, expected_ex_coords)
 
         # Test Polygon with NAN
@@ -229,30 +231,22 @@ class WKTTest(unittest.TestCase):
 
     def _construct_line_string(self, num_of_points):
         # Constructs a arbitrarily long line string
-        step = 1
         ls = "LINESTRING ("
-        for i in self._seq(0, num_of_points*step, step):
+        for i in range(0, num_of_points):
             ls += str(i)+" "+str(i)+', '
         return ls.rstrip(', ')+")"
 
     def _construct_line_string_expected_cords(self, num_of_points):
         # Constructs the corresponding expected coordinates for a linge string, and polygon string
         coords = []
-        step = 1
-        for i in self._seq(0, num_of_points*step, step):
-            coords.append([i, i])
-        return tuple(coords)
 
-    def _seq(self, start, end, step):
-        # Generates a sequences that allows for increments of decminal resolution
-        assert(step != 0)
-        sample_count = abs(end - start) / step
-        return itertools.islice(itertools.count(start, step), sample_count)
+        for i in range(0, num_of_points):
+            coords.append((i, i))
+        return tuple(coords)
 
     def _construct_polygon_string(self, num_of_points):
         # Constructs a arbitrarily long polygpn string
-        step = 1
         ls = "POLYGON (("
-        for i in self._seq(0, num_of_points*step, step):
+        for i in range(0, num_of_points):
             ls += str(i)+" "+str(i)+', '
         return ls.rstrip(', ')+"))"
