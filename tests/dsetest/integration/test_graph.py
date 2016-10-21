@@ -128,7 +128,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
 
         @test_category dse graph
         """
-        query_to_run = self.generate_line_graph(250)
+        query_to_run = generate_line_graph(250)
         self.session.execute_graph(query_to_run)
         rs = self.session.execute_graph("g.E().range(0,10)")
         self.assertFalse(rs.has_more_pages)
@@ -166,7 +166,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
 
         @test_category dse graph
         """
-        generate_large_complex_graph(self.sesion, 5000)
+        generate_large_complex_graph(self.session, 5000)
         rs = self.session.execute_graph("g.V()")
         for result in rs:
             self._validate_generic_vertex_result_type(result)
@@ -390,7 +390,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         # bad graph name to verify it's passed
         ep.graph_options = ep.graph_options.copy()
         ep.graph_options.graph_name = "definitely_not_correct"
-        self.assertRaises(ServerError, s.execute_graph, statement, execution_profile=ep)
+        self.assertRaises(InvalidRequest, s.execute_graph, statement, execution_profile=ep)
 
     def test_execute_graph_timeout(self):
         s = self.session
