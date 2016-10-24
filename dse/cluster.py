@@ -191,18 +191,31 @@ def default_lbp_factory():
     return DCAwareRoundRobinPolicy()
 
 
-class AsyncPagingOptions(object):
+class OptimizedPagingOptions(object):
 
     class PagingUnit(object):
         BYTES = 1
         ROWS = 2
 
     page_unit = None
-    page_size = None
-    max_pages = None
-    max_pages_per_second = None
+    """
+    Value of PagingUnit. Default is PagingUnit.ROWS
+    """
 
-    uuid = None
+    page_size = None
+    """
+    Approximate size of pages, in `paging_unit`
+    """
+
+    max_pages = None
+    """
+    Max number of pages to send
+    """
+
+    max_pages_per_second = None
+    """
+    Max rate at which to send pages
+    """
 
     def __init__(self, page_unit=PagingUnit.ROWS, page_size=5000, max_pages=0, max_pages_per_second=0):
         self.page_unit = page_unit
@@ -264,12 +277,19 @@ class ExecutionProfile(object):
     Defaults to :class:`.NoSpeculativeExecutionPolicy` if not specified
     """
 
-    async_paging_options = None
+    optimized_paging_options = None
+    """
+    When set, requests will use Apollo's optimized paging, which streams multiple pages without
+    intermediate requests.
+
+    This has the potential to materialize all results in memory at once if the consumer cannot keep up. Use options
+    to constrain page size and rate.
+    """
 
     def __init__(self, load_balancing_policy=None, retry_policy=None,
                  consistency_level=ConsistencyLevel.LOCAL_ONE, serial_consistency_level=None,
                  request_timeout=10.0, row_factory=named_tuple_factory, speculative_execution_policy=None,
-                 async_paging_options=None):
+                 optimized_paging_options=None):
         self.load_balancing_policy = load_balancing_policy or default_lbp_factory()
         self.retry_policy = retry_policy or RetryPolicy()
         self.consistency_level = consistency_level
@@ -277,7 +297,7 @@ class ExecutionProfile(object):
         self.request_timeout = request_timeout
         self.row_factory = row_factory
         self.speculative_execution_policy = speculative_execution_policy or NoSpeculativeExecutionPolicy()
-        self.async_paging_options = async_paging_options
+        self.optimized_paging_options = optimized_paging_options
 
 
 class GraphExecutionProfile(ExecutionProfile):
@@ -2112,7 +2132,7 @@ class Session(object):
 
         cl = query.consistency_level if query.consistency_level is not None else execution_profile.consistency_level
         serial_cl = query.serial_consistency_level if query.serial_consistency_level is not None else execution_profile.serial_consistency_level
-        async_paging_options = execution_profile.async_paging_options
+        optimized_paging_options = execution_profile.optimized_paging_options
 
         fetch_size = query.fetch_size
         if fetch_size is FETCH_SIZE_UNSET and self._protocol_version >= 2:
@@ -2131,13 +2151,13 @@ class Session(object):
             if parameters:
                 query_string = bind_params(query_string, parameters, self.encoder)
             message = QueryMessage(
-                query_string, cl, serial_cl, fetch_size, paging_state, timestamp, async_paging_options)
+                query_string, cl, serial_cl, fetch_size, paging_state, timestamp, optimized_paging_options)
         elif isinstance(query, BoundStatement):
             prepared_statement = query.prepared_statement
             message = ExecuteMessage(
                 prepared_statement.query_id, query.values, cl,
                 serial_cl, fetch_size, paging_state, timestamp,
-                skip_meta=bool(prepared_statement.result_metadata), async_paging_options=async_paging_options)
+                skip_meta=bool(prepared_statement.result_metadata), optimized_paging_options=optimized_paging_options)
         elif isinstance(query, BatchStatement):
             if self._protocol_version < 2:
                 raise UnsupportedOperation(
@@ -3313,7 +3333,7 @@ class ResponseFuture(object):
     _timer = None
     _protocol_handler = ProtocolHandler
     _spec_execution_plan = NoSpeculativeExecutionPlan()
-    _async_paging_session = None
+    _optimized_paging_session = None
 
     _warned_timeout = False
 
@@ -3568,9 +3588,9 @@ class ResponseFuture(object):
                     self._col_types = response.column_types
                     self._set_final_result(self.row_factory(response.column_names, response.parsed_rows))
                 else:
-                    if response.kind == RESULT_KIND_VOID and self.message.async_paging_id is not None:
-                        self._async_paging_session = connection.new_async_paging_session(self.message.async_paging_id, self.row_factory)
-                        self._set_final_result(self._async_paging_session.results())
+                    if response.kind == RESULT_KIND_VOID and self.message.optimized_paging_id is not None:
+                        self._optimized_paging_session = connection.new_optimized_paging_session(self.message.optimized_paging_id, self.row_factory)
+                        self._set_final_result(self._optimized_paging_session.results())
                     else:
                         self._set_final_result(response)
             elif isinstance(response, ErrorMessage):
@@ -4098,11 +4118,11 @@ class ResultSet(object):
         """
         return self.response_future.get_all_query_traces(max_wait_sec_per)
 
-    def cancel_async_paging(self):
+    def cancel_optimized_paging(self):
         try:
-            self.response_future._async_paging_session.cancel()
+            self.response_future._optimized_paging_session.cancel()
         except AttributeError:
-            raise DriverException("Attempted to cancel paging with no active session. This is only for requests with AsyncPagingOptions.")
+            raise DriverException("Attempted to cancel paging with no active session. This is only for requests with OptimizedPagingOptions.")
 
     @property
     def was_applied(self):
