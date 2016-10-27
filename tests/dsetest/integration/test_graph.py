@@ -335,12 +335,15 @@ class BasicGraphTest(BasicGraphUnitTestCase):
                                  v''')[0]
         self.assertEqual(len(v.properties), 1)
         self.assertEqual(len(v.properties['mult_key']), 1)
+        self.assertEqual(v.properties['mult_key'][0].label, 'mult_key')
         self.assertEqual(v.properties['mult_key'][0].value, 'value')
 
         # multiple_with_two_values
         v = s.execute_graph('''g.addV(label, 'MPW1', 'mult_key', 'value0', 'mult_key', 'value1')''')[0]
         self.assertEqual(len(v.properties), 1)
         self.assertEqual(len(v.properties['mult_key']), 2)
+        self.assertEqual(v.properties['mult_key'][0].label, 'mult_key')
+        self.assertEqual(v.properties['mult_key'][1].label, 'mult_key')
         self.assertEqual(v.properties['mult_key'][0].value, 'value0')
         self.assertEqual(v.properties['mult_key'][1].value, 'value1')
 
@@ -350,6 +353,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
                                  v''')[0]
         self.assertEqual(len(v.properties), 1)
         self.assertEqual(len(v.properties['single_key']), 1)
+        self.assertEqual(v.properties['single_key'][0].label, 'single_key')
         self.assertEqual(v.properties['single_key'][0].value, 'value')
 
         # single_with_two_values
@@ -378,6 +382,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         self.assertEqual(len(v.properties), 1)
         self.assertEqual(len(v.properties['key']), 1)
         p = v.properties['key'][0]
+        self.assertEqual(p.label, 'key')
         self.assertEqual(p.value, 'value')
         self.assertEqual(p.properties, {'k0': 'v0', 'k1': 'v1'})
 
