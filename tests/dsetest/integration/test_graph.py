@@ -22,7 +22,8 @@ from dse.cluster import EXEC_PROFILE_GRAPH_DEFAULT, GraphExecutionProfile, Clust
 from dse.graph import (SimpleGraphStatement, graph_object_row_factory, single_object_row_factory,\
                        graph_result_row_factory, Result, Edge, Vertex, Path, GraphOptions, _graph_options)
 
-from tests.dsetest.integration import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT
+from tests.dsetest.integration import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT,\
+    validate_classic_vertex, validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type
 from integration import PROTOCOL_VERSION
 
 
@@ -72,10 +73,10 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         generate_classic(self.session)
         rs = self.session.execute_graph('g.V()')
         for vertex in rs:
-            self._validate_classic_vertex(vertex)
+            validate_classic_vertex(self, vertex)
         rs = self.session.execute_graph('g.E()')
         for edge in rs:
-            self._validate_classic_edge(edge)
+            validate_classic_edge(self, edge)
 
     def test_graph_classic_path(self):
         """
@@ -94,7 +95,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         self.assertEqual(len(rs_list), 2)
         for result in rs_list:
             path = result.as_path()
-            self._validate_path_result_type(path)
+            validate_path_result_type(self, path)
 
     def test_large_create_script(self):
         """
@@ -135,7 +136,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         results = list(rs)
         self.assertEqual(len(results), 10)
         for result in results:
-            self._validate_line_edge(result)
+            validate_line_edge(self, result)
 
     def test_result_types(self):
         """
@@ -169,7 +170,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         generate_large_complex_graph(self.session, 5000)
         rs = self.session.execute_graph("g.V()")
         for result in rs:
-            self._validate_generic_vertex_result_type(result)
+            validate_generic_vertex_result_type(self, result)
 
     def test_parameter_passing(self):
         """
@@ -301,12 +302,12 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         rs = list(self.session.execute_graph('g.V()'))
         self.assertGreater(len(rs), 0, "Result set was empty this was not expected")
         for v in rs:
-            self._validate_classic_vertex(v)
+            validate_classic_vertex(self, v)
 
         rs = list(self.session.execute_graph('g.E()'))
         self.assertGreater(len(rs), 0, "Result set was empty this was not expected")
         for e in rs:
-            self._validate_classic_edge(e)
+            validate_classic_edge(self, e)
 
     def test_vertex_multiple_properties(self):
         """
@@ -459,53 +460,6 @@ class BasicGraphTest(BasicGraphUnitTestCase):
             else:
                 self.fail("Received unexpected type: %s" % type_indicator)
             self.assertIsInstance(prop['value'], typ)
-
-    def _validate_classic_vertex(self, vertex):
-        vertex_props = vertex.properties.keys()
-        self.assertEqual(len(vertex_props), 2)
-        self.assertIn('name', vertex_props)
-        self.assertTrue('lang' in vertex_props or 'age' in vertex_props)
-
-    def _validate_classic_vertex_return_type(self, vertex):
-        self._validate_generic_vertex_result_type(vertex)
-        vertex_props = vertex.properties
-        self.assertIn('name', vertex_props)
-        self.assertTrue('lang' in vertex_props or 'age' in vertex_props)
-
-    def _validate_generic_vertex_result_type(self, vertex):
-        self.assertIsInstance(vertex, Vertex)
-        for attr in ('id', 'type', 'label', 'properties'):
-            self.assertIsNotNone(getattr(vertex, attr))
-
-    def _validate_classic_edge_properties(self, edge_properties):
-        self.assertEqual(len(edge_properties.keys()), 1)
-        self.assertIn('weight', edge_properties)
-
-    def _validate_classic_edge(self, edge):
-        self._validate_generic_edge_result_type(edge)
-        self._validate_classic_edge_properties(edge.properties)
-
-    def _validate_line_edge(self, edge):
-        self._validate_generic_edge_result_type(edge)
-        edge_props = edge.properties
-        self.assertEqual(len(edge_props.keys()), 1)
-        self.assertIn('distance', edge_props)
-
-    def _validate_generic_edge_result_type(self, edge):
-        self.assertIsInstance(edge, Edge)
-        for attr in ('properties', 'outV', 'outVLabel', 'inV', 'inVLabel', 'label', 'type', 'id'):
-            self.assertIsNotNone(getattr(edge, attr))
-
-    def _validate_path_result_type(self, path):
-        self.assertIsInstance(path, Path)
-        self.assertIsNotNone(path.labels)
-        for obj in path.objects:
-            if isinstance(obj, Edge):
-                self._validate_classic_edge(obj)
-            elif isinstance(obj, Vertex):
-                self._validate_classic_vertex(obj)
-            else:
-                self.fail("Invalid object found in path " + str(object.type))
 
 
 class GraphTimeoutTests(BasicGraphUnitTestCase):

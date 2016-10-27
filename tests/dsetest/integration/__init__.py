@@ -27,7 +27,7 @@ from integration import PROTOCOL_VERSION, get_server_versions, BasicKeyspaceUnit
 from integration import use_singledc, use_single_node, wait_for_node_socket
 from cassandra.protocol import ServerError
 from dse.util import Point, LineString, Polygon
-
+from dse.graph import Edge, Vertex, Path
 home = expanduser('~')
 
 # Home directory of the Embedded Apache Directory Server to use
@@ -394,3 +394,58 @@ def generate_large_complex_graph(session, size):
             g.V().count();'''
         prof = session.execution_profile_clone_update(EXEC_PROFILE_GRAPH_DEFAULT, request_timeout=32)
         session.execute_graph(to_run, execution_profile=prof)
+
+
+def validate_classic_vertex(test, vertex):
+        vertex_props = vertex.properties.keys()
+        test.assertEqual(len(vertex_props), 2)
+        test.assertIn('name', vertex_props)
+        test.assertTrue('lang' in vertex_props or 'age' in vertex_props)
+
+
+def validate_classic_vertex_return_type(test, vertex):
+    validate_generic_vertex_result_type(vertex)
+    vertex_props = vertex.properties
+    test.assertIn('name', vertex_props)
+    test.assertTrue('lang' in vertex_props or 'age' in vertex_props)
+
+
+def validate_generic_vertex_result_type(test, vertex):
+    test.assertIsInstance(vertex, Vertex)
+    for attr in ('id', 'type', 'label', 'properties'):
+        test.assertIsNotNone(getattr(vertex, attr))
+
+
+def validate_classic_edge_properties(test, edge_properties):
+    test.assertEqual(len(edge_properties.keys()), 1)
+    test.assertIn('weight', edge_properties)
+
+
+def validate_classic_edge(test, edge):
+    validate_generic_edge_result_type(test, edge)
+    validate_classic_edge_properties(test, edge.properties)
+
+
+def validate_line_edge(test, edge):
+    validate_generic_edge_result_type(test, edge)
+    edge_props = edge.properties
+    test.assertEqual(len(edge_props.keys()), 1)
+    test.assertIn('distance', edge_props)
+
+
+def validate_generic_edge_result_type(test, edge):
+    test.assertIsInstance(edge, Edge)
+    for attr in ('properties', 'outV', 'outVLabel', 'inV', 'inVLabel', 'label', 'type', 'id'):
+        test.assertIsNotNone(getattr(edge, attr))
+
+
+def validate_path_result_type(test, path):
+    test.assertIsInstance(path, Path)
+    test.assertIsNotNone(path.labels)
+    for obj in path.objects:
+        if isinstance(obj, Edge):
+            validate_classic_edge(test, obj)
+        elif isinstance(obj, Vertex):
+            validate_classic_vertex(test, obj)
+        else:
+            test.fail("Invalid object found in path " + str(object.type))
