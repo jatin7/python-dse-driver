@@ -1,3 +1,11 @@
+1.1.0
+=====
+October 31, 2016
+
+Features
+--------
+* Add Geom Types wkt deserializer
+
 1.0.4
 =====
 September 13, 2016
