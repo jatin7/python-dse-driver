@@ -8,6 +8,6 @@ sections:
     directory: docs
 versions:
   - name: v1.1
-    ref: HEAD
+    ref: 1.1.0
   - name: v1.0
     ref: 1.0.0
