@@ -1,6 +1,6 @@
 1.1.0
 =====
-October 31, 2016
+November 1, 2016
 
 Features
 --------
