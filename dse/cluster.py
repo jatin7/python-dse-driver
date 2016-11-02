@@ -14,12 +14,13 @@ from cassandra import ConsistencyLevel, __version__ as core_driver_version
 from cassandra.cluster import Cluster, Session, default_lbp_factory, ExecutionProfile, _ConfigMode, _NOT_SET
 from cassandra.marshal import int64_pack
 from cassandra.query import tuple_factory
-from dse import _core_driver_target_version, _use_any_core_driver_version, __version__ as dse_driver_version
-import dse.cqltypes  # unsued here, imported to cause type registration
+from dse import _core_driver_target_version, _use_any_core_driver_version, __version__ as dse_driver_version, inject_extensions
 from dse.graph import GraphOptions, SimpleGraphStatement, graph_object_row_factory, _request_timeout_key
 from dse.policies import DSELoadBalancingPolicy, NeverRetryPolicy
 from dse.query import HostTargetingStatement
 from dse.util import Point, LineString, Polygon
+
+inject_extensions()
 
 if six.PY3:
     long = int
