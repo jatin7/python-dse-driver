@@ -2171,7 +2171,6 @@ class Session(object):
         message.tracing = trace
         message.update_custom_payload(query.custom_payload)
         message.update_custom_payload(custom_payload)
-        message.inject_dse_payloads()
         message.allow_beta_protocol_version = self.cluster.allow_beta_protocol_version
 
         retry_policy = query.retry_policy or execution_profile.retry_policy
