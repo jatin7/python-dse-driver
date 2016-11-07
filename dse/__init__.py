@@ -22,3 +22,8 @@ __version__ = '.'.join(map(str, __version_info__))
 
 _core_driver_target_version = '3.7.1'
 _use_any_core_driver_version = bool(os.environ.get('DSE_DRIVER_PERMIT_UNSUPPORTED_CORE'))
+
+
+def inject_extensions():
+    import dse.cqltypes
+    import dse.metadata
