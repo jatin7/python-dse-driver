@@ -1,16 +1,11 @@
 # Copyright 2013-2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from __future__ import print_function
 import os
@@ -26,6 +21,8 @@ if __name__ == '__main__' and sys.argv[1] == "eventlet_nosetests":
     print("Running eventlet tests")
     from eventlet import monkey_patch
     monkey_patch()
+
+from dse import __version__
 
 import ez_setup
 ez_setup.use_setuptools()
@@ -45,7 +42,6 @@ try:
 except ImportError:
     has_subprocess = False
 
-from cassandra import __version__
 
 long_description = ""
 with open("README.rst") as f:
@@ -72,20 +68,14 @@ if __name__ == '__main__' and sys.argv[1] == "install":
     except ImportError:
         pass
 
-PROFILING = False
-
-
 class DocCommand(Command):
 
-    description = "generate or test documentation"
+    description = "generate documentation"
 
-    user_options = [("test", "t",
-                     "run doctests instead of generating documentation")]
-
-    boolean_options = ["test"]
+    user_options = []
 
     def initialize_options(self):
-        self.test = False
+        pass
 
     def finalize_options(self):
         pass
@@ -107,7 +97,7 @@ class DocCommand(Command):
             # Prevent run with in-place extensions because cython-generated objects do not carry docstrings
             # http://docs.cython.org/src/userguide/special_methods.html#docstrings
             import glob
-            for f in glob.glob("cassandra/*.so"):
+            for f in glob.glob("dse/*.so"):
                 print("Removing '%s' to allow docs to run on pure python modules." %(f,))
                 os.unlink(f)
 
@@ -141,11 +131,11 @@ class BuildFailed(Exception):
         self.ext = ext
 
 
-murmur3_ext = Extension('cassandra.cmurmur3',
-                        sources=['cassandra/cmurmur3.c'])
+murmur3_ext = Extension('dse.cmurmur3',
+                        sources=['dse/cmurmur3.c'])
 
-libev_ext = Extension('cassandra.io.libevwrapper',
-                      sources=['cassandra/io/libevwrapper.c'],
+libev_ext = Extension('dse.io.libevwrapper',
+                      sources=['dse/io/libevwrapper.c'],
                       include_dirs=['/usr/include/libev', '/usr/local/include', '/opt/local/include'],
                       libraries=['ev'],
                       library_dirs=['/usr/local/lib', '/opt/local/lib'])
@@ -310,13 +300,13 @@ On OSX, via homebrew:
                                      'pool', 'protocol', 'query', 'util']
                 compile_args = [] if is_windows else ['-Wno-unused-function']
                 self.extensions.extend(cythonize(
-                    [Extension('cassandra.%s' % m, ['cassandra/%s.py' % m],
+                    [Extension('dse.%s' % m, ['dse/%s.py' % m],
                                extra_compile_args=compile_args)
                         for m in cython_candidates],
                     nthreads=build_concurrency,
                     exclude_failures=True))
 
-                self.extensions.extend(cythonize(NoPatchExtension("*", ["cassandra/*.pyx"], extra_compile_args=compile_args),
+                self.extensions.extend(cythonize(NoPatchExtension("*", ["dse/*.pyx"], extra_compile_args=compile_args),
                                                  nthreads=build_concurrency))
             except Exception:
                 sys.stderr.write("Failed to cythonize one or more modules. These will not be compiled as extensions (optional).\n")
@@ -392,28 +382,29 @@ def run_setup(extensions):
         else:
             sys.stderr.write("Bypassing Cython setup requirement\n")
 
-    dependencies = ['six >=1.6']
+    dependencies = ['six >=1.6',
+                    'geomet>=0.1,<0.2']
 
     if not PY3:
         dependencies.append('futures')
 
     setup(
-        name='cassandra-driver',
+        name='cassandra-driver-dse',
         version=__version__,
-        description='Python driver for Cassandra',
+        description='DataStax Enterprise Driver',
         long_description=long_description,
         url='http://github.com/datastax/python-driver',
         author='Tyler Hobbs',
         author_email='tyler@datastax.com',
-        packages=['cassandra', 'cassandra.io', 'cassandra.cqlengine'],
-        keywords='cassandra,cql,orm',
+        packages=['dse', 'dse.io', 'dse.cqlengine'],
+        keywords='cassandra,cql,orm,dse,graph',
         include_package_data=True,
         install_requires=dependencies,
         tests_require=['nose', 'mock<=1.0.1', 'PyYAML', 'pytz', 'sure'],
         classifiers=[
             'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
-            'License :: OSI Approved :: Apache Software License',
+            'License :: Other/Proprietary License',
             'Natural Language :: English',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
@@ -425,6 +416,7 @@ def run_setup(extensions):
             'Programming Language :: Python :: Implementation :: PyPy',
             'Topic :: Software Development :: Libraries :: Python Modules'
         ],
+        license="DataStax DSE Driver License http://www.datastax.com/terms/datastax-dse-driver-license-terms",
         **kw)
 
 run_setup(None)

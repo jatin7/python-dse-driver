@@ -2,7 +2,7 @@ Releasing
 =========
 * Run the tests and ensure they all pass
 * Update CHANGELOG.rst
-* Update the version in ``cassandra/__init__.py``
+* Update the version in ``dse/__init__.py``
 
   * For beta releases, use a version like ``(2, 1, '0b1')``
   * For release candidates, use a version like ``(2, 1, '0rc1')``
@@ -19,13 +19,19 @@ Releasing
 
 * On pypi, make the latest GA the only visible version
 * Update the docs (see below)
-* Append a 'postN' string to the version tuple in ``cassandra/__init__.py``
+* Append a 'postN' string to the version tuple in ``dse/__init__.py``
   so that it looks like ``(x, y, z, 'postN')``
 
   * After a beta or rc release, this should look like ``(2, 1, '0b1', 'post0')``
 
+* After the release has been tagged, add a section to docs.yaml with the new tag ref::
+
+    versions:
+      - name: <version name>
+        ref: <release tag>
+
 * Commit and push
-* Update 'cassandra-test' branch to reflect new release
+* Update 'dse-test' branch to reflect new release
 
     * this is typically a matter of merging or rebasing onto master
     * test and push updated branch to origin
@@ -67,6 +73,37 @@ you have changed the files with errors.  It's good to occassionally clear the bu
 directory and build from scratch::
 
     rm -rf docs/_build/*
+
+Documentor
+==========
+We now also use another tool called Documentor with Sphinx source to build docs.
+This gives us versioned docs with nice integrated search.
+
+Dependencies
+------------
+Sphinx
+~~~~~~
+Installed as described above
+
+Documentor
+~~~~~~~~~~
+Clone and setup Documentor as specified in `the project <https://github.com/riptano/documentor#installation-and-quick-start>`_.
+This tool assumes Ruby, bundler, and npm are present.
+
+Building
+--------
+The setup script expects documentor to be in the system path. You can either add it permanently or run with something
+like this::
+
+    PATH=$PATH:<documentor repo>/bin python setup.py doc
+
+The docs will not display properly just browsing the filesystem in a browser. To view the docs as they would be in most
+web servers, use the SimpleHTTPServer module::
+
+    cd docs/_build/
+    python -m SimpleHTTPServer
+
+Then, browse to `localhost:8000 <http://localhost:8000>`_.
 
 Running the Tests
 =================
@@ -147,3 +184,7 @@ name to specify the built version::
     python setup.py egg_info -b-`git rev-parse --short HEAD` sdist --formats=zip
 
 The file (``dist/cassandra-driver-<version spec>.zip``) is packaged with Cassandra in ``cassandra/lib/cassandra-driver-internal-only*zip``.
+
+Most notes on releasing and testing are the same as those in the core driver `README-dev <https://github.com/datastax/python-driver/blob/master/README-dev.rst>`_.
+
+Here we discuss any differences.

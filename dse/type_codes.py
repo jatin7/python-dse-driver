@@ -1,10 +1,19 @@
+# Copyright 2016 DataStax, Inc.
+#
+# Licensed under the DataStax DSE Driver License;
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
+
 """
 Module with constants for Cassandra type codes.
 
 These constants are useful for
 
-    a) mapping messages to cqltypes                (cassandra/cqltypes.py)
-    b) optimized dispatching for (de)serialization (cassandra/encoding.py)
+    a) mapping messages to cqltypes                (dse/cqltypes.py)
+    b) optimized dispatching for (de)serialization (dse/encoding.py)
 
 Type codes are repeated here from the Cassandra binary protocol specification:
 

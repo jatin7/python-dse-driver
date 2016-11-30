@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 #
-# Cassandra Driver documentation build configuration file, created by
+# Licensed under the DataStax DSE Driver License;
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
+#
+# DSE Driver documentation build configuration file, created by
 # sphinx-quickstart on Mon Jul  1 11:40:09 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -18,7 +25,7 @@ import sys
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
-import cassandra
+import dse
 
 # -- General configuration -----------------------------------------------------
 
@@ -42,7 +49,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Cassandra Driver'
+project = u'DataStax Enterprise Driver'
 copyright = u'2013-2016 DataStax'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -50,9 +57,9 @@ copyright = u'2013-2016 DataStax'
 # built documents.
 #
 # The short X.Y version.
-version = cassandra.__version__
+version = dse.__version__
 # The full version, including alpha/beta/rc tags.
-release = cassandra.__version__
+release = dse.__version__
 
 autodoc_member_order = 'bysource'
 autoclass_content = 'both'
@@ -146,7 +153,7 @@ html_static_path = []
 #html_domain_indices = True
 
 # If false, no index is generated.
-#html_use_index = True
+html_use_index = False
 
 # If true, the index is split into individual pages for each letter.
 #html_split_index = False
@@ -169,7 +176,7 @@ html_static_path = []
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'CassandraDriverdoc'
+htmlhelp_basename = 'DSEDriverdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +190,7 @@ htmlhelp_basename = 'CassandraDriverdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'cassandra-driver.tex', u'Cassandra Driver Documentation', u'DataStax', 'manual'),
+    ('index', 'cassandra-driver-dse.tex', u'DSE Driver Documentation', u'DataStax', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -215,6 +222,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'cassandra-driver', u'Cassandra Driver Documentation',
-     [u'Tyler Hobbs'], 1)
+    ('index', 'cassandra-driver-dse', u'DSE Driver Documentation',
+     [u'Adam Holmberg'], 1)
 ]

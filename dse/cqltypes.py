@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 """
 Representation of Cassandra data types. These classes should make it simple for
@@ -33,23 +28,27 @@ import calendar
 from collections import namedtuple
 from decimal import Decimal
 import io
+from itertools import chain
 import logging
 import re
 import socket
 import time
 import six
 from six.moves import range
+import struct
 import sys
 from uuid import UUID
-import warnings
 
-
-from cassandra.marshal import (int8_pack, int8_unpack, int16_pack, int16_unpack,
+from dse.marshal import (int8_pack, int8_unpack, int16_pack, int16_unpack,
                                uint16_pack, uint16_unpack, uint32_pack, uint32_unpack,
                                int32_pack, int32_unpack, int64_pack, int64_unpack,
                                float_pack, float_unpack, double_pack, double_unpack,
-                               varint_pack, varint_unpack)
-from cassandra import util
+                               varint_pack, varint_unpack, point_be, point_le)
+from dse import util
+
+_little_endian_flag = 1  # we always serialize LE
+
+_ord = ord if six.PY2 else lambda x: x
 
 apache_cassandra_type_prefix = 'org.apache.cassandra.db.marshal.'
 
@@ -176,7 +175,7 @@ def lookup_casstype(casstype):
     Example:
 
         >>> lookup_casstype('org.apache.cassandra.db.marshal.MapType(org.apache.cassandra.db.marshal.UTF8Type,org.apache.cassandra.db.marshal.Int32Type)')
-        <class 'cassandra.types.MapType(UTF8Type, Int32Type)'>
+        <class 'dse.cqltypes.MapType(UTF8Type, Int32Type)'>
 
     """
     if isinstance(casstype, (CassandraType, CassandraTypeType)):
@@ -296,7 +295,7 @@ class _CassandraType(object):
         using them as parameters. This is how composite types are constructed.
 
             >>> MapType.apply_parameters([DateType, BooleanType])
-            <class 'cassandra.types.MapType(DateType, BooleanType)'>
+            <class 'dse.cqltypes.MapType(DateType, BooleanType)'>
 
         `subtypes` will be a sequence of CassandraTypes.  If provided, `names`
         will be an equally long sequence of column names or Nones.
@@ -1051,3 +1050,86 @@ def cql_typename(casstypename):
         'list<varint>'
     """
     return lookup_casstype(casstypename).cql_parameterized_type()
+
+
+class WKBGeometryType(object):
+    POINT = 1
+    LINESTRING = 2
+    POLYGON = 3
+
+
+class PointType(CassandraType):
+    typename = 'PointType'
+
+    _type = struct.pack('<BI', _little_endian_flag, WKBGeometryType.POINT)
+
+    @staticmethod
+    def serialize(val, protocol_version):
+        return PointType._type + point_le.pack(val.x, val.y)
+
+    @staticmethod
+    def deserialize(byts, protocol_version):
+        is_little_endian = bool(_ord(byts[0]))
+        point = point_le if is_little_endian else point_be
+        return util.Point(*point.unpack_from(byts, 5))  # ofs = endian byte + int type
+
+
+class LineStringType(CassandraType):
+    typename = 'LineStringType'
+
+    _type = struct.pack('<BI', _little_endian_flag, WKBGeometryType.LINESTRING)
+
+    @staticmethod
+    def serialize(val, protocol_version):
+        num_points = len(val.coords)
+        return LineStringType._type + struct.pack('<I' + 'dd' * num_points, num_points, *(d for coords in val.coords for d in coords))
+
+    @staticmethod
+    def deserialize(byts, protocol_version):
+        is_little_endian = bool(_ord(byts[0]))
+        point = point_le if is_little_endian else point_be
+        coords = ((point.unpack_from(byts, offset) for offset in range(1 + 4 + 4, len(byts), point.size)))  # start = endian + int type + int count
+        return util.LineString(coords)
+
+
+class PolygonType(CassandraType):
+    typename = 'PolygonType'
+
+    _type = struct.pack('<BI', _little_endian_flag, WKBGeometryType.POLYGON)
+    _ring_count = struct.Struct('<I').pack
+
+    @staticmethod
+    def serialize(val, protocol_version):
+        buf = io.BytesIO(PolygonType._type)
+        buf.seek(0, 2)
+
+        if val.exterior.coords:
+            num_rings = 1 + len(val.interiors)
+            buf.write(PolygonType._ring_count(num_rings))
+            for ring in chain((val.exterior,), val.interiors):
+                num_points = len(ring.coords)
+                buf.write(struct.pack('<I' + 'dd' * num_points, num_points, *(d for coord in ring.coords for d in coord)))
+        else:
+            buf.write(PolygonType._ring_count(0))
+        return buf.getvalue()
+
+    @staticmethod
+    def deserialize(byts, protocol_version):
+        is_little_endian = bool(_ord(byts[0]))
+        if is_little_endian:
+            int_fmt = '<i'
+            point = point_le
+        else:
+            int_fmt = '>i'
+            point = point_be
+        p = 5
+        ring_count = struct.unpack_from(int_fmt, byts, p)[0]
+        p += 4
+        rings = []
+        for _ in range(ring_count):
+            point_count = struct.unpack_from(int_fmt, byts, p)[0]
+            p += 4
+            end = p + point_count * point.size
+            rings.append([point.unpack_from(byts, offset) for offset in range(p, end, point.size)])
+            p = end
+        return util.Polygon(exterior=rings[0], interiors=rings[1:]) if rings else util.Polygon()

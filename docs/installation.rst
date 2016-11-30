@@ -14,9 +14,9 @@ Installation through pip
 packages.  It will handle installing all Python dependencies for the driver at
 the same time as the driver itself.  To install the driver*::
 
-    pip install cassandra-driver
+    pip install cassandra-driver-dse
 
-You can use ``pip install --pre cassandra-driver`` if you need to install a beta version.
+You can use ``pip install --pre cassandra-driver-dse`` if you need to install a beta version.
 
 ***Note**: if intending to use optional extensions, install the `dependencies <#optional-non-python-dependencies>`_ first. The driver may need to be reinstalled if dependencies are added after the initial installation.
 
@@ -28,7 +28,7 @@ If you're installing on OSX and have XCode 5.1 installed, you may see an error l
 
 To fix this, re-run the installation with an extra compilation flag::
 
-    ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future pip install cassandra-driver
+    ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future pip install cassandra-driver-dse
 
 .. _windows_build:
 
@@ -52,7 +52,7 @@ Manual Installation
 You can always install the driver directly from a source checkout or tarball.
 When installing manually, ensure the python dependencies are already
 installed. You can find the list of dependencies in
-`requirements.txt <https://github.com/datastax/python-driver/blob/master/requirements.txt>`_.
+`requirements.txt <https://github.com/datastax/python-driver-dse/blob/master/requirements.txt>`_.
 
 Once the dependencies are installed, simply run::
 
@@ -62,9 +62,9 @@ Verifying your Installation
 ---------------------------
 To check if the installation was successful, you can run::
 
-    python -c 'import cassandra; print cassandra.__version__'
+    python -c 'import dse; print dse.__version__'
 
-It should print something like "2.7.0".
+It should print something like "2.0.0".
 
 (*Optional*) Compression Support
 --------------------------------
@@ -143,8 +143,8 @@ context::
 
 This method is required when using pip, which provides no other way of injecting user options in a single command::
 
-    CASS_DRIVER_NO_CYTHON=1 pip install cassandra-driver
-    CASS_DRIVER_NO_CYTHON=1 sudo -E pip install ~/python-driver
+    CASS_DRIVER_NO_CYTHON=1 pip install cassandra-driver-dse
+    CASS_DRIVER_NO_CYTHON=1 sudo -E pip install ~/python-driver-dse
 
 The environment variable is the preferred option because it spans all invocations of setup.py, and will
 prevent Cython from being materialized as a setup requirement.
@@ -186,8 +186,8 @@ the libev event loop by doing the following:
 
 .. code-block:: python
 
-    >>> from cassandra.io.libevreactor import LibevConnection
-    >>> from cassandra.cluster import Cluster
+    >>> from dse.io.libevreactor import LibevConnection
+    >>> from dse.cluster import Cluster
 
     >>> cluster = Cluster()
     >>> cluster.connection_class = LibevConnection

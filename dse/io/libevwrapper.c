@@ -60,7 +60,7 @@ static PyMethodDef Loop_methods[] = {
 static
 PyTypeObject libevwrapper_LoopType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cassandra.io.libevwrapper.Loop",/*tp_name*/
+    "dse.io.libevwrapper.Loop",/*tp_name*/
     sizeof(libevwrapper_Loop),       /*tp_basicsize*/
     0,                               /*tp_itemsize*/
     (destructor)Loop_dealloc,        /*tp_dealloc*/
@@ -203,7 +203,7 @@ static PyMethodDef IO_methods[] = {
 
 static PyTypeObject libevwrapper_IOType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cassandra.io.libevwrapper.IO",  /*tp_name*/
+    "dse.io.libevwrapper.IO",  /*tp_name*/
     sizeof(libevwrapper_IO),         /*tp_basicsize*/
     0,                               /*tp_itemsize*/
     (destructor)IO_dealloc,          /*tp_dealloc*/
@@ -296,7 +296,7 @@ static PyMethodDef Async_methods[] = {
 
 static PyTypeObject libevwrapper_AsyncType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cassandra.io.libevwrapper.Async", /*tp_name*/
+    "dse.io.libevwrapper.Async", /*tp_name*/
     sizeof(libevwrapper_Async),      /*tp_basicsize*/
     0,                               /*tp_itemsize*/
     (destructor)Async_dealloc,       /*tp_dealloc*/
@@ -414,7 +414,7 @@ static PyMethodDef Prepare_methods[] = {
 
 static PyTypeObject libevwrapper_PrepareType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cassandra.io.libevwrapper.Prepare",  /*tp_name*/
+    "dse.io.libevwrapper.Prepare",  /*tp_name*/
     sizeof(libevwrapper_Prepare),    /*tp_basicsize*/
     0,                               /*tp_itemsize*/
     (destructor)Prepare_dealloc,     /*tp_dealloc*/
@@ -538,7 +538,7 @@ static PyMethodDef Timer_methods[] = {
 
 static PyTypeObject libevwrapper_TimerType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cassandra.io.libevwrapper.Timer",  /*tp_name*/
+    "dse.io.libevwrapper.Timer",  /*tp_name*/
     sizeof(libevwrapper_Timer),      /*tp_basicsize*/
     0,                               /*tp_itemsize*/
     (destructor)Timer_dealloc,       /*tp_dealloc*/

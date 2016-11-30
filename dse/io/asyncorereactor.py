@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 import atexit
 from collections import deque
 from functools import partial
@@ -27,7 +22,7 @@ from six.moves import range
 try:
     from weakref import WeakSet
 except ImportError:
-    from cassandra.util import WeakSet  # noqa
+    from dse.util import WeakSet  # noqa
 
 import asyncore
 
@@ -36,7 +31,7 @@ try:
 except ImportError:
     ssl = None  # NOQA
 
-from cassandra.connection import Connection, ConnectionShutdown, NONBLOCKING, Timer, TimerManager
+from dse.connection import Connection, ConnectionShutdown, NONBLOCKING, Timer, TimerManager
 
 log = logging.getLogger(__name__)
 
@@ -120,7 +115,7 @@ class _AsyncoreUDPDispatcher(_AsyncoreDispatcher):
 
     To use::
 
-        from cassandra.io.asyncorereactor import _AsyncoreUDPDispatcher, AsyncoreLoop
+        from dse.io.asyncorereactor import _AsyncoreUDPDispatcher, AsyncoreLoop
         AsyncoreLoop._loop_dispatch_class = _AsyncoreUDPDispatcher
 
     """
@@ -215,7 +210,7 @@ class AsyncoreLoop(object):
                 self._loop_lock.release()
 
         if should_start:
-            self._thread = Thread(target=self._run_loop, name="cassandra_driver_event_loop")
+            self._thread = Thread(target=self._run_loop, name="dse_driver_event_loop")
             self._thread.daemon = True
             self._thread.start()
 

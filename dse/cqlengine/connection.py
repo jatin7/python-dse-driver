@@ -1,27 +1,22 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from collections import defaultdict
 import logging
 import six
 import threading
 
-from cassandra.cluster import Cluster, _NOT_SET, NoHostAvailable, UserTypeDoesNotExist
-from cassandra.query import SimpleStatement, dict_factory
+from dse.cluster import Cluster, _NOT_SET, NoHostAvailable, UserTypeDoesNotExist
+from dse.query import SimpleStatement, dict_factory
 
-from cassandra.cqlengine import CQLEngineException
-from cassandra.cqlengine.statements import BaseCQLStatement
+from dse.cqlengine import CQLEngineException
+from dse.cqlengine.statements import BaseCQLStatement
 
 
 log = logging.getLogger(__name__)
@@ -111,7 +106,7 @@ class Connection(object):
         self.setup_session()
 
     def setup_session(self):
-        self.session.row_factory = dict_factory
+        self.cluster.profile_manager.default.row_factory = dict_factory
         enc = self.session.encoder
         enc.mapping[tuple] = enc.cql_encode_tuple
         _register_known_types(self.session.cluster)
@@ -216,7 +211,7 @@ def default():
 
 def set_session(s):
     """
-    Configures the default connection with a preexisting :class:`cassandra.cluster.Session`
+    Configures the default connection with a preexisting :class:`dse.cluster.Session`
 
     Note: the mapper presently requires a Session :attr:`~.row_factory` set to ``dict_factory``.
     This may be relaxed in the future
@@ -227,14 +222,14 @@ def set_session(s):
     if conn.session:
         log.warning("configuring new default connection for cqlengine when one was already set")
 
-    if s.row_factory is not dict_factory:
+    if s.cluster.profile_manager.default.row_factory is not dict_factory:
         raise CQLEngineException("Failed to initialize: 'Session.row_factory' must be 'dict_factory'.")
     conn.session = s
     conn.cluster = s.cluster
 
     # Set default keyspace from given session's keyspace
     if conn.session.keyspace:
-        from cassandra.cqlengine import models
+        from dse.cqlengine import models
         models.DEFAULT_KEYSPACE = conn.session.keyspace
 
     conn.setup_session()
@@ -252,15 +247,15 @@ def setup(
     """
     Setup a the driver connection used by the mapper
 
-    :param list hosts: list of hosts, (``contact_points`` for :class:`cassandra.cluster.Cluster`)
+    :param list hosts: list of hosts, (``contact_points`` for :class:`dse.cluster.Cluster`)
     :param str default_keyspace: The default keyspace to use
     :param int consistency: The global default :class:`~.ConsistencyLevel` - default is the same as :attr:`.Session.default_consistency_level`
     :param bool lazy_connect: True if should not connect until first use
     :param bool retry_connect: True if we should retry to connect even if there was a connection failure initially
-    :param \*\*kwargs: Pass-through keyword arguments for :class:`cassandra.cluster.Cluster`
+    :param \*\*kwargs: Pass-through keyword arguments for :class:`dse.cluster.Cluster`
     """
 
-    from cassandra.cqlengine import models
+    from dse.cqlengine import models
     models.DEFAULT_KEYSPACE = default_keyspace
 
     register_connection('default', hosts=hosts, consistency=consistency, lazy_connect=lazy_connect,
@@ -313,7 +308,7 @@ def register_udt(keyspace, type_name, klass, connection=None):
 
 
 def _register_known_types(cluster):
-    from cassandra.cqlengine import models
+    from dse.cqlengine import models
     for ks_name, name_type_map in udt_by_keyspace.items():
         for type_name, klass in name_type_map.items():
             try:

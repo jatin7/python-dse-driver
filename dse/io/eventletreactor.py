@@ -1,17 +1,12 @@
 # Copyright 2014 Symantec Corporation
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 # Originally derived from MagnetoDB source:
 #   https://github.com/stackforge/magnetodb/blob/2015.1.0b1/magnetodb/common/cassandra/io/eventletreactor.py
@@ -25,7 +20,7 @@ import time
 
 from six.moves import xrange
 
-from cassandra.connection import Connection, ConnectionShutdown, Timer, TimerManager
+from dse.connection import Connection, ConnectionShutdown, Timer, TimerManager
 
 
 log = logging.getLogger(__name__)

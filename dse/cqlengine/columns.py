@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from copy import deepcopy, copy
 from datetime import date, datetime, timedelta
@@ -18,10 +13,10 @@ import logging
 import six
 from uuid import UUID as _UUID
 
-from cassandra import util
-from cassandra.cqltypes import SimpleDateType, _cqltypes, UserType
-from cassandra.cqlengine import ValidationError
-from cassandra.cqlengine.functions import get_total_seconds
+from dse import util
+from dse.cqltypes import SimpleDateType, _cqltypes, UserType
+from dse.cqlengine import ValidationError
+from dse.cqlengine.functions import get_total_seconds
 
 log = logging.getLogger(__name__)
 
@@ -253,7 +248,7 @@ class Column(object):
         return '{0} {1} {2}'.format(self.cql, self.db_type, static)
 
     # TODO: make columns use cqltypes under the hood
-    # until then, this bridges the gap in using types along with cassandra.metadata for CQL generation
+    # until then, this bridges the gap in using types along with dse.metadata for CQL generation
     def cql_parameterized_type(self):
         return self.db_type
 
@@ -819,7 +814,7 @@ class Set(BaseContainerColumn):
         if None in val:
             raise ValidationError("{0} None not allowed in a set".format(self.column_name))
         # TODO: stop doing this conversion because it doesn't support non-hashable collections as keys (cassandra does)
-        # will need to start using the cassandra.util types in the next major rev (PYTHON-494)
+        # will need to start using the dse.util types in the next major rev (PYTHON-494)
         return set(self.value_col.validate(v) for v in val)
 
     def to_python(self, value):
@@ -903,7 +898,7 @@ class Map(BaseContainerColumn):
         if None in val:
             raise ValidationError("{0} None is not allowed in a map".format(self.column_name))
         # TODO: stop doing this conversion because it doesn't support non-hashable collections as keys (cassandra does)
-        # will need to start using the cassandra.util types in the next major rev (PYTHON-494)
+        # will need to start using the dse.util types in the next major rev (PYTHON-494)
         return dict((self.key_col.validate(k), self.value_col.validate(v)) for k, v in val.items())
 
     def to_python(self, value):
@@ -935,7 +930,7 @@ class UserDefinedType(Column):
 
     http://www.datastax.com/documentation/cql/3.1/cql/cql_using/cqlUseUDT.html
 
-    These columns are represented by a specialization of :class:`cassandra.cqlengine.usertype.UserType`.
+    These columns are represented by a specialization of :class:`dse.cqlengine.usertype.UserType`.
 
     Please see :ref:`user_types` for examples and discussion.
     """

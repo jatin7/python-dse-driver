@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 
 from collections import namedtuple
@@ -21,7 +16,7 @@ from six.moves import xrange, zip
 from threading import Condition
 import sys
 
-from cassandra.cluster import ResultSet
+from dse.cluster import ResultSet
 
 import logging
 log = logging.getLogger(__name__)
@@ -223,7 +218,7 @@ class ConcurrentExecutorListResults(_ConcurrentExecutor):
 
 def execute_concurrent_with_args(session, statement, parameters, *args, **kwargs):
     """
-    Like :meth:`~cassandra.concurrent.execute_concurrent()`, but takes a single
+    Like :meth:`~dse.concurrent.execute_concurrent()`, but takes a single
     statement and a sequence of parameters.  Each item in ``parameters``
     should be a sequence or :const:`None`.
 

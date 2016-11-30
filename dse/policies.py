@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from itertools import islice, cycle, groupby, repeat
 import logging
@@ -18,7 +13,7 @@ from random import randint
 from threading import Lock
 import socket
 
-from cassandra import ConsistencyLevel, OperationTimedOut
+from dse import ConsistencyLevel, OperationTimedOut
 
 log = logging.getLogger(__name__)
 
@@ -961,3 +956,69 @@ class ConstantSpeculativeExecutionPolicy(SpeculativeExecutionPolicy):
 
     def new_plan(self, keyspace, statement):
         return self.ConstantSpeculativeExecutionPlan(self.delay, self.max_attempts)
+
+
+class WrapperPolicy(LoadBalancingPolicy):
+
+    def __init__(self, child_policy):
+        self._child_policy = child_policy
+
+    def distance(self, *args, **kwargs):
+        return self._child_policy.distance(*args, **kwargs)
+
+    def populate(self, cluster, hosts):
+        self._child_policy.populate(cluster, hosts)
+
+    def on_up(self, *args, **kwargs):
+        return self._child_policy.on_up(*args, **kwargs)
+
+    def on_down(self, *args, **kwargs):
+        return self._child_policy.on_down(*args, **kwargs)
+
+    def on_add(self, *args, **kwargs):
+        return self._child_policy.on_add(*args, **kwargs)
+
+    def on_remove(self, *args, **kwargs):
+        return self._child_policy.on_remove(*args, **kwargs)
+
+
+class DSELoadBalancingPolicy(WrapperPolicy):
+    """
+    A :class:`.LoadBalancingPolicy` wrapper that adds the ability to target a specific host first.
+
+    If no host is set on the query, the child policy's query plan will be used as is.
+    """
+
+    _cluster_metadata = None
+
+    def populate(self, cluster, hosts):
+        self._cluster_metadata = cluster.metadata
+        self._child_policy.populate(cluster, hosts)
+
+    def make_query_plan(self, working_keyspace=None, query=None):
+        if query and query.keyspace:
+            keyspace = query.keyspace
+        else:
+            keyspace = working_keyspace
+
+        addr = getattr(query, 'target_host', None) if query else None
+        target_host = self._cluster_metadata.get_host(addr)
+
+        child = self._child_policy
+        if target_host and target_host.is_up:
+            yield target_host
+            for h in child.make_query_plan(keyspace, query):
+                if h != target_host:
+                    yield h
+        else:
+            for h in child.make_query_plan(keyspace, query):
+                yield h
+
+
+class NeverRetryPolicy(RetryPolicy):
+    def _rethrow(self, *args, **kwargs):
+        return self.RETHROW, None
+
+    on_read_timeout = _rethrow
+    on_write_timeout = _rethrow
+    on_unavailable = _rethrow

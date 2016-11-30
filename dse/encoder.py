@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 """
 These functions are used to convert Python objects into CQL strings.
 When non-prepared statements are executed, these encoder functions are
@@ -29,8 +24,9 @@ import types
 from uuid import UUID
 import six
 
-from cassandra.util import (OrderedDict, OrderedMap, OrderedMapSerializedKey,
-                            sortedset, Time, Date)
+from dse.util import (OrderedDict, OrderedMap, OrderedMapSerializedKey,
+                      sortedset, Time, Date, Point, LineString, Polygon)
+
 
 if six.PY3:
     long = int
@@ -88,7 +84,10 @@ class Encoder(object):
             sortedset: self.cql_encode_set_collection,
             frozenset: self.cql_encode_set_collection,
             types.GeneratorType: self.cql_encode_list_collection,
-            ValueSequence: self.cql_encode_sequence
+            ValueSequence: self.cql_encode_sequence,
+            Point: self.cql_encode_str_quoted,
+            LineString: self.cql_encode_str_quoted,
+            Polygon: self.cql_encode_str_quoted
         }
 
         if six.PY2:
@@ -122,6 +121,9 @@ class Encoder(object):
         Escapes quotes in :class:`str` objects.
         """
         return cql_quote(val)
+
+    def cql_encode_str_quoted(self, val):
+        return "'%s'" % val
 
     if six.PY3:
         def cql_encode_bytes(self, val):
@@ -169,14 +171,14 @@ class Encoder(object):
 
     def cql_encode_time(self, val):
         """
-        Converts a :class:`cassandra.util.Time` object to a string with format
+        Converts a :class:`dse.util.Time` object to a string with format
         ``HH:MM:SS.mmmuuunnn``.
         """
         return "'%s'" % val
 
     def cql_encode_date_ext(self, val):
         """
-        Encodes a :class:`cassandra.util.Date` object as an integer
+        Encodes a :class:`dse.util.Date` object as an integer
         """
         # using the int form in case the Date exceeds datetime.[MIN|MAX]YEAR
         return str(val.days_from_epoch + 2 ** 31)

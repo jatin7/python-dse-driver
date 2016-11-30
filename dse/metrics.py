@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from itertools import chain
 import logging
@@ -116,7 +111,7 @@ class Metrics(object):
     def __init__(self, cluster_proxy):
         log.debug("Starting metric capture")
 
-        self.stats_name = 'cassandra-{0}'.format(str(self._stats_counter))
+        self.stats_name = 'dse-{0}'.format(str(self._stats_counter))
         Metrics._stats_counter += 1
         self.stats = scales.collection(self.stats_name,
             scales.PmfStat('request_timer'),
@@ -137,9 +132,9 @@ class Metrics(object):
                 lambda: sum(sum(p.open_count for p in s._pools.values()) for s in cluster_proxy.sessions)))
 
         # TODO, to be removed in 4.0
-        # /cassandra contains the metrics of the first cluster registered
-        if 'cassandra' not in scales._Stats.stats:
-            scales._Stats.stats['cassandra'] = scales._Stats.stats[self.stats_name]
+        # /dse contains the metrics of the first cluster registered
+        if 'dse' not in scales._Stats.stats:
+            scales._Stats.stats['dse'] = scales._Stats.stats[self.stats_name]
 
         self.request_timer = self.stats.request_timer
         self.connection_errors = self.stats.connection_errors
@@ -184,7 +179,7 @@ class Metrics(object):
         """
         Set the metrics stats name.
         The stats_name is a string used to access the metris through scales: scales.getStats()[<stats_name>]
-        Default is 'cassandra-<num>'.
+        Default is 'dse-<num>'.
         """
 
         if self.stats_name == stats_name:

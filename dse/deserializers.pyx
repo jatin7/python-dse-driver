@@ -1,33 +1,28 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 
 from libc.stdint cimport int32_t, uint16_t
 
 include 'cython_marshal.pyx'
-from cassandra.buffer cimport Buffer, to_bytes, slice_buffer
-from cassandra.cython_utils cimport datetime_from_timestamp
+from dse.buffer cimport Buffer, to_bytes, slice_buffer
+from dse.cython_utils cimport datetime_from_timestamp
 
 from cython.view cimport array as cython_array
-from cassandra.tuple cimport tuple_new, tuple_set
+from dse.tuple cimport tuple_new, tuple_set
 
 import socket
 from decimal import Decimal
 from uuid import UUID
 
-from cassandra import cqltypes
-from cassandra import util
+from dse import cqltypes
+from dse import util
 
 cdef bint PY2 = six.PY2
 

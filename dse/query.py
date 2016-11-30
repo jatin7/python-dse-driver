@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 """
 This module holds classes for working with prepared statements and
@@ -26,12 +21,12 @@ import time
 import six
 from six.moves import range, zip
 
-from cassandra import ConsistencyLevel, OperationTimedOut
-from cassandra.util import unix_time_from_uuid1
-from cassandra.encoder import Encoder
-import cassandra.encoder
-from cassandra.protocol import _UNSET_VALUE
-from cassandra.util import OrderedDict, _sanitize_identifiers
+from dse import ConsistencyLevel, OperationTimedOut
+from dse.util import unix_time_from_uuid1
+from dse.encoder import Encoder
+import dse.encoder
+from dse.protocol import _UNSET_VALUE
+from dse.util import OrderedDict, _sanitize_identifiers
 
 import logging
 log = logging.getLogger(__name__)
@@ -71,15 +66,13 @@ def tuple_factory(colnames, rows):
 
     Example::
 
-        >>> from cassandra.query import tuple_factory
+        >>> from dse.query import tuple_factory
         >>> session = cluster.connect('mykeyspace')
         >>> session.row_factory = tuple_factory
         >>> rows = session.execute("SELECT name, age FROM users LIMIT 1")
         >>> print rows[0]
         ('Bob', 42)
 
-    .. versionchanged:: 2.0.0
-        moved from ``cassandra.decoder`` to ``cassandra.query``
     """
     return rows
 
@@ -91,7 +84,7 @@ def named_tuple_factory(colnames, rows):
 
     Example::
 
-        >>> from cassandra.query import named_tuple_factory
+        >>> from dse.query import named_tuple_factory
         >>> session = cluster.connect('mykeyspace')
         >>> session.row_factory = named_tuple_factory
         >>> rows = session.execute("SELECT name, age FROM users LIMIT 1")
@@ -110,8 +103,6 @@ def named_tuple_factory(colnames, rows):
         >>> print "name: %s, age: %d" % (name, age)
         name: Bob, age: 42
 
-    .. versionchanged:: 2.0.0
-        moved from ``cassandra.decoder`` to ``cassandra.query``
     """
     clean_column_names = map(_clean_column_name, colnames)
     try:
@@ -135,26 +126,23 @@ def dict_factory(colnames, rows):
 
     Example::
 
-        >>> from cassandra.query import dict_factory
+        >>> from dse.query import dict_factory
         >>> session = cluster.connect('mykeyspace')
         >>> session.row_factory = dict_factory
         >>> rows = session.execute("SELECT name, age FROM users LIMIT 1")
         >>> print rows[0]
         {u'age': 42, u'name': u'Bob'}
-
-    .. versionchanged:: 2.0.0
-        moved from ``cassandra.decoder`` to ``cassandra.query``
     """
     return [dict(zip(colnames, row)) for row in rows]
 
 
 def ordered_dict_factory(colnames, rows):
     """
-    Like :meth:`~cassandra.query.dict_factory`, but returns each row as an OrderedDict,
+    Like :meth:`~dse.query.dict_factory`, but returns each row as an OrderedDict,
     so the order of the columns is preserved.
 
     .. versionchanged:: 2.0.0
-        moved from ``cassandra.decoder`` to ``cassandra.query``
+        moved from ``dse.decoder`` to ``dse.query``
     """
     return [OrderedDict(zip(colnames, row)) for row in rows]
 
@@ -171,7 +159,7 @@ class Statement(object):
 
     retry_policy = None
     """
-    An instance of a :class:`cassandra.policies.RetryPolicy` or one of its
+    An instance of a :class:`dse.policies.RetryPolicy` or one of its
     subclasses.  This controls when a query will be retried and how it
     will be retried.
     """
@@ -227,7 +215,7 @@ class Statement(object):
                  serial_consistency_level=None, fetch_size=FETCH_SIZE_UNSET, keyspace=None, custom_payload=None,
                  is_idempotent=False):
         if retry_policy and not hasattr(retry_policy, 'on_read_timeout'):  # just checking one method to detect positional parameter errors
-            raise ValueError('retry_policy should implement cassandra.policies.RetryPolicy')
+            raise ValueError('retry_policy should implement dse.policies.RetryPolicy')
         self.retry_policy = retry_policy
         if consistency_level is not None:
             self.consistency_level = consistency_level
@@ -798,7 +786,7 @@ class BatchStatement(Statement):
     __repr__ = __str__
 
 
-ValueSequence = cassandra.encoder.ValueSequence
+ValueSequence = dse.encoder.ValueSequence
 """
 A wrapper class that is used to specify that a sequence of values should
 be treated as a CQL list of values instead of a single column collection when used
@@ -1012,3 +1000,16 @@ class TraceEvent(object):
 
     def __str__(self):
         return "%s on %s[%s] at %s" % (self.description, self.source, self.thread_name, self.datetime)
+
+
+class HostTargetingStatement(object):
+    """
+    Wraps any query statement and attaches a target host, making
+    it usable in a targeted LBP without modifying the user's statement.
+    """
+    def __init__(self, inner_statement, target_host):
+            self.__class__ = type(inner_statement.__class__.__name__,
+                                  (self.__class__, inner_statement.__class__),
+                                  {})
+            self.__dict__ = inner_statement.__dict__
+            self.target_host = target_host

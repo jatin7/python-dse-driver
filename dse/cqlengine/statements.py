@@ -1,27 +1,22 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from datetime import datetime, timedelta
 import time
 import six
 from six.moves import filter
 
-from cassandra.query import FETCH_SIZE_UNSET
-from cassandra.cqlengine import columns
-from cassandra.cqlengine import UnicodeMixin
-from cassandra.cqlengine.functions import QueryValue
-from cassandra.cqlengine.operators import BaseWhereOperator, InOperator, EqualsOperator
+from dse.query import FETCH_SIZE_UNSET
+from dse.cqlengine import columns
+from dse.cqlengine import UnicodeMixin
+from dse.cqlengine.functions import QueryValue
+from dse.cqlengine.operators import BaseWhereOperator, InOperator, EqualsOperator
 
 
 class StatementException(Exception):
@@ -34,7 +29,7 @@ class ValueQuoter(UnicodeMixin):
         self.value = value
 
     def __unicode__(self):
-        from cassandra.encoder import cql_quote
+        from dse.encoder import cql_quote
         if isinstance(self.value, (list, tuple)):
             return '[' + ', '.join([cql_quote(v) for v in self.value]) + ']'
         elif isinstance(self.value, dict):
@@ -52,7 +47,7 @@ class ValueQuoter(UnicodeMixin):
 class InQuoter(ValueQuoter):
 
     def __unicode__(self):
-        from cassandra.encoder import cql_quote
+        from dse.encoder import cql_quote
         return '(' + ', '.join([cql_quote(v) for v in self.value]) + ')'
 
 

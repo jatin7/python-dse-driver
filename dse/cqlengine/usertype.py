@@ -1,11 +1,19 @@
+# Copyright 2016 DataStax, Inc.
+#
+# Licensed under the DataStax DSE Driver License;
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 import re
 import six
 
-from cassandra.util import OrderedDict
-from cassandra.cqlengine import CQLEngineException
-from cassandra.cqlengine import columns
-from cassandra.cqlengine import connection as conn
-from cassandra.cqlengine import models
+from dse.util import OrderedDict
+from dse.cqlengine import CQLEngineException
+from dse.cqlengine import columns
+from dse.cqlengine import connection as conn
+from dse.cqlengine import models
 
 
 class UserTypeException(CQLEngineException):
@@ -194,14 +202,14 @@ class UserType(BaseUserType):
 
         # connect with default keyspace ...
 
-        from cassandra.cqlengine.columns import Text, Integer
-        from cassandra.cqlengine.usertype import UserType
+        from dse.cqlengine.columns import Text, Integer
+        from dse.cqlengine.usertype import UserType
 
         class address(UserType):
             street = Text()
             zipcode = Integer()
 
-        from cassandra.cqlengine import management
+        from dse.cqlengine import management
         management.sync_type(address)
 
     Please see :ref:`user_types` for a complete example and discussion.

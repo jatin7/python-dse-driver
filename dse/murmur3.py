@@ -1,3 +1,12 @@
+# Copyright 2016 DataStax, Inc.
+#
+# Licensed under the DataStax DSE Driver License;
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
+
 from six.moves import range
 import struct
 
@@ -108,6 +117,6 @@ def _murmur3(data):
     return truncate_int64(h1)
 
 try:
-    from cassandra.cmurmur3 import murmur3
+    from dse.cmurmur3 import murmur3
 except ImportError:
     murmur3 = _murmur3

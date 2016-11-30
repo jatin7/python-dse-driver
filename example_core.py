@@ -1,18 +1,13 @@
 #!/usr/bin/env python
 
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 import logging
 
@@ -22,9 +17,9 @@ handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
 log.addHandler(handler)
 
-from cassandra import ConsistencyLevel
-from cassandra.cluster import Cluster
-from cassandra.query import SimpleStatement
+from dse import ConsistencyLevel
+from dse.cluster import Cluster
+from dse.query import SimpleStatement
 
 KEYSPACE = "testkeyspace"
 
@@ -81,6 +76,8 @@ def main():
         log.info('\t'.join(row))
 
     session.execute("DROP KEYSPACE " + KEYSPACE)
+
+    cluster.shutdown()
 
 if __name__ == "__main__":
     main()

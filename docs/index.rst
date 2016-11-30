@@ -1,14 +1,6 @@
-Python Cassandra Driver
-=======================
-A Python client driver for `Apache Cassandra <http://cassandra.apache.org>`_.
-This driver works exclusively with the Cassandra Query Language v3 (CQL3)
-and Cassandra's native protocol.  Cassandra 1.2+ is supported.
-
-The driver supports Python 2.6, 2.7, 3.3, and 3.4.
-
-This driver is open source under the
-`Apache v2 License <http://www.apache.org/licenses/LICENSE-2.0.html>`_.
-The source code for this driver can be found on `GitHub <http://github.com/datastax/python-driver>`_.
+DataStax Enterprise Python Driver
+=================================
+This is the documentation for the DataStax Enterprise Python Driver for DSE.
 
 Contents
 --------
@@ -51,6 +43,18 @@ Contents
 :doc:`faq`
     A collection of Frequently Asked Questions
 
+:doc:`auth`
+    Example configuring DSE authentication
+
+:doc:`geo_types`
+    Working with DSE geometry types
+
+:doc:`graph`
+    Graph queries with DSE Graph
+
+:doc:`api/index`
+    The API documentation.
+
 .. toctree::
    :hidden:
 
@@ -65,6 +69,9 @@ Contents
    security
    user_defined_types
    object_mapper
+   geo_types
+   graph
+   auth
    dates_and_times
    faq
 

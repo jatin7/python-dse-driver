@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 import copy
 from datetime import datetime, timedelta
@@ -19,16 +14,16 @@ import time
 import six
 from warnings import warn
 
-from cassandra.query import SimpleStatement
-from cassandra.cqlengine import columns, CQLEngineException, ValidationError, UnicodeMixin
-from cassandra.cqlengine import connection as conn
-from cassandra.cqlengine.functions import Token, BaseQueryFunction, QueryValue
-from cassandra.cqlengine.operators import (InOperator, EqualsOperator, GreaterThanOperator,
-                                           GreaterThanOrEqualOperator, LessThanOperator,
-                                           LessThanOrEqualOperator, ContainsOperator, BaseWhereOperator)
-from cassandra.cqlengine.statements import (WhereClause, SelectStatement, DeleteStatement,
-                                            UpdateStatement, InsertStatement,
-                                            BaseCQLStatement, MapDeleteClause, ConditionalClause)
+from dse.query import SimpleStatement
+from dse.cqlengine import columns, CQLEngineException, ValidationError, UnicodeMixin
+from dse.cqlengine import connection as conn
+from dse.cqlengine.functions import Token, BaseQueryFunction, QueryValue
+from dse.cqlengine.operators import (InOperator, EqualsOperator, GreaterThanOperator,
+                                     GreaterThanOrEqualOperator, LessThanOperator,
+                                     LessThanOrEqualOperator, ContainsOperator, BaseWhereOperator)
+from dse.cqlengine.statements import (WhereClause, SelectStatement, DeleteStatement,
+                                      UpdateStatement, InsertStatement,
+                                      BaseCQLStatement, MapDeleteClause, ConditionalClause)
 
 
 class QueryException(CQLEngineException):
@@ -296,7 +291,7 @@ class ContextQuery(object):
     """
 
     def __init__(self, *args, **kwargs):
-        from cassandra.cqlengine import models
+        from dse.cqlengine import models
 
         self.models = []
 
@@ -1014,7 +1009,7 @@ class AbstractQuerySet(object):
 
         clone = copy.deepcopy(self)
         if keyspace:
-            from cassandra.cqlengine.models import _clone_model_class
+            from dse.cqlengine.models import _clone_model_class
             clone.model = _clone_model_class(self.model, {'__keyspace__': keyspace})
 
         if connection:

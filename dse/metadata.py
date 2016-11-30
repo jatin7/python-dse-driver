@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from binascii import unhexlify
 from bisect import bisect_right
@@ -27,17 +22,17 @@ from threading import RLock
 
 murmur3 = None
 try:
-    from cassandra.murmur3 import murmur3
+    from dse.murmur3 import murmur3
 except ImportError as e:
     pass
 
-from cassandra import SignatureDescriptor, ConsistencyLevel, InvalidRequest, Unauthorized
-import cassandra.cqltypes as types
-from cassandra.encoder import Encoder
-from cassandra.marshal import varint_unpack
-from cassandra.protocol import QueryMessage
-from cassandra.query import dict_factory, bind_params
-from cassandra.util import OrderedDict
+from dse import SignatureDescriptor, ConsistencyLevel, InvalidRequest, Unauthorized
+import dse.cqltypes as types
+from dse.encoder import Encoder
+from dse.marshal import varint_unpack
+from dse.protocol import QueryMessage
+from dse.query import dict_factory, bind_params
+from dse.util import OrderedDict
 
 log = logging.getLogger(__name__)
 
@@ -610,21 +605,21 @@ class KeyspaceMetadata(object):
 
     user_types = None
     """
-    A map from user-defined type names to instances of :class:`~cassandra.metadata.UserType`.
+    A map from user-defined type names to instances of :class:`~dse.metadata.UserType`.
 
     .. versionadded:: 2.1.0
     """
 
     functions = None
     """
-    A map from user-defined function signatures to instances of :class:`~cassandra.metadata.Function`.
+    A map from user-defined function signatures to instances of :class:`~dse.metadata.Function`.
 
     .. versionadded:: 2.6.0
     """
 
     aggregates = None
     """
-    A map from user-defined aggregate signatures to instances of :class:`~cassandra.metadata.Aggregate`.
+    A map from user-defined aggregate signatures to instances of :class:`~dse.metadata.Aggregate`.
 
     .. versionadded:: 2.6.0
     """
@@ -2553,3 +2548,13 @@ def _cql_from_cass_type(cass_type):
         return cass_type.subtypes[0].cql_parameterized_type()
     else:
         return cass_type.cql_parameterized_type()
+
+
+class RLACTableExtension(RegisteredTableExtension):
+    name = "DSE_RLACA"
+
+    @classmethod
+    def after_table_cql(cls, table_meta, ext_key, ext_blob):
+        return "RESTRICT ROWS ON %s.%s USING %s;" % (protect_name(table_meta.keyspace_name),
+                                                    protect_name(table_meta.name),
+                                                    protect_name(ext_blob.decode('utf-8')))

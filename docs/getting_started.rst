@@ -5,16 +5,19 @@ First, make sure you have the driver properly :doc:`installed <installation>`.
 
 Connecting to Cassandra
 -----------------------
-Before we can start executing any queries against a Cassandra cluster we need to setup
+Before we can start executing any queries against a DSE cluster we need to setup
 an instance of :class:`~.Cluster`. As the name suggests, you will typically have one
 instance of :class:`~.Cluster` for each Cassandra cluster you want to interact
 with.
 
 The simplest way to create a :class:`~.Cluster` is like this:
+First, make sure you have the DSE driver properly :doc:`installed <installation>`.
+
+#### TBD: link to upgrade guide
 
 .. code-block:: python
 
-    from cassandra.cluster import Cluster
+    from dse.cluster import Cluster
 
     cluster = Cluster()
 
@@ -24,7 +27,7 @@ addresses for nodes in your cluster:
 
 .. code-block:: python
 
-    from cassandra.cluster import Cluster
+    from dse.cluster import Cluster
 
     cluster = Cluster(['192.168.0.1', '192.168.0.2'])
 
@@ -39,16 +42,50 @@ behavior in some other way, this is the place to do it:
 
 .. code-block:: python
 
-    from cassandra.cluster import Cluster
-    from cassandra.policies import DCAwareRoundRobinPolicy
+    from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
+    from dse.query import tuple_factory
 
-    cluster = Cluster(
-        ['10.1.1.3', '10.1.1.4', '10.1.1.5'],
-        load_balancing_policy=DCAwareRoundRobinPolicy(local_dc='US_EAST'),
-        port=9042)
+    profile = ExecutionProfile(row_factory=tuple_factory)
+    cluster = Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: profile})
+    session = cluster.connect()
 
+    print session.execute("SELECT release_version FROM system.local")[0]
 
-You can find a more complete list of options in the :class:`~.Cluster` documentation.
+Profiles are passed in by ``execution_profile`` dict.
+
+In this case we can construct the base ``ExecutionProfile`` passing all attributes:
+
+    from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
+    from dse.policies import WhiteListRoundRobinPolicy, DowngradingConsistencyRetryPolicy
+    from dse.query import tuple_factory
+
+    profile = ExecutionProfile(WhiteListRoundRobinPolicy(['127.0.0.1']),
+                               DowngradingConsistencyRetryPolicy(),
+                               ConsistencyLevel.LOCAL_QUORUM,
+                               ConsistencyLevel.LOCAL_SERIAL,
+                               15, tuple_factory)
+    cluster = Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: profile})
+    session = cluster.connect()
+
+    print session.execute("SELECT release_version FROM system.local")[0]
+
+It should be noted that this sets the default behavior for CQL requests. The DSE driver also defines a set of default
+profiles for graph execution:
+
+* :data:`~.cluster.EXEC_PROFILE_GRAPH_DEFAULT`
+* :data:`~.cluster.EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT`
+* :data:`~.cluster.EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT`
+
+Users are free to setup additional profiles to be used by name:
+
+.. code-block:: python
+
+    profile_long = ExecutionProfile(request_timeout=30)
+    cluster = Cluster(execution_profiles={'long': profile_long})
+    session = cluster.connect()
+    session.execute(statement, execution_profile='long')
+
+Also, parameters passed to ``Session.execute`` or attached to ``Statement``\s are still honored as before.
 
 Instantiating a :class:`~.Cluster` does not actually connect us to any nodes.
 To establish connections and begin executing queries we need a
@@ -261,7 +298,7 @@ For example:
 
 .. code-block:: python
 
-    from cassandra import ReadTimeout
+    from dse import ReadTimeout
 
     query = "SELECT * FROM users WHERE user_id=%s"
     future = session.execute_async(query, [user_id])
@@ -334,8 +371,8 @@ in a :class:`~.SimpleStatement`:
 
 .. code-block:: python
 
-    from cassandra import ConsistencyLevel
-    from cassandra.query import SimpleStatement
+    from dse import ConsistencyLevel
+    from dse.query import SimpleStatement
 
     query = SimpleStatement(
         "INSERT INTO users (name, age) VALUES (%s, %s)",
@@ -379,7 +416,7 @@ prepared statement:
 
 .. code-block:: python
 
-    from cassandra import ConsistencyLevel
+    from dse import ConsistencyLevel
 
     cluster = Cluster()
     session = cluster.connect("mykeyspace")

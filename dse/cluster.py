@@ -1,17 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 """
 This module houses the main classes you will interact with,
 :class:`.Cluster` and :class:`.Session`.
@@ -24,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, FIRST_COMPLETED, wait as wait
 from copy import copy
 from functools import partial, wraps
 from itertools import groupby, count
+import json
 import logging
 from random import random
 import six
@@ -38,38 +33,44 @@ from weakref import WeakValueDictionary
 try:
     from weakref import WeakSet
 except ImportError:
-    from cassandra.util import WeakSet  # NOQA
+    from dse.util import WeakSet  # NOQA
 
-from cassandra import (ConsistencyLevel, AuthenticationFailed,
-                       OperationTimedOut, UnsupportedOperation,
-                       SchemaTargetType, DriverException)
-from cassandra.connection import (ConnectionException, ConnectionShutdown,
-                                  ConnectionHeartbeat, ProtocolVersionUnsupported)
-from cassandra.cqltypes import UserType
-from cassandra.encoder import Encoder
-from cassandra.protocol import (QueryMessage, ResultMessage,
-                                ErrorMessage, ReadTimeoutErrorMessage,
-                                WriteTimeoutErrorMessage,
-                                UnavailableErrorMessage,
-                                OverloadedErrorMessage,
-                                PrepareMessage, ExecuteMessage,
-                                PreparedQueryNotFound,
-                                IsBootstrappingErrorMessage,
-                                BatchMessage, RESULT_KIND_PREPARED,
-                                RESULT_KIND_SET_KEYSPACE, RESULT_KIND_ROWS,
-                                RESULT_KIND_SCHEMA_CHANGE, MIN_SUPPORTED_VERSION,
-                                ProtocolHandler)
-from cassandra.metadata import Metadata, protect_name, murmur3
-from cassandra.policies import (TokenAwarePolicy, DCAwareRoundRobinPolicy, SimpleConvictionPolicy,
-                                ExponentialReconnectionPolicy, HostDistance,
-                                RetryPolicy, IdentityTranslator, NoSpeculativeExecutionPlan,
-                                NoSpeculativeExecutionPolicy)
-from cassandra.pool import (Host, _ReconnectionHandler, _HostReconnectionHandler,
-                            HostConnectionPool, HostConnection,
-                            NoConnectionsAvailable)
-from cassandra.query import (SimpleStatement, PreparedStatement, BoundStatement,
-                             BatchStatement, bind_params, QueryTrace,
-                             named_tuple_factory, dict_factory, tuple_factory, FETCH_SIZE_UNSET)
+from dse import (ConsistencyLevel, AuthenticationFailed,
+                 OperationTimedOut, UnsupportedOperation,
+                 SchemaTargetType, DriverException)
+from dse.connection import (ConnectionException, ConnectionShutdown,
+                            ConnectionHeartbeat, ProtocolVersionUnsupported)
+from dse.cqltypes import UserType
+from dse.encoder import Encoder
+from dse.graph import GraphOptions, SimpleGraphStatement, graph_object_row_factory, _request_timeout_key
+from dse.protocol import (QueryMessage, ResultMessage,
+                          ErrorMessage, ReadTimeoutErrorMessage,
+                          WriteTimeoutErrorMessage,
+                          UnavailableErrorMessage,
+                          OverloadedErrorMessage,
+                          PrepareMessage, ExecuteMessage,
+                          PreparedQueryNotFound,
+                          IsBootstrappingErrorMessage,
+                          BatchMessage, RESULT_KIND_PREPARED,
+                          RESULT_KIND_SET_KEYSPACE, RESULT_KIND_ROWS,
+                          RESULT_KIND_SCHEMA_CHANGE, MIN_SUPPORTED_VERSION,
+                          ProtocolHandler)
+from dse.marshal import int64_pack
+from dse.metadata import Metadata, protect_name, murmur3
+from dse.policies import (TokenAwarePolicy, DCAwareRoundRobinPolicy, SimpleConvictionPolicy,
+                          ExponentialReconnectionPolicy, HostDistance,
+                          RetryPolicy, IdentityTranslator, NoSpeculativeExecutionPlan,
+                          NoSpeculativeExecutionPolicy, DSELoadBalancingPolicy, NeverRetryPolicy)
+from dse.pool import (Host, _ReconnectionHandler, _HostReconnectionHandler,
+                      HostConnectionPool, HostConnection,
+                      NoConnectionsAvailable)
+from dse.query import (SimpleStatement, PreparedStatement, BoundStatement,
+                       BatchStatement, bind_params, QueryTrace, HostTargetingStatement,
+                       named_tuple_factory, dict_factory, tuple_factory, FETCH_SIZE_UNSET)
+
+
+if six.PY3:
+    long = int
 
 
 def _is_eventlet_monkey_patched():
@@ -89,14 +90,14 @@ def _is_gevent_monkey_patched():
 # monkey patched with eventlet, otherwise if libev is available, use that as
 # the default because it's fastest. Otherwise, use asyncore.
 if _is_gevent_monkey_patched():
-    from cassandra.io.geventreactor import GeventConnection as DefaultConnection
+    from dse.io.geventreactor import GeventConnection as DefaultConnection
 elif _is_eventlet_monkey_patched():
-    from cassandra.io.eventletreactor import EventletConnection as DefaultConnection
+    from dse.io.eventletreactor import EventletConnection as DefaultConnection
 else:
     try:
-        from cassandra.io.libevreactor import LibevConnection as DefaultConnection  # NOQA
+        from dse.io.libevreactor import LibevConnection as DefaultConnection  # NOQA
     except ImportError:
-        from cassandra.io.asyncorereactor import AsyncoreConnection as DefaultConnection  # NOQA
+        from dse.io.asyncorereactor import AsyncoreConnection as DefaultConnection  # NOQA
 
 # Forces load of utf8 encoding module to avoid deadlock that occurs
 # if code that is being imported tries to import the module in a seperate
@@ -229,10 +230,10 @@ class ExecutionProfile(object):
 
     Some example implementations:
 
-        - :func:`cassandra.query.tuple_factory` - return a result row as a tuple
-        - :func:`cassandra.query.named_tuple_factory` - return a result row as a named tuple
-        - :func:`cassandra.query.dict_factory` - return a result row as a dict
-        - :func:`cassandra.query.ordered_dict_factory` - return a result row as an OrderedDict
+        - :func:`dse.query.tuple_factory` - return a result row as a tuple
+        - :func:`dse.query.named_tuple_factory` - return a result row as a named tuple
+        - :func:`dse.query.dict_factory` - return a result row as a dict
+        - :func:`dse.query.ordered_dict_factory` - return a result row as an OrderedDict
     """
 
     speculative_execution_policy = None
@@ -252,6 +253,62 @@ class ExecutionProfile(object):
         self.request_timeout = request_timeout
         self.row_factory = row_factory
         self.speculative_execution_policy = speculative_execution_policy or NoSpeculativeExecutionPolicy()
+
+
+class GraphExecutionProfile(ExecutionProfile):
+    graph_options = None
+    """
+    :class:`.GraphOptions` to use with this execution
+
+    Default options for graph queries, initialized as follows by default::
+
+        GraphOptions(graph_source=b'g',
+                     graph_language=b'gremlin-groovy')
+
+    See dse.graph.GraphOptions
+    """
+
+    def __init__(self, load_balancing_policy=None, retry_policy=None,
+                 consistency_level=ConsistencyLevel.LOCAL_ONE, serial_consistency_level=None,
+                 request_timeout=30.0, row_factory=graph_object_row_factory,
+                 graph_options=None):
+        """
+        Default execution profile for graph execution.
+
+        See `ExecutionProfile <##TBD##>`_
+        for base attributes.
+
+        In addition to default parameters shown in the signature, this profile also defaults ``retry_policy`` to
+        :class:`dse.policies.NeverRetryPolicy`.
+        """
+        retry_policy = retry_policy or NeverRetryPolicy()
+        super(GraphExecutionProfile, self).__init__(load_balancing_policy, retry_policy, consistency_level,
+                                                    serial_consistency_level, request_timeout, row_factory)
+        self.graph_options = graph_options or GraphOptions(graph_source=b'g',
+                                                           graph_language=b'gremlin-groovy')
+
+
+class GraphAnalyticsExecutionProfile(GraphExecutionProfile):
+
+    def __init__(self, load_balancing_policy=None, retry_policy=None,
+                 consistency_level=ConsistencyLevel.LOCAL_ONE, serial_consistency_level=None,
+                 request_timeout=3600. * 24. * 7., row_factory=graph_object_row_factory,
+                 graph_options=None):
+        """
+        Execution profile with timeout and load balancing appropriate for graph analytics queries.
+
+        See also :class:`~.GraphExecutionPolicy`.
+
+        In addition to default parameters shown in the signature, this profile also defaults ``retry_policy`` to
+        :class:`dse.policies.NeverRetryPolicy`, and ``load_balancing_policy`` to one that targets the current Spark
+        master.
+        """
+        load_balancing_policy = load_balancing_policy or DSELoadBalancingPolicy(default_lbp_factory())
+        graph_options = graph_options or GraphOptions(graph_source=b'a',
+                                                      graph_language=b'gremlin-groovy')
+        super(GraphAnalyticsExecutionProfile, self).__init__(load_balancing_policy, retry_policy, consistency_level,
+                                                             serial_consistency_level, request_timeout, row_factory, graph_options)
+
 
 
 class ProfileManager(object):
@@ -305,6 +362,31 @@ Key for the ``Cluster`` default execution profile, used when no other profile is
 Use this as the key in ``Cluster(execution_profiles)`` to override the default profile.
 """
 
+EXEC_PROFILE_GRAPH_DEFAULT = object()
+"""
+Key for the default graph execution profile, used when no other profile is selected in
+``Session.execute_graph(execution_profile)``.
+
+Use this as the key in `Cluster(execution_profiles) <###TBD###>`_
+to override the default graph profile.
+"""
+
+EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT = object()
+"""
+Key for the default graph system execution profile. This can be used for graph statements using the DSE graph
+system API.
+
+Selected using ``Session.execute_graph(execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)``.
+"""
+
+EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT = object()
+"""
+Key for the default graph analytics execution profile. This can be used for graph statements intended to
+use Spark/analytics as the traversal source.
+
+Selected using ``Session.execute_graph(execution_profile=EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT)``.
+"""
+
 
 class _ConfigMode(object):
     UNCOMMITTED = 0
@@ -320,7 +402,7 @@ class Cluster(object):
 
     Example usage::
 
-        >>> from cassandra.cluster import Cluster
+        >>> from dse.cluster import Cluster
         >>> cluster = Cluster(['192.168.1.1', '192.168.1.2'])
         >>> session = cluster.connect()
         >>> session.execute("CREATE KEYSPACE ...")
@@ -381,6 +463,7 @@ class Cluster(object):
     The following table describes the native protocol versions that
     are supported by each version of Cassandra:
 
+    ###TBD###
     +-------------------+-------------------+
     | Cassandra Version | Protocol Versions |
     +===================+===================+
@@ -422,7 +505,7 @@ class Cluster(object):
     def auth_provider(self):
         """
         When :attr:`~.Cluster.protocol_version` is 2 or higher, this should
-        be an instance of a subclass of :class:`~cassandra.auth.AuthProvider`,
+        be an instance of a subclass of :class:`~dse.auth.AuthProvider`,
         such as :class:`~.PlainTextAuthProvider`.
 
         When :attr:`~.Cluster.protocol_version` is 1, this should be
@@ -443,7 +526,7 @@ class Cluster(object):
             self._auth_provider_callable = value.new_authenticator
         except AttributeError:
             if self.protocol_version > 1:
-                raise TypeError("auth_provider must implement the cassandra.auth.AuthProvider "
+                raise TypeError("auth_provider must implement the dse.auth.AuthProvider "
                                 "interface when protocol_version >= 2")
             elif not callable(value):
                 raise TypeError("auth_provider must be callable when protocol_version == 1")
@@ -531,12 +614,12 @@ class Cluster(object):
     metrics_enabled = False
     """
     Whether or not metric collection is enabled.  If enabled, :attr:`.metrics`
-    will be an instance of :class:`~cassandra.metrics.Metrics`.
+    will be an instance of :class:`~dse.metrics.Metrics`.
     """
 
     metrics = None
     """
-    An instance of :class:`cassandra.metrics.Metrics` if :attr:`.metrics_enabled` is
+    An instance of :class:`dse.metrics.Metrics` if :attr:`.metrics_enabled` is
     :const:`True`, else :const:`None`.
     """
 
@@ -579,7 +662,7 @@ class Cluster(object):
 
     metadata = None
     """
-    An instance of :class:`cassandra.metadata.Metadata`.
+    An instance of :class:`dse.metadata.Metadata`.
     """
 
     connection_class = DefaultConnection
@@ -587,11 +670,11 @@ class Cluster(object):
     This determines what event loop system will be used for managing
     I/O with Cassandra.  These are the current options:
 
-    * :class:`cassandra.io.asyncorereactor.AsyncoreConnection`
-    * :class:`cassandra.io.libevreactor.LibevConnection`
-    * :class:`cassandra.io.eventletreactor.EventletConnection` (requires monkey-patching - see doc for details)
-    * :class:`cassandra.io.geventreactor.GeventConnection` (requires monkey-patching - see doc for details)
-    * :class:`cassandra.io.twistedreactor.TwistedConnection`
+    * :class:`dse.io.asyncorereactor.AsyncoreConnection`
+    * :class:`dse.io.libevreactor.LibevConnection`
+    * :class:`dse.io.eventletreactor.EventletConnection` (requires monkey-patching - see doc for details)
+    * :class:`dse.io.geventreactor.GeventConnection` (requires monkey-patching - see doc for details)
+    * :class:`dse.io.twistedreactor.TwistedConnection`
 
     By default, ``AsyncoreConnection`` will be used, which uses
     the ``asyncore`` module in the Python standard library.
@@ -848,6 +931,17 @@ class Cluster(object):
                 self.profile_manager.profiles.update(execution_profiles)
                 self._config_mode = _ConfigMode.PROFILES
 
+        if self._config_mode == _ConfigMode.LEGACY:
+            raise ValueError("DSE Cluster uses execution profiles and should not specify legacy parameters "
+                             "load_balancing_policy or default_retry_policy. Configure this in a profile instead.")
+
+        lbp = DSELoadBalancingPolicy(default_lbp_factory())
+        self.profile_manager.profiles.setdefault(EXEC_PROFILE_GRAPH_DEFAULT, GraphExecutionProfile(load_balancing_policy=lbp))
+        self.profile_manager.profiles.setdefault(EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT, GraphExecutionProfile(load_balancing_policy=lbp, request_timeout=60. * 3.))
+        self.profile_manager.profiles.setdefault(EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT, GraphAnalyticsExecutionProfile(load_balancing_policy=lbp))
+        self._config_mode = _ConfigMode.PROFILES
+
+
         self.metrics_enabled = metrics_enabled
         self.ssl_options = ssl_options
         self.sockopts = sockopts
@@ -901,7 +995,7 @@ class Cluster(object):
         self._lock = RLock()
 
         if self.metrics_enabled:
-            from cassandra.metrics import Metrics
+            from dse.metrics import Metrics
             self.metrics = Metrics(weakref.proxy(self))
 
         self.control_connection = ControlConnection(
@@ -1146,7 +1240,7 @@ class Cluster(object):
             if new_version >= MIN_SUPPORTED_VERSION:
                 log.warning("Downgrading core protocol version from %d to %d for %s. "
                             "To avoid this, it is best practice to explicitly set Cluster(protocol_version) to the version supported by your cluster. "
-                            "http://datastax.github.io/python-driver/api/cassandra/cluster.html#cassandra.cluster.Cluster.protocol_version", self.protocol_version, new_version, host_addr)
+                            "###TBD###", self.protocol_version, new_version, host_addr)
                 self.protocol_version = new_version
             else:
                 raise DriverException("Cannot downgrade protocol version (%d) below minimum supported version: %d" % (new_version, MIN_SUPPORTED_VERSION))
@@ -1549,7 +1643,7 @@ class Cluster(object):
 
     def register_listener(self, listener):
         """
-        Adds a :class:`cassandra.policies.HostStateListener` subclass instance to
+        Adds a :class:`dse.policies.HostStateListener` subclass instance to
         the list of listeners to be notified when a host is added, removed,
         marked up, or marked down.
         """
@@ -1667,7 +1761,7 @@ class Cluster(object):
         """
         Synchronously refresh user defined function metadata.
 
-        ``function`` is a :class:`cassandra.UserFunctionDescriptor`.
+        ``function`` is a :class:`dse.UserFunctionDescriptor`.
 
         See :meth:`~.Cluster.refresh_schema_metadata` for description of ``max_schema_agreement_wait`` behavior
         """
@@ -1679,7 +1773,7 @@ class Cluster(object):
         """
         Synchronously refresh user defined aggregate metadata.
 
-        ``aggregate`` is a :class:`cassandra.UserAggregateDescriptor`.
+        ``aggregate`` is a :class:`dse.UserAggregateDescriptor`.
 
         See :meth:`~.Cluster.refresh_schema_metadata` for description of ``max_schema_agreement_wait`` behavior
         """
@@ -1788,10 +1882,10 @@ class Session(object):
         returned row will be a named tuple.  You can alternatively
         use any of the following:
 
-          - :func:`cassandra.query.tuple_factory` - return a result row as a tuple
-          - :func:`cassandra.query.named_tuple_factory` - return a result row as a named tuple
-          - :func:`cassandra.query.dict_factory` - return a result row as a dict
-          - :func:`cassandra.query.ordered_dict_factory` - return a result row as an OrderedDict
+          - :func:`dse.query.tuple_factory` - return a result row as a tuple
+          - :func:`dse.query.named_tuple_factory` - return a result row as a named tuple
+          - :func:`dse.query.dict_factory` - return a result row as a dict
+          - :func:`dse.query.ordered_dict_factory` - return a result row as an OrderedDict
 
         """
         return self._row_factory
@@ -1895,7 +1989,7 @@ class Session(object):
 
     encoder = None
     """
-    A :class:`~cassandra.encoder.Encoder` instance that will be used when
+    A :class:`~dse.encoder.Encoder` instance that will be used when
     formatting query parameters for non-prepared statements.  This is not used
     for prepared statements (because prepared statements give the driver more
     information about what CQL types are expected, allowing it to accept a
@@ -1903,7 +1997,7 @@ class Session(object):
 
     The encoder uses a mapping from python types to encoder methods (for
     specific CQL types).  This mapping can be be modified by users as they see
-    fit.  Methods of :class:`~cassandra.encoder.Encoder` should be used for mapping
+    fit.  Methods of :class:`~dse.encoder.Encoder` should be used for mapping
     values if possible, because they take precautions to avoid injections and
     properly sanitize data.
 
@@ -1925,7 +2019,7 @@ class Session(object):
     internal driver requests). This can be used to override or extend features such as
     message or type ser/des.
 
-    The default pure python implementation is :class:`cassandra.protocol.ProtocolHandler`.
+    The default pure python implementation is :class:`dse.protocol.ProtocolHandler`.
 
     When compiled with Cython, there are also built-in faster alternatives. See :ref:`faster_deser`
     """
@@ -1968,7 +2062,7 @@ class Session(object):
         If an error is encountered while executing the query, an Exception
         will be raised.
 
-        `query` may be a query string or an instance of :class:`cassandra.query.Statement`.
+        `query` may be a query string or an instance of :class:`dse.query.Statement`.
 
         `parameters` may be a sequence or dict of parameters to bind.  If a
         sequence is used, ``%s`` should be used the placeholder for each
@@ -2037,6 +2131,83 @@ class Session(object):
         self._on_request(future)
         future.send_request()
         return future
+
+    def execute_graph(self, query, parameters=None, trace=False, execution_profile=EXEC_PROFILE_GRAPH_DEFAULT):
+        """
+        Executes a Gremlin query string or SimpleGraphStatement synchronously,
+        and returns a ResultSet from this execution.
+
+        `parameters` is dict of named parameters to bind. The values must be
+        JSON-serializable.
+
+        `execution_profile`: Selects an execution profile for the request.
+        """
+        return self.execute_graph_async(query, parameters, trace, execution_profile).result()
+
+    def execute_graph_async(self, query, parameters=None, trace=False, execution_profile=EXEC_PROFILE_GRAPH_DEFAULT):
+        """
+        Execute the graph query and return a `ResponseFuture <###TBD###>`_
+        object which callbacks may be attached to for asynchronous response delivery. You may also call ``ResponseFuture.result()`` to synchronously block for
+        results at any time.
+        """
+        if not isinstance(query, SimpleGraphStatement):
+            query = SimpleGraphStatement(query)
+
+        graph_parameters = None
+        if parameters:
+            graph_parameters = self._transform_params(parameters)
+
+        execution_profile = self._get_execution_profile(execution_profile)  # look up instance here so we can apply the extended attributes
+
+        try:
+            options = execution_profile.graph_options.copy()
+        except AttributeError:
+            raise ValueError("Execution profile for graph queries must derive from GraphExecutionProfile, and provide graph_options")
+
+        custom_payload = options.get_options_map()
+        custom_payload[_request_timeout_key] = int64_pack(long(execution_profile.request_timeout * 1000))
+        future = self._create_response_future(query, parameters=None, trace=trace, custom_payload=custom_payload,
+                                              timeout=_NOT_SET, execution_profile=execution_profile)
+        future.message._query_params = graph_parameters
+        future._protocol_handler = self.client_protocol_handler
+
+        if options.is_analytics_source and isinstance(execution_profile.load_balancing_policy, DSELoadBalancingPolicy):
+            self._target_analytics_master(future)
+        else:
+            future.send_request()
+        return future
+
+    def _transform_params(self, parameters):
+        if not isinstance(parameters, dict):
+            raise ValueError('The parameters must be a dictionary. Unnamed parameters are not allowed.')
+        return [json.dumps(parameters).encode('utf-8')]
+
+    def _target_analytics_master(self, future):
+        future._start_timer()
+        master_query_future = self._create_response_future("CALL DseClientTool.getAnalyticsGraphServer()",
+                                                           parameters=None, trace=False,
+                                                           custom_payload=None, timeout=future.timeout)
+        master_query_future.row_factory = tuple_factory
+        master_query_future.send_request()
+
+        cb = self._on_analytics_master_result
+        args = (master_query_future, future)
+        master_query_future.add_callbacks(callback=cb, callback_args=args, errback=cb, errback_args=args)
+
+    def _on_analytics_master_result(self, response, master_future, query_future):
+        try:
+            row = master_future.result()[0]
+            addr = row[0]['location']
+            delimiter_index = addr.rfind(':')  # assumes <ip>:<port> - not robust, but that's what is being provided
+            if delimiter_index > 0:
+                addr = addr[:delimiter_index]
+            targeted_query = HostTargetingStatement(query_future.query, addr)
+            query_future.query_plan = self._load_balancer.make_query_plan(self.keyspace, targeted_query)
+        except Exception:
+            log.debug("Failed querying analytics master (request might not be routed optimally). "
+                      "Make sure the session is connecting to a graph analytics datacenter.", exc_info=True)
+
+        self.submit(query_future.send_request)
 
     def _create_response_future(self, query, parameters, trace, custom_payload, timeout, execution_profile=EXEC_PROFILE_DEFAULT, paging_state=None):
         """ Returns the ResponseFuture before calling send_request() on it """
@@ -2181,7 +2352,7 @@ class Session(object):
 
     def prepare(self, query, custom_payload=None):
         """
-        Prepares a query string, returning a :class:`~cassandra.query.PreparedStatement`
+        Prepares a query string, returning a :class:`~dse.query.PreparedStatement`
         instance which can be used as follows::
 
             >>> session = cluster.connect("mykeyspace")
@@ -2676,6 +2847,9 @@ class ControlConnection(object):
             self._refresh_node_list_and_token_map(connection, preloaded_results=shared_results)
             self._refresh_schema(connection, preloaded_results=shared_results, schema_agreement_wait=-1)
         except Exception:
+            import traceback
+
+            traceback.print_exc()
             connection.close()
             raise
 
@@ -3759,7 +3933,7 @@ class ResponseFuture(object):
         set for the request expires.
 
         Timeout is specified in the Session request execution functions.
-        If the timeout is exceeded, an :exc:`cassandra.OperationTimedOut` will be raised.
+        If the timeout is exceeded, an :exc:`dse.OperationTimedOut` will be raised.
         This is a client-side timeout. For more information
         about server-side coordinator timeouts, see :class:`.policies.RetryPolicy`.
 
@@ -3795,7 +3969,7 @@ class ResponseFuture(object):
 
         Note that this may raise an exception if there are problems retrieving the trace
         details from Cassandra. If the trace is not available after `max_wait`,
-        :exc:`cassandra.query.TraceUnavailable` will be raised.
+        :exc:`dse.query.TraceUnavailable` will be raised.
 
         `query_cl` is the consistency level used to poll the trace tables.
         """
@@ -3942,7 +4116,7 @@ class ResultSet(object):
 
     You can treat this as a normal iterator over rows::
 
-        >>> from cassandra.query import SimpleStatement
+        >>> from dse.query import SimpleStatement
         >>> statement = SimpleStatement("SELECT * FROM users", fetch_size=10)
         >>> for user_row in session.execute(statement):
         ...     process_user(user_row)

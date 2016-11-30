@@ -18,9 +18,9 @@ tests/integration/ccm
 setuptools*.tar.gz
 setuptools*.egg
 
-cassandra/*.c
-!cassandra/cmurmur3.c
-cassandra/*.html
+dse/*.c
+!dse/cmurmur3.c
+dse/*.html
 tests/unit/cython/bytesio_testhelper.c
 
 # OSX
