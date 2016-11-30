@@ -1,27 +1,22 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 import struct, time, logging, sys, traceback
 
-from cassandra import ConsistencyLevel, Unavailable, OperationTimedOut, ReadTimeout, ReadFailure, \
+from dse import ConsistencyLevel, Unavailable, OperationTimedOut, ReadTimeout, ReadFailure, \
     WriteTimeout, WriteFailure
-from cassandra.cluster import Cluster, NoHostAvailable, Session
-from cassandra.concurrent import execute_concurrent_with_args
-from cassandra.metadata import murmur3
-from cassandra.policies import (RoundRobinPolicy, DCAwareRoundRobinPolicy,
+from dse.cluster import Cluster, NoHostAvailable, Session
+from dse.concurrent import execute_concurrent_with_args
+from dse.metadata import murmur3
+from dse.policies import (RoundRobinPolicy, DCAwareRoundRobinPolicy,
                                 TokenAwarePolicy, WhiteListRoundRobinPolicy)
-from cassandra.query import SimpleStatement
+from dse.query import SimpleStatement
 
 from tests.integration import use_singledc, use_multidc, remove_cluster, PROTOCOL_VERSION
 from tests.integration.long.utils import (wait_for_up, create_schema,

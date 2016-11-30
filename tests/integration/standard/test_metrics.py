@@ -1,31 +1,26 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 import time
 
-from cassandra.policies import WhiteListRoundRobinPolicy, FallthroughRetryPolicy
+from dse.policies import WhiteListRoundRobinPolicy, FallthroughRetryPolicy
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest  # noqa
 
-from cassandra.query import SimpleStatement
-from cassandra import ConsistencyLevel, WriteTimeout, Unavailable, ReadTimeout
-from cassandra.protocol import SyntaxException
+from dse.query import SimpleStatement
+from dse import ConsistencyLevel, WriteTimeout, Unavailable, ReadTimeout
+from dse.protocol import SyntaxException
 
-from cassandra.cluster import Cluster, NoHostAvailable
+from dse.cluster import Cluster, NoHostAvailable
 from tests.integration import get_cluster, get_node, use_singledc, PROTOCOL_VERSION, execute_until_pass
 from greplin import scales
 from tests.integration import BasicSharedKeyspaceUnitTestCaseWTable, BasicExistingKeyspaceUnitTestCase

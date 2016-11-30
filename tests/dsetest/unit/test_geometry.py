@@ -15,8 +15,8 @@ except ImportError:
 import struct
 import itertools
 import math
-from cassandra.cqltypes import lookup_casstype
-from cassandra.protocol import MAX_SUPPORTED_VERSION
+from dse.cqltypes import lookup_casstype
+from dse.protocol import MAX_SUPPORTED_VERSION
 from dse.cqltypes import PointType, LineStringType, PolygonType, WKBGeometryType
 from dse.util import Point, LineString, Polygon, _LinearRing
 

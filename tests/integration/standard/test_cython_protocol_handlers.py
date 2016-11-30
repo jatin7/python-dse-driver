@@ -9,11 +9,11 @@ except ImportError:
 
 from itertools import count
 
-from cassandra.query import tuple_factory
-from cassandra.cluster import Cluster, NoHostAvailable
-from cassandra.concurrent import execute_concurrent_with_args
-from cassandra.protocol import ProtocolHandler, LazyProtocolHandler, NumpyProtocolHandler
-from cassandra.cython_deps import HAVE_CYTHON, HAVE_NUMPY
+from dse.query import tuple_factory
+from dse.cluster import Cluster, NoHostAvailable
+from dse.concurrent import execute_concurrent_with_args
+from dse.protocol import ProtocolHandler, LazyProtocolHandler, NumpyProtocolHandler
+from dse.cython_deps import HAVE_CYTHON, HAVE_NUMPY
 from tests.integration import use_singledc, PROTOCOL_VERSION, notprotocolv1, drop_keyspace_shutdown_cluster, VERIFY_CYTHON, BasicSharedKeyspaceUnitTestCase, execute_with_retry_tolerant, greaterthancass21
 from tests.integration.datatype_utils import update_datatypes
 from tests.integration.standard.utils import (

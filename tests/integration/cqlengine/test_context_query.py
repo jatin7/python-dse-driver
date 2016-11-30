@@ -1,21 +1,16 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
-from cassandra.cqlengine import columns
-from cassandra.cqlengine.management import drop_keyspace, sync_table, create_keyspace_simple
-from cassandra.cqlengine.models import Model
-from cassandra.cqlengine.query import ContextQuery
+from dse.cqlengine import columns
+from dse.cqlengine.management import drop_keyspace, sync_table, create_keyspace_simple
+from dse.cqlengine.models import Model
+from dse.cqlengine.query import ContextQuery
 from tests.integration.cqlengine.base import BaseCassEngTestCase
 
 

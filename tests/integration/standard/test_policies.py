@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from tests.integration import use_singledc
 
@@ -18,10 +13,10 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest  # noqa
-from cassandra import OperationTimedOut
-from cassandra.cluster import ExecutionProfile
-from cassandra.query import SimpleStatement
-from cassandra.policies import ConstantSpeculativeExecutionPolicy, RoundRobinPolicy
+from dse import OperationTimedOut
+from dse.cluster import ExecutionProfile
+from dse.query import SimpleStatement
+from dse.policies import ConstantSpeculativeExecutionPolicy, RoundRobinPolicy
 from tests.integration import BasicSharedKeyspaceUnitTestCase, greaterthancass21
 
 

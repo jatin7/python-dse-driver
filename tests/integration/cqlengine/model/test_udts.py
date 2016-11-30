@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 try:
     import unittest2 as unittest
 except ImportError:
@@ -21,11 +16,11 @@ from decimal import Decimal
 from mock import Mock
 from uuid import UUID, uuid4
 
-from cassandra.cqlengine.models import Model
-from cassandra.cqlengine.usertype import UserType, UserTypeDefinitionException
-from cassandra.cqlengine import columns, connection
-from cassandra.cqlengine.management import sync_table, sync_type, create_keyspace_simple, drop_keyspace, drop_table
-from cassandra.util import Date, Time
+from dse.cqlengine.models import Model
+from dse.cqlengine.usertype import UserType, UserTypeDefinitionException
+from dse.cqlengine import columns, connection
+from dse.cqlengine.management import sync_table, sync_type, create_keyspace_simple, drop_keyspace, drop_table
+from dse.util import Date, Time
 
 from tests.integration import PROTOCOL_VERSION
 from tests.integration.cqlengine.base import BaseCassEngTestCase
@@ -432,8 +427,8 @@ class UserDefinedTypeTests(BaseCassEngTestCase):
             age = columns.Integer()
             name = columns.Text()
 
-        from cassandra.cqlengine import models
-        from cassandra.cqlengine import connection
+        from dse.cqlengine import models
+        from dse.cqlengine import connection
 
         # None emulating no model and no default keyspace before connecting
         connection.udt_by_keyspace.clear()

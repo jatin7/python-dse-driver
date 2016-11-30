@@ -12,11 +12,11 @@ from itertools import chain
 import json
 import six
 
-from cassandra import OperationTimedOut, ConsistencyLevel, InvalidRequest
-from cassandra.protocol import ServerError, SyntaxException
-from cassandra.query import QueryTrace
-from cassandra.policies import WhiteListRoundRobinPolicy
-from cassandra.cluster import NoHostAvailable
+from dse import OperationTimedOut, ConsistencyLevel, InvalidRequest
+from dse.protocol import ServerError, SyntaxException
+from dse.query import QueryTrace
+from dse.policies import WhiteListRoundRobinPolicy
+from dse.cluster import NoHostAvailable
 
 from dse.cluster import EXEC_PROFILE_GRAPH_DEFAULT, GraphExecutionProfile, Cluster
 from dse.graph import (SimpleGraphStatement, graph_object_row_factory, single_object_row_factory,\

@@ -1,27 +1,22 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from datetime import datetime
 
-from cassandra.cqlengine import columns
-from cassandra.cqlengine import functions
-from cassandra.cqlengine import query
-from cassandra.cqlengine.management import sync_table, drop_table
-from cassandra.cqlengine.models import Model
-from cassandra.cqlengine.named import NamedTable
-from cassandra.cqlengine.operators import EqualsOperator
-from cassandra.cqlengine.statements import WhereClause
+from dse.cqlengine import columns
+from dse.cqlengine import functions
+from dse.cqlengine import query
+from dse.cqlengine.management import sync_table, drop_table
+from dse.cqlengine.models import Model
+from dse.cqlengine.named import NamedTable
+from dse.cqlengine.operators import EqualsOperator
+from dse.cqlengine.statements import WhereClause
 from tests.integration.cqlengine import DEFAULT_KEYSPACE
 from tests.integration.cqlengine.base import BaseCassEngTestCase
 from tests.integration.cqlengine import execute_count

@@ -9,7 +9,7 @@
 
 
 from tests.dsetest.integration import BasicGeometricUnitTestCase, use_single_node_with_graph
-from cassandra.util import OrderedMap, sortedset
+from dse.util import OrderedMap, sortedset
 from collections import namedtuple
 
 try:

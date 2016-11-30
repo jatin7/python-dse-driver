@@ -1,25 +1,20 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 import uuid
 import mock
 
-from cassandra.cqlengine import columns
-from cassandra.cqlengine import models
-from cassandra.cqlengine.connection import get_session
+from dse.cqlengine import columns
+from dse.cqlengine import models
+from dse.cqlengine.connection import get_session
 from tests.integration.cqlengine.base import BaseCassEngTestCase
-from cassandra.cqlengine import management
+from dse.cqlengine import management
 
 
 class TestInheritanceClassConstruction(BaseCassEngTestCase):

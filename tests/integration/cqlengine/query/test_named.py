@@ -1,29 +1,24 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest  # noqa
 
-from cassandra import ConsistencyLevel
-from cassandra.cqlengine import operators
-from cassandra.cqlengine.named import NamedKeyspace
-from cassandra.cqlengine.operators import EqualsOperator, GreaterThanOrEqualOperator
-from cassandra.cqlengine.query import ResultObject
-from cassandra.concurrent import execute_concurrent_with_args
-from cassandra.cqlengine import models
+from dse import ConsistencyLevel
+from dse.cqlengine import operators
+from dse.cqlengine.named import NamedKeyspace
+from dse.cqlengine.operators import EqualsOperator, GreaterThanOrEqualOperator
+from dse.cqlengine.query import ResultObject
+from dse.concurrent import execute_concurrent_with_args
+from dse.cqlengine import models
 
 from tests.integration.cqlengine import setup_connection, execute_count
 from tests.integration.cqlengine.base import BaseCassEngTestCase

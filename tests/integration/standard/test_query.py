@@ -1,30 +1,25 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 import os
-from cassandra.concurrent import execute_concurrent
-from cassandra import DriverException
+from dse.concurrent import execute_concurrent
+from dse import DriverException
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest  # noqa
 import logging
-from cassandra import ConsistencyLevel, Unavailable, InvalidRequest, cluster
-from cassandra.query import (PreparedStatement, BoundStatement, SimpleStatement,
+from dse import ConsistencyLevel, Unavailable, InvalidRequest, cluster
+from dse.query import (PreparedStatement, BoundStatement, SimpleStatement,
                              BatchStatement, BatchType, dict_factory, TraceUnavailable)
-from cassandra.cluster import Cluster, NoHostAvailable
-from cassandra.policies import HostDistance, RoundRobinPolicy
+from dse.cluster import Cluster, NoHostAvailable
+from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
 from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, get_server_versions, greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3
 

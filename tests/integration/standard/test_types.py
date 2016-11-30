@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 try:
     import unittest2 as unittest
@@ -21,13 +16,13 @@ from datetime import datetime
 import math
 import six
 
-import cassandra
-from cassandra import InvalidRequest
-from cassandra.cluster import Cluster
-from cassandra.concurrent import execute_concurrent_with_args
-from cassandra.cqltypes import Int32Type, EMPTY
-from cassandra.query import dict_factory, ordered_dict_factory
-from cassandra.util import sortedset
+import dse
+from dse import InvalidRequest
+from dse.cluster import Cluster
+from dse.concurrent import execute_concurrent_with_args
+from dse.cqltypes import Int32Type, EMPTY
+from dse.query import dict_factory, ordered_dict_factory
+from dse.util import sortedset
 from tests.unit.cython.utils import cythontest
 
 from tests.integration import use_singledc, PROTOCOL_VERSION, execute_until_pass, notprotocolv1, \

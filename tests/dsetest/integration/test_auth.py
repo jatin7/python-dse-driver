@@ -9,8 +9,8 @@
 
 from nose.plugins.attrib import attr
 from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT
-from cassandra.cluster import NoHostAvailable
-from cassandra.query import SimpleStatement
+from dse.cluster import NoHostAvailable
+from dse.query import SimpleStatement
 from dse.auth import DSEGSSAPIAuthProvider
 import os, time, logging
 import subprocess

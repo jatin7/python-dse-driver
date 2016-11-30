@@ -1,25 +1,20 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest  # noqa
 
-from cassandra.protocol import ProtocolHandler, ResultMessage, UUIDType, read_int, EventMessage
-from cassandra.query import tuple_factory
-from cassandra.cluster import Cluster
+from dse.protocol import ProtocolHandler, ResultMessage, UUIDType, read_int, EventMessage
+from dse.query import tuple_factory
+from dse.cluster import Cluster
 from tests.integration import use_singledc, PROTOCOL_VERSION, drop_keyspace_shutdown_cluster
 from tests.integration.datatype_utils import update_datatypes, PRIMITIVE_DATATYPES
 from tests.integration.standard.utils import create_table_with_all_types, get_all_primitive_params

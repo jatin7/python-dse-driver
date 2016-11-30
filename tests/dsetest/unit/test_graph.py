@@ -6,7 +6,7 @@
 # You may obtain a copy of the License at
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
-from cassandra import ConsistencyLevel
+from dse import ConsistencyLevel
 
 try:
     import unittest2 as unittest
@@ -16,7 +16,7 @@ except ImportError:
 import json
 import six
 
-from cassandra.policies import RetryPolicy
+from dse.policies import RetryPolicy
 from dse.graph import (SimpleGraphStatement, GraphOptions, Result, VertexProperty,
                        _graph_options, graph_result_row_factory, single_object_row_factory,
                        Vertex, Edge, Path)

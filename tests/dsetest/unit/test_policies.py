@@ -13,8 +13,8 @@ except ImportError:
 
 from mock import Mock
 
-from cassandra.pool import Host
-from cassandra.policies import RoundRobinPolicy
+from dse.pool import Host
+from dse.policies import RoundRobinPolicy
 
 from dse.policies import DSELoadBalancingPolicy
 

@@ -1,16 +1,11 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 try:
     import unittest2 as unittest
@@ -24,14 +19,14 @@ import time
 from uuid import uuid4
 import logging
 
-import cassandra
-from cassandra.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
-from cassandra.concurrent import execute_concurrent
-from cassandra.policies import (RoundRobinPolicy, ExponentialReconnectionPolicy,
+import dse
+from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
+from dse.concurrent import execute_concurrent
+from dse.policies import (RoundRobinPolicy, ExponentialReconnectionPolicy,
                                 RetryPolicy, SimpleConvictionPolicy, HostDistance,
                                 WhiteListRoundRobinPolicy, AddressTranslator)
-from cassandra.protocol import MAX_SUPPORTED_VERSION
-from cassandra.query import SimpleStatement, TraceUnavailable, tuple_factory
+from dse.protocol import MAX_SUPPORTED_VERSION
+from dse.query import SimpleStatement, TraceUnavailable, tuple_factory
 
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_server_versions, CASSANDRA_VERSION, execute_until_pass, execute_with_long_wait_retry, get_node,\
     MockLoggingHandler, get_unsupported_lower_protocol, get_unsupported_upper_protocol, protocolv5

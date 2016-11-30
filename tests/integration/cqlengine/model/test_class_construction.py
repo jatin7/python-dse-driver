@@ -1,23 +1,18 @@
-# Copyright 2013-2016 DataStax, Inc.
+# Copyright 2016 DataStax, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
+#
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from uuid import uuid4
 import warnings
 
-from cassandra.cqlengine import columns, CQLEngineException
-from cassandra.cqlengine.models import Model, ModelException, ModelDefinitionException, ColumnQueryEvaluator
-from cassandra.cqlengine.query import ModelQuerySet, DMLQuery
+from dse.cqlengine import columns, CQLEngineException
+from dse.cqlengine.models import Model, ModelException, ModelDefinitionException, ColumnQueryEvaluator
+from dse.cqlengine.query import ModelQuerySet, DMLQuery
 
 from tests.integration.cqlengine.base import BaseCassEngTestCase
 
@@ -344,7 +339,7 @@ class TestAbstractModelClasses(BaseCassEngTestCase):
 
     def test_attempting_to_create_abstract_table_fails(self):
         """ Attempting to create a table from an abstract model should fail """
-        from cassandra.cqlengine.management import sync_table
+        from dse.cqlengine.management import sync_table
         with self.assertRaises(CQLEngineException):
             sync_table(AbstractModelWithFullCols)
 
@@ -361,7 +356,7 @@ class TestAbstractModelClasses(BaseCassEngTestCase):
 
     def test_concrete_class_table_creation_cycle(self):
         """ Tests that models with inherited abstract classes can be created, and have io performed """
-        from cassandra.cqlengine.management import sync_table, drop_table
+        from dse.cqlengine.management import sync_table, drop_table
         sync_table(ConcreteModelWithCol)
 
         w1 = ConcreteModelWithCol.create(pkey=5, data=6)
