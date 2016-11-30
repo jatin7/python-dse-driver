@@ -25,8 +25,8 @@ import threading
 from six.moves.queue import PriorityQueue
 import sys
 
-from cassandra.cluster import Cluster, Session
-from cassandra.concurrent import execute_concurrent, execute_concurrent_with_args
+from dse.cluster import Cluster, Session
+from dse.concurrent import execute_concurrent, execute_concurrent_with_args
 
 
 class MockResponseResponseFuture():

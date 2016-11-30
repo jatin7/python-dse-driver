@@ -17,7 +17,7 @@ try:
 except ImportError:
     import unittest  # noqa
 
-from cassandra.cqlengine.columns import Column
+from dse.cqlengine.columns import Column
 
 
 class ColumnTest(unittest.TestCase):

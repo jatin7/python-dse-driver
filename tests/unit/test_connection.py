@@ -22,13 +22,13 @@ from six import BytesIO
 import time
 from threading import Lock
 
-from cassandra import OperationTimedOut
-from cassandra.cluster import Cluster
-from cassandra.connection import (Connection, HEADER_DIRECTION_TO_CLIENT, ProtocolError,
+from dse import OperationTimedOut
+from dse.cluster import Cluster
+from dse.connection import (Connection, HEADER_DIRECTION_TO_CLIENT, ProtocolError,
                                   locally_supported_compressions, ConnectionHeartbeat, _Frame, Timer, TimerManager,
                                   ConnectionException)
-from cassandra.marshal import uint8_pack, uint32_pack, int32_pack
-from cassandra.protocol import (write_stringmultimap, write_int, write_string,
+from dse.marshal import uint8_pack, uint32_pack, int32_pack
+from dse.protocol import (write_stringmultimap, write_int, write_string,
                                 SupportedMessage, ProtocolHandler)
 
 
@@ -264,7 +264,7 @@ class ConnectionTest(unittest.TestCase):
         self.assertEqual('test', cluster.connection_class)
 
 
-@patch('cassandra.connection.ConnectionHeartbeat._raise_if_stopped')
+@patch('dse.connection.ConnectionHeartbeat._raise_if_stopped')
 class ConnectionHeartbeatTest(unittest.TestCase):
 
     @staticmethod

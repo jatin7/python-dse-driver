@@ -19,18 +19,18 @@ except ImportError:
 
 from mock import Mock, MagicMock, ANY
 
-from cassandra import ConsistencyLevel, Unavailable, SchemaTargetType, SchemaChangeType
-from cassandra.cluster import Session, ResponseFuture, NoHostAvailable
-from cassandra.connection import Connection, ConnectionException
-from cassandra.protocol import (ReadTimeoutErrorMessage, WriteTimeoutErrorMessage,
+from dse import ConsistencyLevel, Unavailable, SchemaTargetType, SchemaChangeType
+from dse.cluster import Session, ResponseFuture, NoHostAvailable
+from dse.connection import Connection, ConnectionException
+from dse.protocol import (ReadTimeoutErrorMessage, WriteTimeoutErrorMessage,
                                 UnavailableErrorMessage, ResultMessage, QueryMessage,
                                 OverloadedErrorMessage, IsBootstrappingErrorMessage,
                                 PreparedQueryNotFound, PrepareMessage,
                                 RESULT_KIND_ROWS, RESULT_KIND_SET_KEYSPACE,
                                 RESULT_KIND_SCHEMA_CHANGE, ProtocolHandler)
-from cassandra.policies import RetryPolicy
-from cassandra.pool import NoConnectionsAvailable
-from cassandra.query import SimpleStatement
+from dse.policies import RetryPolicy
+from dse.pool import NoConnectionsAvailable
+from dse.query import SimpleStatement
 
 
 class ResponseFutureTests(unittest.TestCase):

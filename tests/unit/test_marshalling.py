@@ -13,8 +13,8 @@
 # limitations under the License.
 import sys
 
-from cassandra.marshal import bitlength
-from cassandra.protocol import MAX_SUPPORTED_VERSION
+from dse.marshal import bitlength
+from dse.protocol import MAX_SUPPORTED_VERSION
 
 try:
     import unittest2 as unittest
@@ -26,8 +26,8 @@ from datetime import datetime, date
 from decimal import Decimal
 from uuid import UUID
 
-from cassandra.cqltypes import lookup_casstype, DecimalType, UTF8Type, DateType
-from cassandra.util import OrderedMapSerializedKey, sortedset, Time, Date
+from dse.cqltypes import lookup_casstype, DecimalType, UTF8Type, DateType
+from dse.util import OrderedMapSerializedKey, sortedset, Time, Date
 
 marshalled_value_pairs = (
     # binary form, type, python native type

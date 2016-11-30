@@ -22,17 +22,17 @@ import tempfile
 import six
 import time
 
-import cassandra
-from cassandra.cqltypes import (BooleanType, lookup_casstype_simple, lookup_casstype,
+import dse
+from dse.cqltypes import (BooleanType, lookup_casstype_simple, lookup_casstype,
                                 LongType, DecimalType, SetType, cql_typename,
                                 CassandraType, UTF8Type, parse_casstype_args,
                                 SimpleDateType, TimeType, ByteType, ShortType,
                                 EmptyValue, _CassandraType, DateType, int64_pack)
-from cassandra.encoder import cql_quote
-from cassandra.protocol import (write_string, read_longstring, write_stringmap,
+from dse.encoder import cql_quote
+from dse.protocol import (write_string, read_longstring, write_stringmap,
                                 read_stringmap, read_inet, write_inet,
                                 read_string, write_longstring)
-from cassandra.query import named_tuple_factory
+from dse.query import named_tuple_factory
 
 
 class TypeTests(unittest.TestCase):
@@ -42,66 +42,66 @@ class TypeTests(unittest.TestCase):
         Ensure lookup_casstype_simple returns the correct classes
         """
 
-        self.assertEqual(lookup_casstype_simple('AsciiType'), cassandra.cqltypes.AsciiType)
-        self.assertEqual(lookup_casstype_simple('LongType'), cassandra.cqltypes.LongType)
-        self.assertEqual(lookup_casstype_simple('BytesType'), cassandra.cqltypes.BytesType)
-        self.assertEqual(lookup_casstype_simple('BooleanType'), cassandra.cqltypes.BooleanType)
-        self.assertEqual(lookup_casstype_simple('CounterColumnType'), cassandra.cqltypes.CounterColumnType)
-        self.assertEqual(lookup_casstype_simple('DecimalType'), cassandra.cqltypes.DecimalType)
-        self.assertEqual(lookup_casstype_simple('DoubleType'), cassandra.cqltypes.DoubleType)
-        self.assertEqual(lookup_casstype_simple('FloatType'), cassandra.cqltypes.FloatType)
-        self.assertEqual(lookup_casstype_simple('InetAddressType'), cassandra.cqltypes.InetAddressType)
-        self.assertEqual(lookup_casstype_simple('Int32Type'), cassandra.cqltypes.Int32Type)
-        self.assertEqual(lookup_casstype_simple('UTF8Type'), cassandra.cqltypes.UTF8Type)
-        self.assertEqual(lookup_casstype_simple('DateType'), cassandra.cqltypes.DateType)
-        self.assertEqual(lookup_casstype_simple('SimpleDateType'), cassandra.cqltypes.SimpleDateType)
-        self.assertEqual(lookup_casstype_simple('ByteType'), cassandra.cqltypes.ByteType)
-        self.assertEqual(lookup_casstype_simple('ShortType'), cassandra.cqltypes.ShortType)
-        self.assertEqual(lookup_casstype_simple('TimeUUIDType'), cassandra.cqltypes.TimeUUIDType)
-        self.assertEqual(lookup_casstype_simple('TimeType'), cassandra.cqltypes.TimeType)
-        self.assertEqual(lookup_casstype_simple('UUIDType'), cassandra.cqltypes.UUIDType)
-        self.assertEqual(lookup_casstype_simple('IntegerType'), cassandra.cqltypes.IntegerType)
-        self.assertEqual(lookup_casstype_simple('MapType'), cassandra.cqltypes.MapType)
-        self.assertEqual(lookup_casstype_simple('ListType'), cassandra.cqltypes.ListType)
-        self.assertEqual(lookup_casstype_simple('SetType'), cassandra.cqltypes.SetType)
-        self.assertEqual(lookup_casstype_simple('CompositeType'), cassandra.cqltypes.CompositeType)
-        self.assertEqual(lookup_casstype_simple('ColumnToCollectionType'), cassandra.cqltypes.ColumnToCollectionType)
-        self.assertEqual(lookup_casstype_simple('ReversedType'), cassandra.cqltypes.ReversedType)
+        self.assertEqual(lookup_casstype_simple('AsciiType'), dse.cqltypes.AsciiType)
+        self.assertEqual(lookup_casstype_simple('LongType'), dse.cqltypes.LongType)
+        self.assertEqual(lookup_casstype_simple('BytesType'), dse.cqltypes.BytesType)
+        self.assertEqual(lookup_casstype_simple('BooleanType'), dse.cqltypes.BooleanType)
+        self.assertEqual(lookup_casstype_simple('CounterColumnType'), dse.cqltypes.CounterColumnType)
+        self.assertEqual(lookup_casstype_simple('DecimalType'), dse.cqltypes.DecimalType)
+        self.assertEqual(lookup_casstype_simple('DoubleType'), dse.cqltypes.DoubleType)
+        self.assertEqual(lookup_casstype_simple('FloatType'), dse.cqltypes.FloatType)
+        self.assertEqual(lookup_casstype_simple('InetAddressType'), dse.cqltypes.InetAddressType)
+        self.assertEqual(lookup_casstype_simple('Int32Type'), dse.cqltypes.Int32Type)
+        self.assertEqual(lookup_casstype_simple('UTF8Type'), dse.cqltypes.UTF8Type)
+        self.assertEqual(lookup_casstype_simple('DateType'), dse.cqltypes.DateType)
+        self.assertEqual(lookup_casstype_simple('SimpleDateType'), dse.cqltypes.SimpleDateType)
+        self.assertEqual(lookup_casstype_simple('ByteType'), dse.cqltypes.ByteType)
+        self.assertEqual(lookup_casstype_simple('ShortType'), dse.cqltypes.ShortType)
+        self.assertEqual(lookup_casstype_simple('TimeUUIDType'), dse.cqltypes.TimeUUIDType)
+        self.assertEqual(lookup_casstype_simple('TimeType'), dse.cqltypes.TimeType)
+        self.assertEqual(lookup_casstype_simple('UUIDType'), dse.cqltypes.UUIDType)
+        self.assertEqual(lookup_casstype_simple('IntegerType'), dse.cqltypes.IntegerType)
+        self.assertEqual(lookup_casstype_simple('MapType'), dse.cqltypes.MapType)
+        self.assertEqual(lookup_casstype_simple('ListType'), dse.cqltypes.ListType)
+        self.assertEqual(lookup_casstype_simple('SetType'), dse.cqltypes.SetType)
+        self.assertEqual(lookup_casstype_simple('CompositeType'), dse.cqltypes.CompositeType)
+        self.assertEqual(lookup_casstype_simple('ColumnToCollectionType'), dse.cqltypes.ColumnToCollectionType)
+        self.assertEqual(lookup_casstype_simple('ReversedType'), dse.cqltypes.ReversedType)
 
-        self.assertEqual(str(lookup_casstype_simple('unknown')), str(cassandra.cqltypes.mkUnrecognizedType('unknown')))
+        self.assertEqual(str(lookup_casstype_simple('unknown')), str(dse.cqltypes.mkUnrecognizedType('unknown')))
 
     def test_lookup_casstype(self):
         """
         Ensure lookup_casstype returns the correct classes
         """
 
-        self.assertEqual(lookup_casstype('AsciiType'), cassandra.cqltypes.AsciiType)
-        self.assertEqual(lookup_casstype('LongType'), cassandra.cqltypes.LongType)
-        self.assertEqual(lookup_casstype('BytesType'), cassandra.cqltypes.BytesType)
-        self.assertEqual(lookup_casstype('BooleanType'), cassandra.cqltypes.BooleanType)
-        self.assertEqual(lookup_casstype('CounterColumnType'), cassandra.cqltypes.CounterColumnType)
-        self.assertEqual(lookup_casstype('DateType'), cassandra.cqltypes.DateType)
-        self.assertEqual(lookup_casstype('DecimalType'), cassandra.cqltypes.DecimalType)
-        self.assertEqual(lookup_casstype('DoubleType'), cassandra.cqltypes.DoubleType)
-        self.assertEqual(lookup_casstype('FloatType'), cassandra.cqltypes.FloatType)
-        self.assertEqual(lookup_casstype('InetAddressType'), cassandra.cqltypes.InetAddressType)
-        self.assertEqual(lookup_casstype('Int32Type'), cassandra.cqltypes.Int32Type)
-        self.assertEqual(lookup_casstype('UTF8Type'), cassandra.cqltypes.UTF8Type)
-        self.assertEqual(lookup_casstype('DateType'), cassandra.cqltypes.DateType)
-        self.assertEqual(lookup_casstype('TimeType'), cassandra.cqltypes.TimeType)
-        self.assertEqual(lookup_casstype('ByteType'), cassandra.cqltypes.ByteType)
-        self.assertEqual(lookup_casstype('ShortType'), cassandra.cqltypes.ShortType)
-        self.assertEqual(lookup_casstype('TimeUUIDType'), cassandra.cqltypes.TimeUUIDType)
-        self.assertEqual(lookup_casstype('UUIDType'), cassandra.cqltypes.UUIDType)
-        self.assertEqual(lookup_casstype('IntegerType'), cassandra.cqltypes.IntegerType)
-        self.assertEqual(lookup_casstype('MapType'), cassandra.cqltypes.MapType)
-        self.assertEqual(lookup_casstype('ListType'), cassandra.cqltypes.ListType)
-        self.assertEqual(lookup_casstype('SetType'), cassandra.cqltypes.SetType)
-        self.assertEqual(lookup_casstype('CompositeType'), cassandra.cqltypes.CompositeType)
-        self.assertEqual(lookup_casstype('ColumnToCollectionType'), cassandra.cqltypes.ColumnToCollectionType)
-        self.assertEqual(lookup_casstype('ReversedType'), cassandra.cqltypes.ReversedType)
+        self.assertEqual(lookup_casstype('AsciiType'), dse.cqltypes.AsciiType)
+        self.assertEqual(lookup_casstype('LongType'), dse.cqltypes.LongType)
+        self.assertEqual(lookup_casstype('BytesType'), dse.cqltypes.BytesType)
+        self.assertEqual(lookup_casstype('BooleanType'), dse.cqltypes.BooleanType)
+        self.assertEqual(lookup_casstype('CounterColumnType'), dse.cqltypes.CounterColumnType)
+        self.assertEqual(lookup_casstype('DateType'), dse.cqltypes.DateType)
+        self.assertEqual(lookup_casstype('DecimalType'), dse.cqltypes.DecimalType)
+        self.assertEqual(lookup_casstype('DoubleType'), dse.cqltypes.DoubleType)
+        self.assertEqual(lookup_casstype('FloatType'), dse.cqltypes.FloatType)
+        self.assertEqual(lookup_casstype('InetAddressType'), dse.cqltypes.InetAddressType)
+        self.assertEqual(lookup_casstype('Int32Type'), dse.cqltypes.Int32Type)
+        self.assertEqual(lookup_casstype('UTF8Type'), dse.cqltypes.UTF8Type)
+        self.assertEqual(lookup_casstype('DateType'), dse.cqltypes.DateType)
+        self.assertEqual(lookup_casstype('TimeType'), dse.cqltypes.TimeType)
+        self.assertEqual(lookup_casstype('ByteType'), dse.cqltypes.ByteType)
+        self.assertEqual(lookup_casstype('ShortType'), dse.cqltypes.ShortType)
+        self.assertEqual(lookup_casstype('TimeUUIDType'), dse.cqltypes.TimeUUIDType)
+        self.assertEqual(lookup_casstype('UUIDType'), dse.cqltypes.UUIDType)
+        self.assertEqual(lookup_casstype('IntegerType'), dse.cqltypes.IntegerType)
+        self.assertEqual(lookup_casstype('MapType'), dse.cqltypes.MapType)
+        self.assertEqual(lookup_casstype('ListType'), dse.cqltypes.ListType)
+        self.assertEqual(lookup_casstype('SetType'), dse.cqltypes.SetType)
+        self.assertEqual(lookup_casstype('CompositeType'), dse.cqltypes.CompositeType)
+        self.assertEqual(lookup_casstype('ColumnToCollectionType'), dse.cqltypes.ColumnToCollectionType)
+        self.assertEqual(lookup_casstype('ReversedType'), dse.cqltypes.ReversedType)
 
-        self.assertEqual(str(lookup_casstype('unknown')), str(cassandra.cqltypes.mkUnrecognizedType('unknown')))
+        self.assertEqual(str(lookup_casstype('unknown')), str(dse.cqltypes.mkUnrecognizedType('unknown')))
 
         self.assertRaises(ValueError, lookup_casstype, 'AsciiType~')
 
@@ -112,15 +112,15 @@ class TypeTests(unittest.TestCase):
 
         self.assertEqual(LongType.cql_parameterized_type(), 'bigint')
 
-        subtypes = (cassandra.cqltypes.UTF8Type, cassandra.cqltypes.UTF8Type)
+        subtypes = (dse.cqltypes.UTF8Type, dse.cqltypes.UTF8Type)
         self.assertEqual('map<text, text>',
-                         cassandra.cqltypes.MapType.apply_parameters(subtypes).cql_parameterized_type())
+                         dse.cqltypes.MapType.apply_parameters(subtypes).cql_parameterized_type())
 
     def test_datetype_from_string(self):
         # Ensure all formats can be parsed, without exception
-        for format in cassandra.cqltypes.cql_timestamp_formats:
+        for format in dse.cqltypes.cql_timestamp_formats:
             date_string = str(datetime.datetime.now().strftime(format))
-            cassandra.cqltypes.DateType.interpret_datestring(date_string)
+            dse.cqltypes.DateType.interpret_datestring(date_string)
 
     def test_cql_typename(self):
         """

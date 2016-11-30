@@ -19,7 +19,7 @@ except ImportError:
 
 import six
 
-from cassandra.query import BatchStatement, SimpleStatement
+from dse.query import BatchStatement, SimpleStatement
 
 
 class BatchStatementTest(unittest.TestCase):

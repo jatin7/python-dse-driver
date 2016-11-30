@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cassandra.cython_deps import HAVE_CYTHON, HAVE_NUMPY
+from dse.cython_deps import HAVE_CYTHON, HAVE_NUMPY
 from tests.integration import VERIFY_CYTHON
 
 try:

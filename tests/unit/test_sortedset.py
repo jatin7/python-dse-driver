@@ -17,8 +17,8 @@ try:
 except ImportError:
     import unittest  # noqa
 
-from cassandra.util import sortedset
-from cassandra.cqltypes import EMPTY
+from dse.util import sortedset
+from dse.cqltypes import EMPTY
 
 
 class SortedSetTest(unittest.TestCase):

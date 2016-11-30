@@ -18,12 +18,12 @@ except ImportError:
 
 from mock import patch
 
-from cassandra import ConsistencyLevel, DriverException, Timeout, Unavailable, RequestExecutionException, ReadTimeout, WriteTimeout, CoordinationFailure, ReadFailure, WriteFailure, FunctionFailure, AlreadyExists,\
+from dse import ConsistencyLevel, DriverException, Timeout, Unavailable, RequestExecutionException, ReadTimeout, WriteTimeout, CoordinationFailure, ReadFailure, WriteFailure, FunctionFailure, AlreadyExists,\
     InvalidRequest, Unauthorized, AuthenticationFailed, OperationTimedOut, UnsupportedOperation, RequestValidationException, ConfigurationException
-from cassandra.cluster import _Scheduler, Session, Cluster, _NOT_SET, default_lbp_factory, \
+from dse.cluster import _Scheduler, Session, Cluster, _NOT_SET, default_lbp_factory, \
     ExecutionProfile, _ConfigMode, EXEC_PROFILE_DEFAULT
-from cassandra.policies import HostDistance, RetryPolicy, RoundRobinPolicy, DowngradingConsistencyRetryPolicy
-from cassandra.query import SimpleStatement, named_tuple_factory, tuple_factory
+from dse.policies import HostDistance, RetryPolicy, RoundRobinPolicy, DowngradingConsistencyRetryPolicy
+from dse.query import SimpleStatement, named_tuple_factory, tuple_factory
 
 
 class ExceptionTypeTest(unittest.TestCase):
@@ -107,7 +107,7 @@ class SchedulerTest(unittest.TestCase):
     # TODO: this suite could be expanded; for now just adding a test covering a ticket
 
     @patch('time.time', return_value=3)  # always queue at same time
-    @patch('cassandra.cluster._Scheduler.run')  # don't actually run the thread
+    @patch('dse.cluster._Scheduler.run')  # don't actually run the thread
     def test_event_delay_timing(self, *_):
         """
         Schedule something with a time collision to make sure the heap comparison works

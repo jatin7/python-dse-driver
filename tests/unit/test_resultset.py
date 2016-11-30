@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from cassandra.query import named_tuple_factory, dict_factory, tuple_factory
+from dse.query import named_tuple_factory, dict_factory, tuple_factory
 
 try:
     import unittest2 as unittest
@@ -20,7 +20,7 @@ except ImportError:
 
 from mock import Mock, PropertyMock
 
-from cassandra.cluster import ResultSet
+from dse.cluster import ResultSet
 
 
 class ResultSetTests(unittest.TestCase):

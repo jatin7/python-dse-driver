@@ -22,11 +22,11 @@ import time
 try:
     from twisted.test import proto_helpers
     from twisted.python.failure import Failure
-    from cassandra.io import twistedreactor
+    from dse.io import twistedreactor
 except ImportError:
     twistedreactor = None  # NOQA
 
-from cassandra.connection import _Frame
+from dse.connection import _Frame
 from tests.unit.io.utils import submit_and_wait_for_completion, TimerCallback
 
 

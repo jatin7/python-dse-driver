@@ -17,12 +17,12 @@ try:
 except ImportError:
     import unittest # noqa
 
-from cassandra.encoder import Encoder
-from cassandra.protocol import ColumnMetadata
-from cassandra.query import (bind_params, ValueSequence, PreparedStatement,
+from dse.encoder import Encoder
+from dse.protocol import ColumnMetadata
+from dse.query import (bind_params, ValueSequence, PreparedStatement,
                              BoundStatement, UNSET_VALUE)
-from cassandra.cqltypes import Int32Type
-from cassandra.util import OrderedDict
+from dse.cqltypes import Int32Type
+from dse.util import OrderedDict
 
 from six.moves import xrange
 import six
