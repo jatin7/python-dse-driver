@@ -22,7 +22,6 @@ import platform
 from threading import Event
 from subprocess import call
 from itertools import groupby
-
 from dse import OperationTimedOut, ReadTimeout, ReadFailure, WriteTimeout, WriteFailure, AlreadyExists
 from dse.cluster import Cluster
 from dse.protocol import ConfigurationException
@@ -282,11 +281,15 @@ def remove_cluster():
         raise RuntimeError("Failed to remove cluster after 100 attempts")
 
 
-def is_current_cluster(cluster_name, node_counts):
+def is_current_cluster(cluster_name, node_counts, workloads):
     global CCM_CLUSTER
     if CCM_CLUSTER and CCM_CLUSTER.name == cluster_name:
         if [len(list(nodes)) for dc, nodes in
                 groupby(CCM_CLUSTER.nodelist(), lambda n: n.data_center)] == node_counts:
+            for node in CCM_CLUSTER.nodelist():
+                if set(node.workloads) != set(workloads):
+                    print("node workloads don't match creating new cluster")
+                    return False
             return True
     return False
 
@@ -301,7 +304,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
         setup_keyspace(ipformat=ipformat, wait=False)
         return
 
-    if is_current_cluster(cluster_name, nodes):
+    if is_current_cluster(cluster_name, nodes, workloads):
         log.debug("Using existing cluster, matching topology: {0}".format(cluster_name))
     else:
         if CCM_CLUSTER:

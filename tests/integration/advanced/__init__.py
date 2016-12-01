@@ -23,9 +23,9 @@ from decimal import Decimal
 from ccmlib import common
 import datetime
 from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT, EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT
-from integration import (PROTOCOL_VERSION, get_server_versions, BasicKeyspaceUnitTestCase,
-                         drop_keyspace_shutdown_cluster, get_cluster, get_node, teardown_package as base_teardown,
-                         use_singledc, use_single_node, wait_for_node_socket, DSE_VERSION)
+
+from tests.integration import PROTOCOL_VERSION, DSE_VERSION, get_server_versions, BasicKeyspaceUnitTestCase, drop_keyspace_shutdown_cluster, get_cluster, get_node, teardown_package as base_teardown
+from tests.integration import use_singledc, use_single_node, wait_for_node_socket
 from dse.protocol import ServerError
 from dse.util import Point, LineString, Polygon
 from dse.graph import Edge, Vertex, Path

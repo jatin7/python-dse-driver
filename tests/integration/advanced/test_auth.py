@@ -14,9 +14,9 @@ from dse.query import SimpleStatement
 from dse.auth import DSEGSSAPIAuthProvider
 import os, time, logging
 import subprocess
-from tests.dsetest.integration import ADS_HOME, use_single_node_with_graph, generate_classic, reset_graph
+from tests.integration.advanced import ADS_HOME, use_single_node_with_graph, generate_classic, reset_graph
 
-from integration import get_cluster, remove_cluster
+from tests.integration import get_cluster, remove_cluster
 from ccmlib.dse_cluster import DseCluster
 try:
     import unittest2 as unittest
