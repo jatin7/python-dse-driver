@@ -17,7 +17,7 @@ from functools import partial
 import six
 
 from dse import InvalidRequest
-from dse.cluster import Cluster, UserTypeDoesNotExist
+from dse.cluster import Cluster, UserTypeDoesNotExist, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.query import dict_factory
 from dse.util import OrderedMap
 
@@ -302,12 +302,12 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
         c = Cluster(protocol_version=PROTOCOL_VERSION)
         s = c.connect(self.keyspace_name, wait_for_all_pools=True)
 
-        MAX_TEST_LENGTH = 254
+        max_test_length = 254
 
         # create the seed udt, increase timeout to avoid the query failure on slow systems
         s.execute("CREATE TYPE lengthy_udt ({0})"
                   .format(', '.join(['v_{0} int'.format(i)
-                                    for i in range(MAX_TEST_LENGTH)])))
+                                    for i in range(max_test_length)])))
 
         # create a table with multiple sizes of nested udts
         # no need for all nested types, only a spot checked few and the largest one
@@ -316,13 +316,13 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
                   "v frozen<lengthy_udt>)")
 
         # create and register the seed udt type
-        udt = namedtuple('lengthy_udt', tuple(['v_{0}'.format(i) for i in range(MAX_TEST_LENGTH)]))
+        udt = namedtuple('lengthy_udt', tuple(['v_{0}'.format(i) for i in range(max_test_length)]))
         c.register_user_type(self.keyspace_name, "lengthy_udt", udt)
 
         # verify inserts and reads
-        for i in (0, 1, 2, 3, MAX_TEST_LENGTH):
+        for i in (0, 1, 2, 3, max_test_length):
             # create udt
-            params = [j for j in range(i)] + [None for j in range(MAX_TEST_LENGTH - i)]
+            params = [j for j in range(i)] + [None for j in range(max_test_length - i)]
             created_udt = udt(*params)
 
             # write udt
@@ -334,12 +334,12 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
 
         c.shutdown()
 
-    def nested_udt_schema_helper(self, session, MAX_NESTING_DEPTH):
+    def nested_udt_schema_helper(self, session, max_nesting_depth):
         # create the seed udt
         execute_until_pass(session, "CREATE TYPE depth_0 (age int, name text)")
 
         # create the nested udts
-        for i in range(MAX_NESTING_DEPTH):
+        for i in range(max_nesting_depth):
             execute_until_pass(session, "CREATE TYPE depth_{0} (value frozen<depth_{1}>)".format(i + 1, i))
 
         # create a table with multiple sizes of nested udts
@@ -350,7 +350,7 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
                                     "v_1 frozen<depth_1>, "
                                     "v_2 frozen<depth_2>, "
                                     "v_3 frozen<depth_3>, "
-                                    "v_{0} frozen<depth_{0}>)".format(MAX_NESTING_DEPTH))
+                                    "v_{0} frozen<depth_{0}>)".format(max_nesting_depth))
 
     def nested_udt_creation_helper(self, udts, i):
         if i == 0:
@@ -358,8 +358,8 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
         else:
             return udts[i](self.nested_udt_creation_helper(udts, i - 1))
 
-    def nested_udt_verification_helper(self, session, MAX_NESTING_DEPTH, udts):
-        for i in (0, 1, 2, 3, MAX_NESTING_DEPTH):
+    def nested_udt_verification_helper(self, session, max_nesting_depth, udts):
+        for i in (0, 1, 2, 3, max_nesting_depth):
             # create udt
             udt = self.nested_udt_creation_helper(udts, i)
 
@@ -378,75 +378,72 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
             result = session.execute("SELECT v_{0} FROM mytable WHERE k=1".format(i))[0]
             self.assertEqual(udt, result["v_{0}".format(i)])
 
+    def _cluster_default_dict_factory(self):
+        return Cluster(protocol_version=PROTOCOL_VERSION,
+                       execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=dict_factory)})
+
     def test_can_insert_nested_registered_udts(self):
         """
         Test for ensuring nested registered udts are properly inserted
         """
+        with self._cluster_default_dict_factory() as c:
+            s = c.connect(self.keyspace_name, wait_for_all_pools=True)
 
-        c = Cluster(protocol_version=PROTOCOL_VERSION)
-        s = c.connect(self.keyspace_name, wait_for_all_pools=True)
-        s.row_factory = dict_factory
+            max_nesting_depth = 16
 
-        MAX_NESTING_DEPTH = 16
+            # create the schema
+            self.nested_udt_schema_helper(s, max_nesting_depth)
 
-        # create the schema
-        self.nested_udt_schema_helper(s, MAX_NESTING_DEPTH)
-
-        # create and register the seed udt type
-        udts = []
-        udt = namedtuple('depth_0', ('age', 'name'))
-        udts.append(udt)
-        c.register_user_type(self.keyspace_name, "depth_0", udts[0])
-
-        # create and register the nested udt types
-        for i in range(MAX_NESTING_DEPTH):
-            udt = namedtuple('depth_{0}'.format(i + 1), ('value'))
+            # create and register the seed udt type
+            udts = []
+            udt = namedtuple('depth_0', ('age', 'name'))
             udts.append(udt)
-            c.register_user_type(self.keyspace_name, "depth_{0}".format(i + 1), udts[i + 1])
+            c.register_user_type(self.keyspace_name, "depth_0", udts[0])
 
-        # insert udts and verify inserts with reads
-        self.nested_udt_verification_helper(s, MAX_NESTING_DEPTH, udts)
+            # create and register the nested udt types
+            for i in range(max_nesting_depth):
+                udt = namedtuple('depth_{0}'.format(i + 1), ('value'))
+                udts.append(udt)
+                c.register_user_type(self.keyspace_name, "depth_{0}".format(i + 1), udts[i + 1])
 
-        c.shutdown()
+            # insert udts and verify inserts with reads
+            self.nested_udt_verification_helper(s, max_nesting_depth, udts)
 
     def test_can_insert_nested_unregistered_udts(self):
         """
         Test for ensuring nested unregistered udts are properly inserted
         """
 
-        c = Cluster(protocol_version=PROTOCOL_VERSION)
-        s = c.connect(self.keyspace_name, wait_for_all_pools=True)
-        s.row_factory = dict_factory
+        with self._cluster_default_dict_factory() as c:
+            s = c.connect(self.keyspace_name, wait_for_all_pools=True)
 
-        MAX_NESTING_DEPTH = 16
+            max_nesting_depth = 16
 
-        # create the schema
-        self.nested_udt_schema_helper(s, MAX_NESTING_DEPTH)
+            # create the schema
+            self.nested_udt_schema_helper(s, max_nesting_depth)
 
-        # create the seed udt type
-        udts = []
-        udt = namedtuple('depth_0', ('age', 'name'))
-        udts.append(udt)
-
-        # create the nested udt types
-        for i in range(MAX_NESTING_DEPTH):
-            udt = namedtuple('depth_{0}'.format(i + 1), ('value'))
+            # create the seed udt type
+            udts = []
+            udt = namedtuple('depth_0', ('age', 'name'))
             udts.append(udt)
 
-        # insert udts via prepared statements and verify inserts with reads
-        for i in (0, 1, 2, 3, MAX_NESTING_DEPTH):
-            # create udt
-            udt = self.nested_udt_creation_helper(udts, i)
+            # create the nested udt types
+            for i in range(max_nesting_depth):
+                udt = namedtuple('depth_{0}'.format(i + 1), ('value'))
+                udts.append(udt)
 
-            # write udt
-            insert = s.prepare("INSERT INTO mytable (k, v_{0}) VALUES (0, ?)".format(i))
-            s.execute(insert, [udt])
+            # insert udts via prepared statements and verify inserts with reads
+            for i in (0, 1, 2, 3, max_nesting_depth):
+                # create udt
+                udt = self.nested_udt_creation_helper(udts, i)
 
-            # verify udt was written and read correctly
-            result = s.execute("SELECT v_{0} FROM mytable WHERE k=0".format(i))[0]
-            self.assertEqual(udt, result["v_{0}".format(i)])
+                # write udt
+                insert = s.prepare("INSERT INTO mytable (k, v_{0}) VALUES (0, ?)".format(i))
+                s.execute(insert, [udt])
 
-        c.shutdown()
+                # verify udt was written and read correctly
+                result = s.execute("SELECT v_{0} FROM mytable WHERE k=0".format(i))[0]
+                self.assertEqual(udt, result["v_{0}".format(i)])
 
     def test_can_insert_nested_registered_udts_with_different_namedtuples(self):
         """
@@ -454,31 +451,28 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
         created namedtuples are use names that are different the cql type.
         """
 
-        c = Cluster(protocol_version=PROTOCOL_VERSION)
-        s = c.connect(self.keyspace_name, wait_for_all_pools=True)
-        s.row_factory = dict_factory
+        with self._cluster_default_dict_factory() as c:
+            s = c.connect(self.keyspace_name, wait_for_all_pools=True)
 
-        MAX_NESTING_DEPTH = 16
+            max_nesting_depth = 16
 
-        # create the schema
-        self.nested_udt_schema_helper(s, MAX_NESTING_DEPTH)
+            # create the schema
+            self.nested_udt_schema_helper(s, max_nesting_depth)
 
-        # create and register the seed udt type
-        udts = []
-        udt = namedtuple('level_0', ('age', 'name'))
-        udts.append(udt)
-        c.register_user_type(self.keyspace_name, "depth_0", udts[0])
-
-        # create and register the nested udt types
-        for i in range(MAX_NESTING_DEPTH):
-            udt = namedtuple('level_{0}'.format(i + 1), ('value'))
+            # create and register the seed udt type
+            udts = []
+            udt = namedtuple('level_0', ('age', 'name'))
             udts.append(udt)
-            c.register_user_type(self.keyspace_name, "depth_{0}".format(i + 1), udts[i + 1])
+            c.register_user_type(self.keyspace_name, "depth_0", udts[0])
 
-        # insert udts and verify inserts with reads
-        self.nested_udt_verification_helper(s, MAX_NESTING_DEPTH, udts)
+            # create and register the nested udt types
+            for i in range(max_nesting_depth):
+                udt = namedtuple('level_{0}'.format(i + 1), ('value'))
+                udts.append(udt)
+                c.register_user_type(self.keyspace_name, "depth_{0}".format(i + 1), udts[i + 1])
 
-        c.shutdown()
+            # insert udts and verify inserts with reads
+            self.nested_udt_verification_helper(s, max_nesting_depth, udts)
 
     def test_raise_error_on_nonexisting_udts(self):
         """

@@ -19,7 +19,7 @@ from threading import Thread, Event
 import time
 
 from dse import ConsistencyLevel, OperationTimedOut
-from dse.cluster import NoHostAvailable, Cluster
+from dse.cluster import NoHostAvailable, Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import QueryMessage
 from dse.connection import Connection
@@ -44,7 +44,8 @@ class ConnectionTimeoutTest(unittest.TestCase):
     def setUp(self):
         self.defaultInFlight = Connection.max_in_flight
         Connection.max_in_flight = 2
-        self.cluster = Cluster(protocol_version=PROTOCOL_VERSION, load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))
+        self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                               execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))})
         self.session = self.cluster.connect()
 
     def tearDown(self):

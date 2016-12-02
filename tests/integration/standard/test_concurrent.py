@@ -13,14 +13,12 @@ import sys, logging, traceback
 
 from dse import InvalidRequest, ConsistencyLevel, ReadTimeout, WriteTimeout, OperationTimedOut, \
     ReadFailure, WriteFailure
-from dse.cluster import Cluster
+from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.concurrent import execute_concurrent, execute_concurrent_with_args, ExecutionResult
 from dse.policies import HostDistance
 from dse.query import tuple_factory, SimpleStatement
 
 from tests.integration import use_singledc, PROTOCOL_VERSION
-
-from six import next
 
 try:
     import unittest2 as unittest
@@ -38,11 +36,11 @@ class ClusterTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cluster = Cluster(protocol_version=PROTOCOL_VERSION)
+        cls.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                              execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)})
         if PROTOCOL_VERSION < 3:
             cls.cluster.set_core_connections_per_host(HostDistance.LOCAL, 1)
         cls.session = cls.cluster.connect()
-        cls.session.row_factory = tuple_factory
 
     @classmethod
     def tearDownClass(cls):

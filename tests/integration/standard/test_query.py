@@ -15,10 +15,11 @@ try:
 except ImportError:
     import unittest  # noqa
 import logging
-from dse import ConsistencyLevel, Unavailable, InvalidRequest, cluster
+from dse import ConsistencyLevel, Unavailable, InvalidRequest
 from dse.query import (PreparedStatement, BoundStatement, SimpleStatement,
                              BatchStatement, BatchType, dict_factory, TraceUnavailable)
-from dse.cluster import Cluster, NoHostAvailable
+import dse.cluster
+from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
 from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, get_server_versions, greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3
@@ -100,18 +101,20 @@ class QueryTests(BasicSharedKeyspaceUnitTestCase):
         self.assertListEqual([rs_trace], rs.get_all_query_traces())
 
     def test_trace_ignores_row_factory(self):
-        self.session.row_factory = dict_factory
+        with Cluster(protocol_version=PROTOCOL_VERSION,
+                    execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=dict_factory)}) as cluster:
 
-        query = "SELECT * FROM system.local"
-        statement = SimpleStatement(query)
-        rs = self.session.execute(statement, trace=True)
+            s = cluster.connect()
+            query = "SELECT * FROM system.local"
+            statement = SimpleStatement(query)
+            rs = s.execute(statement, trace=True)
 
-        # Ensure this does not throw an exception
-        trace = rs.get_query_trace()
-        self.assertTrue(trace.events)
-        str(trace)
-        for event in trace.events:
-            str(event)
+            # Ensure this does not throw an exception
+            trace = rs.get_query_trace()
+            self.assertTrue(trace.events)
+            str(trace)
+            for event in trace.events:
+                str(event)
 
     @greaterthanprotocolv3
     def test_client_ip_in_trace(self):
@@ -446,23 +449,18 @@ class PreparedStatementArgTest(unittest.TestCase):
         @since 3.4.0
         @jira_ticket PYTHON-556
         @expected_result queries will have to re-prepared on hosts that aren't the control connection
-        """
-        white_list = ForcedHostSwitchPolicy()
-        clus = Cluster(
-            load_balancing_policy=white_list,
-            protocol_version=PROTOCOL_VERSION, prepare_on_all_hosts=False, reprepare_on_up=False)
-        try:
-            session = clus.connect(wait_for_all_pools=True)
+        # """
+        with Cluster(protocol_version=PROTOCOL_VERSION, prepare_on_all_hosts=False, reprepare_on_up=False,
+                     execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=ForcedHostSwitchPolicy())}) as cluster:
+            session = cluster.connect(wait_for_all_pools=True)
             mock_handler = MockLoggingHandler()
-            logger = logging.getLogger(cluster.__name__)
+            logger = logging.getLogger(dse.cluster.__name__)
             logger.addHandler(mock_handler)
             select_statement = session.prepare("SELECT * FROM system.local")
             session.execute(select_statement)
             session.execute(select_statement)
             session.execute(select_statement)
             self.assertEqual(2, mock_handler.get_message_count('debug', "Re-preparing"))
-        finally:
-            clus.shutdown()
 
 
 class PrintStatementTests(unittest.TestCase):

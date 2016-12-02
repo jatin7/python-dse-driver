@@ -14,7 +14,7 @@ except ImportError:
 
 from dse.protocol import ProtocolHandler, ResultMessage, UUIDType, read_int, EventMessage
 from dse.query import tuple_factory
-from dse.cluster import Cluster
+from dse.cluster import Cluster, EXEC_PROFILE_DEFAULT, ExecutionProfile
 from tests.integration import use_singledc, PROTOCOL_VERSION, drop_keyspace_shutdown_cluster
 from tests.integration.datatype_utils import update_datatypes, PRIMITIVE_DATATYPES
 from tests.integration.standard.utils import create_table_with_all_types, get_all_primitive_params
@@ -57,16 +57,14 @@ class CustomProtocolHandlerTest(unittest.TestCase):
         """
 
         # Ensure that we get normal uuid back first
-        session = Cluster(protocol_version=PROTOCOL_VERSION).connect(keyspace="custserdes")
-        session.row_factory = tuple_factory
+        session = Cluster(protocol_version=PROTOCOL_VERSION,
+                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)}).connect(keyspace="custserdes")
         result = session.execute("SELECT schema_version FROM system.local")
         uuid_type = result[0][0]
         self.assertEqual(type(uuid_type), uuid.UUID)
 
         # use our custom protocol handlder
-
         session.client_protocol_handler = CustomTestRawRowType
-        session.row_factory = tuple_factory
         result_set = session.execute("SELECT schema_version FROM system.local")
         raw_value = result_set[0][0]
         self.assertTrue(isinstance(raw_value, binary_type))
@@ -94,9 +92,9 @@ class CustomProtocolHandlerTest(unittest.TestCase):
         @test_category data_types:serialization
         """
         # Connect using a custom protocol handler that tracks the various types the result message is used with.
-        session = Cluster(protocol_version=PROTOCOL_VERSION).connect(keyspace="custserdes")
+        session = Cluster(protocol_version=PROTOCOL_VERSION,
+                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)}).connect(keyspace="custserdes")
         session.client_protocol_handler = CustomProtocolHandlerResultMessageTracked
-        session.row_factory = tuple_factory
 
         colnames = create_table_with_all_types("alltypes", session, 1)
         columns_string = ", ".join(colnames)

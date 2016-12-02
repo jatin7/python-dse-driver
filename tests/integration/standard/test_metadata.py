@@ -884,7 +884,6 @@ class SchemaMetadataTests(BasicSegregatedKeyspaceUnitTestCase):
         self.assertFalse(table_meta.extensions)
         self.assertIn(Ext0.name, table_meta._extension_registry)
         self.assertIn(Ext1.name, table_meta._extension_registry)
-        self.assertEqual(len(table_meta._extension_registry), 2)
 
         self.cluster.refresh_table_metadata(ks, t)
         table_meta = ks_meta.tables[t]

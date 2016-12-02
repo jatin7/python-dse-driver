@@ -935,12 +935,11 @@ class Cluster(object):
             raise ValueError("DSE Cluster uses execution profiles and should not specify legacy parameters "
                              "load_balancing_policy or default_retry_policy. Configure this in a profile instead.")
 
-        lbp = DSELoadBalancingPolicy(default_lbp_factory())
+        lbp = DSELoadBalancingPolicy(self.profile_manager.default.load_balancing_policy)
         self.profile_manager.profiles.setdefault(EXEC_PROFILE_GRAPH_DEFAULT, GraphExecutionProfile(load_balancing_policy=lbp))
         self.profile_manager.profiles.setdefault(EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT, GraphExecutionProfile(load_balancing_policy=lbp, request_timeout=60. * 3.))
         self.profile_manager.profiles.setdefault(EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT, GraphAnalyticsExecutionProfile(load_balancing_policy=lbp))
         self._config_mode = _ConfigMode.PROFILES
-
 
         self.metrics_enabled = metrics_enabled
         self.ssl_options = ssl_options

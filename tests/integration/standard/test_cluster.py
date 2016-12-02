@@ -23,8 +23,8 @@ import dse
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.concurrent import execute_concurrent
 from dse.policies import (RoundRobinPolicy, ExponentialReconnectionPolicy,
-                                RetryPolicy, SimpleConvictionPolicy, HostDistance,
-                                WhiteListRoundRobinPolicy, AddressTranslator)
+                          SimpleConvictionPolicy, HostDistance,
+                          WhiteListRoundRobinPolicy, AddressTranslator)
 from dse.protocol import MAX_SUPPORTED_VERSION
 from dse.query import SimpleStatement, TraceUnavailable, tuple_factory
 
@@ -62,9 +62,10 @@ class ClusterTests(unittest.TestCase):
 
         @test_category connection
         """
-        ingored_host_policy = IgnoredHostPolicy(["127.0.0.2", "127.0.0.3"])
-        cluster = Cluster(protocol_version=PROTOCOL_VERSION, load_balancing_policy=ingored_host_policy)
-        session = cluster.connect()
+        ignored_host_policy = IgnoredHostPolicy(["127.0.0.2", "127.0.0.3"])
+        cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=ignored_host_policy)})
+        cluster.connect()
         for host in cluster.metadata.all_hosts():
             if str(host) == "127.0.0.1":
                 self.assertTrue(host.is_up)
@@ -274,9 +275,7 @@ class ClusterTests(unittest.TestCase):
         """
 
         Cluster(
-            load_balancing_policy=RoundRobinPolicy(),
             reconnection_policy=ExponentialReconnectionPolicy(1.0, 600.0),
-            default_retry_policy=RetryPolicy(),
             conviction_policy_factory=SimpleConvictionPolicy,
             protocol_version=PROTOCOL_VERSION
         )
@@ -333,22 +332,22 @@ class ClusterTests(unittest.TestCase):
         cluster = Cluster(protocol_version=PROTOCOL_VERSION)
 
         min_requests_per_connection = cluster.get_min_requests_per_connection(HostDistance.LOCAL)
-        self.assertEqual(cassandra.cluster.DEFAULT_MIN_REQUESTS, min_requests_per_connection)
+        self.assertEqual(dse.cluster.DEFAULT_MIN_REQUESTS, min_requests_per_connection)
         cluster.set_min_requests_per_connection(HostDistance.LOCAL, min_requests_per_connection + 1)
         self.assertEqual(cluster.get_min_requests_per_connection(HostDistance.LOCAL), min_requests_per_connection + 1)
 
         max_requests_per_connection = cluster.get_max_requests_per_connection(HostDistance.LOCAL)
-        self.assertEqual(cassandra.cluster.DEFAULT_MAX_REQUESTS, max_requests_per_connection)
+        self.assertEqual(dse.cluster.DEFAULT_MAX_REQUESTS, max_requests_per_connection)
         cluster.set_max_requests_per_connection(HostDistance.LOCAL, max_requests_per_connection + 1)
         self.assertEqual(cluster.get_max_requests_per_connection(HostDistance.LOCAL), max_requests_per_connection + 1)
 
         core_connections_per_host = cluster.get_core_connections_per_host(HostDistance.LOCAL)
-        self.assertEqual(cassandra.cluster.DEFAULT_MIN_CONNECTIONS_PER_LOCAL_HOST, core_connections_per_host)
+        self.assertEqual(dse.cluster.DEFAULT_MIN_CONNECTIONS_PER_LOCAL_HOST, core_connections_per_host)
         cluster.set_core_connections_per_host(HostDistance.LOCAL, core_connections_per_host + 1)
         self.assertEqual(cluster.get_core_connections_per_host(HostDistance.LOCAL), core_connections_per_host + 1)
 
         max_connections_per_host = cluster.get_max_connections_per_host(HostDistance.LOCAL)
-        self.assertEqual(cassandra.cluster.DEFAULT_MAX_CONNECTIONS_PER_LOCAL_HOST, max_connections_per_host)
+        self.assertEqual(dse.cluster.DEFAULT_MAX_CONNECTIONS_PER_LOCAL_HOST, max_connections_per_host)
         cluster.set_max_connections_per_host(HostDistance.LOCAL, max_connections_per_host + 1)
         self.assertEqual(cluster.get_max_connections_per_host(HostDistance.LOCAL), max_connections_per_host + 1)
 
@@ -432,74 +431,74 @@ class ClusterTests(unittest.TestCase):
     def test_refresh_schema_no_wait(self):
 
         contact_points = ['127.0.0.1']
-        cluster = Cluster(protocol_version=PROTOCOL_VERSION, max_schema_agreement_wait=10,
-                          contact_points=contact_points, load_balancing_policy=WhiteListRoundRobinPolicy(contact_points))
-        session = cluster.connect()
-
-        schema_ver = session.execute("SELECT schema_version FROM system.local WHERE key='local'")[0][0]
-        new_schema_ver = uuid4()
-        session.execute("UPDATE system.local SET schema_version=%s WHERE key='local'", (new_schema_ver,))
-
-        try:
-            agreement_timeout = 1
-
-            # cluster agreement wait exceeded
-            c = Cluster(protocol_version=PROTOCOL_VERSION, max_schema_agreement_wait=agreement_timeout)
-            c.connect()
-            self.assertTrue(c.metadata.keyspaces)
-
-            # cluster agreement wait used for refresh
-            original_meta = c.metadata.keyspaces
-            start_time = time.time()
-            self.assertRaisesRegexp(Exception, r"Schema metadata was not refreshed.*", c.refresh_schema_metadata)
-            end_time = time.time()
-            self.assertGreaterEqual(end_time - start_time, agreement_timeout)
-            self.assertIs(original_meta, c.metadata.keyspaces)
-
-            # refresh wait overrides cluster value
-            original_meta = c.metadata.keyspaces
-            start_time = time.time()
-            c.refresh_schema_metadata(max_schema_agreement_wait=0)
-            end_time = time.time()
-            self.assertLess(end_time - start_time, agreement_timeout)
-            self.assertIsNot(original_meta, c.metadata.keyspaces)
-            self.assertEqual(original_meta, c.metadata.keyspaces)
-
-            c.shutdown()
-
-            refresh_threshold = 0.5
-            # cluster agreement bypass
-            c = Cluster(protocol_version=PROTOCOL_VERSION, max_schema_agreement_wait=0)
-            start_time = time.time()
-            s = c.connect()
-            end_time = time.time()
-            self.assertLess(end_time - start_time, refresh_threshold)
-            self.assertTrue(c.metadata.keyspaces)
-
-            # cluster agreement wait used for refresh
-            original_meta = c.metadata.keyspaces
-            start_time = time.time()
-            c.refresh_schema_metadata()
-            end_time = time.time()
-            self.assertLess(end_time - start_time, refresh_threshold)
-            self.assertIsNot(original_meta, c.metadata.keyspaces)
-            self.assertEqual(original_meta, c.metadata.keyspaces)
-
-            # refresh wait overrides cluster value
-            original_meta = c.metadata.keyspaces
-            start_time = time.time()
-            self.assertRaisesRegexp(Exception, r"Schema metadata was not refreshed.*", c.refresh_schema_metadata,
-                                    max_schema_agreement_wait=agreement_timeout)
-            end_time = time.time()
-            self.assertGreaterEqual(end_time - start_time, agreement_timeout)
-            self.assertIs(original_meta, c.metadata.keyspaces)
-            c.shutdown()
-        finally:
-            # TODO once fixed this connect call
+        with Cluster(protocol_version=PROTOCOL_VERSION, max_schema_agreement_wait=10,
+                     contact_points=contact_points,
+                     execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(contact_points))}) as cluster:
             session = cluster.connect()
-            session.execute("UPDATE system.local SET schema_version=%s WHERE key='local'", (schema_ver,))
 
-        cluster.shutdown()
+            schema_ver = session.execute("SELECT schema_version FROM system.local WHERE key='local'")[0][0]
+            new_schema_ver = uuid4()
+            session.execute("UPDATE system.local SET schema_version=%s WHERE key='local'", (new_schema_ver,))
+
+            try:
+                agreement_timeout = 1
+
+                # cluster agreement wait exceeded
+                c = Cluster(protocol_version=PROTOCOL_VERSION, max_schema_agreement_wait=agreement_timeout)
+                c.connect()
+                self.assertTrue(c.metadata.keyspaces)
+
+                # cluster agreement wait used for refresh
+                original_meta = c.metadata.keyspaces
+                start_time = time.time()
+                self.assertRaisesRegexp(Exception, r"Schema metadata was not refreshed.*", c.refresh_schema_metadata)
+                end_time = time.time()
+                self.assertGreaterEqual(end_time - start_time, agreement_timeout)
+                self.assertIs(original_meta, c.metadata.keyspaces)
+
+                # refresh wait overrides cluster value
+                original_meta = c.metadata.keyspaces
+                start_time = time.time()
+                c.refresh_schema_metadata(max_schema_agreement_wait=0)
+                end_time = time.time()
+                self.assertLess(end_time - start_time, agreement_timeout)
+                self.assertIsNot(original_meta, c.metadata.keyspaces)
+                self.assertEqual(original_meta, c.metadata.keyspaces)
+
+                c.shutdown()
+
+                refresh_threshold = 0.5
+                # cluster agreement bypass
+                c = Cluster(protocol_version=PROTOCOL_VERSION, max_schema_agreement_wait=0)
+                start_time = time.time()
+                s = c.connect()
+                end_time = time.time()
+                self.assertLess(end_time - start_time, refresh_threshold)
+                self.assertTrue(c.metadata.keyspaces)
+
+                # cluster agreement wait used for refresh
+                original_meta = c.metadata.keyspaces
+                start_time = time.time()
+                c.refresh_schema_metadata()
+                end_time = time.time()
+                self.assertLess(end_time - start_time, refresh_threshold)
+                self.assertIsNot(original_meta, c.metadata.keyspaces)
+                self.assertEqual(original_meta, c.metadata.keyspaces)
+
+                # refresh wait overrides cluster value
+                original_meta = c.metadata.keyspaces
+                start_time = time.time()
+                self.assertRaisesRegexp(Exception, r"Schema metadata was not refreshed.*", c.refresh_schema_metadata,
+                                        max_schema_agreement_wait=agreement_timeout)
+                end_time = time.time()
+                self.assertGreaterEqual(end_time - start_time, agreement_timeout)
+                self.assertIs(original_meta, c.metadata.keyspaces)
+                c.shutdown()
+            finally:
+                # TODO once fixed this connect call
+                session = cluster.connect()
+                session.execute("UPDATE system.local SET schema_version=%s WHERE key='local'", (schema_ver,))
+
 
     def test_trace(self):
         """
@@ -634,7 +633,7 @@ class ClusterTests(unittest.TestCase):
 
         cluster.shutdown()
 
-    @patch('cassandra.cluster.Cluster.idle_heartbeat_interval', new=0.1)
+    @patch('dse.cluster.Cluster.idle_heartbeat_interval', new=0.1)
     def test_idle_heartbeat_disabled(self):
         self.assertTrue(Cluster.idle_heartbeat_interval)
 
@@ -875,7 +874,7 @@ class ClusterTests(unittest.TestCase):
             self.assertEqual(set(h.address for h in pools), set(('127.0.0.1',)))
 
             node2 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2']))
-            self.assertRaises(cassandra.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=0.0000001)
+            self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=0.0000001)
 
 
 class LocalHostAdressTranslator(AddressTranslator):
@@ -934,7 +933,7 @@ class TestAddressTranslation(unittest.TestCase):
 class ContextManagementTest(unittest.TestCase):
 
     load_balancing_policy = WhiteListRoundRobinPolicy(['127.0.0.1'])
-    cluster_kwargs = {'load_balancing_policy': load_balancing_policy,
+    cluster_kwargs = {'execution_profiles': {EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=load_balancing_policy)},
                       'schema_metadata_enabled': False,
                       'token_metadata_enabled': False}
 
@@ -1056,7 +1055,8 @@ class DuplicateRpcTest(unittest.TestCase):
     load_balancing_policy = WhiteListRoundRobinPolicy(['127.0.0.1'])
 
     def setUp(self):
-        self.cluster = Cluster(protocol_version=PROTOCOL_VERSION, load_balancing_policy=self.load_balancing_policy)
+        self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                               execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=self.load_balancing_policy)})
         self.session = self.cluster.connect()
         self.session.execute("UPDATE system.peers SET rpc_address = '127.0.0.1' WHERE peer='127.0.0.2'")
 
@@ -1077,9 +1077,10 @@ class DuplicateRpcTest(unittest.TestCase):
         @test_category metadata
         """
         mock_handler = MockLoggingHandler()
-        logger = logging.getLogger(cassandra.cluster.__name__)
+        logger = logging.getLogger(dse.cluster.__name__)
         logger.addHandler(mock_handler)
-        test_cluster = self.cluster = Cluster(protocol_version=PROTOCOL_VERSION, load_balancing_policy=self.load_balancing_policy)
+        test_cluster = self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                                              execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=self.load_balancing_policy)})
         test_cluster.connect()
         warnings = mock_handler.messages.get("warning")
         self.assertEqual(len(warnings), 1)
