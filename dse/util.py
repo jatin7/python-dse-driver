@@ -13,6 +13,7 @@ import datetime
 from geomet import wkt
 from itertools import chain
 import random
+import re
 import six
 import uuid
 import sys
@@ -1238,8 +1239,8 @@ class Point(object):
     def __repr__(self):
         return "%s(%r, %r)" % (self.__class__.__name__, self.x, self.y)
 
-    @classmethod
-    def from_wkt(cls, s):
+    @staticmethod
+    def from_wkt(s):
         """
         Parse a Point geometry from a wkt string and return a new Point object.
         """
@@ -1293,8 +1294,8 @@ class LineString(object):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.coords)
 
-    @classmethod
-    def from_wkt(cls, s):
+    @staticmethod
+    def from_wkt(s):
         """
         Parse a LineString geometry from a wkt string and return a new LineString object.
         """
@@ -1374,8 +1375,8 @@ class Polygon(object):
     def __repr__(self):
         return "%s(%r, %r)" % (self.__class__.__name__, self.exterior.coords, [ring.coords for ring in self.interiors])
 
-    @classmethod
-    def from_wkt(cls, s):
+    @staticmethod
+    def from_wkt(s):
         """
         Parse a Polygon geometry from a wkt string and return a new Polygon object.
         """
@@ -1392,3 +1393,61 @@ class Polygon(object):
         interiors = coords[1:] if len(coords) > 1 else None
 
         return Polygon(exterior=exterior, interiors=interiors)
+
+
+_distance_wkt_pattern = re.compile("distance *\\( *\\( *([\\d\\.-]+) *([\\d+\\.-]+) *\\) *([\\d+\\.-]+) *\\) *$", re.IGNORECASE)
+
+
+class Distance(object):
+    """
+    Represents a Distance geometry for DSE
+    """
+
+    x = None
+    """
+    x coordinate of the center point
+    """
+
+    y = None
+    """
+    y coordinate of the center point
+    """
+
+    radius = None
+    """
+    radius to represent the distance from the center point
+    """
+
+    def __init__(self, x=_nan, y=_nan, radius=_nan):
+        self.x = x
+        self.y = y
+        self.radius = radius
+
+    def __eq__(self, other):
+        return isinstance(other, Distance) and self.x == other.x and self.y == other.y and self.radius == other.radius
+
+    def __hash__(self):
+        return hash((self.x, self.y, self.radius))
+
+    def __str__(self):
+        """
+        Well-known text representation of the point
+        """
+        return "DISTANCE ((%r %r) %r)" % (self.x, self.y, self.radius)
+
+    def __repr__(self):
+        return "%s(%r, %r, %r)" % (self.__class__.__name__, self.x, self.y, self.radius)
+
+    @staticmethod
+    def from_wkt(s):
+        """
+        Parse a Distance geometry from a wkt string and return a new Distance object.
+        """
+
+        distance_match = _distance_wkt_pattern.match(s)
+
+        if distance_match is None:
+            raise ValueError("Invalid WKT geometry: '{0}'".format(s))
+
+        x, y, radius = distance_match.groups()
+        return Distance(x, y, radius)

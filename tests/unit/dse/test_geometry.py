@@ -18,7 +18,7 @@ import math
 from dse.cqltypes import lookup_casstype
 from dse.protocol import MAX_SUPPORTED_VERSION
 from dse.cqltypes import PointType, LineStringType, PolygonType, WKBGeometryType
-from dse.util import Point, LineString, Polygon, _LinearRing
+from dse.util import Point, LineString, Polygon, _LinearRing, Distance
 
 wkb_be = 0
 wkb_le = 1
@@ -145,6 +145,31 @@ class WKTTest(unittest.TestCase):
         for cords in lo.coords:
             for cord in cords:
                 self.assertTrue(math.isnan(cord))
+
+    def test_distance_parse(self):
+        """
+        This test exercises the parsing logic our Distance WKT object
+        @since 1.2
+        @jira_ticket PYTHON-670
+        @test_category dse geometric
+        @expected_result We should be able to form Distance objects from properly formatted WKT strings
+        """
+
+        ds = "DISTANCE ((12, 10) 3)"
+        do = Distance(12, 10, 3)
+        self.assertEqual(do.x, 12)
+        self.assertEqual(do.y, 10)
+        self.assertEqual(do.radius, 3)
+        # Test bad distance strings
+
+        bds = "DISTANCE ((1.0 2.0))"
+        with self.assertRaises(ValueError):
+            bdo = Distance.from_wkt(bds)
+        bps = "DISTANCE ((1.0 2.0 3.0 4.0 5.0)"
+        with self.assertRaises(ValueError):
+            bdo = Distance.from_wkt(bds)
+
+        # NAN isn't supported, truncating not supported
 
     def test_point_parse(self):
         """

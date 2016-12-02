@@ -117,6 +117,10 @@ def use_single_node_with_graph_and_spark(start=True):
     use_single_node(start=start, workloads=['graph', 'spark'])
 
 
+def use_single_node_with_graph_and_solr(start=True):
+    use_single_node(start=start, workloads=['graph', 'solr'])
+
+
 def use_singledc_wth_graph(start=True):
     use_singledc(start=start, workloads=['graph'])
 
@@ -203,6 +207,45 @@ class BasicGraphUnitTestCase(BasicKeyspaceUnitTestCase):
     def clear_schema(self):
         self.session.execute_graph('schema.clear()')
 
+    def reset_graph(self):
+        reset_graph(self.session, self.graph_name)
+
+    def wait_for_graph_inserted(self):
+        wait_for_graph_inserted(self.session, self.graph_name)
+
+
+class BasicSharedGraphUnitTestCase(BasicKeyspaceUnitTestCase):
+    """
+    This is basic graph unit test case that provides various utility methods that can be leveraged for testcase setup and tear
+    down
+    """
+
+    @classmethod
+    def session_setup(cls):
+        cls.cluster = Cluster(protocol_version=PROTOCOL_VERSION)
+        cls.session = cls.cluster.connect()
+        cls.ks_name = cls.__name__.lower()
+        cls.cass_version, cls.cql_version = get_server_versions()
+        cls.graph_name = cls.__name__.lower()
+
+    @classmethod
+    def setUpClass(cls):
+        cls.session_setup()
+        cls.reset_graph()
+        profiles = cls.cluster.profile_manager.profiles
+        profiles[EXEC_PROFILE_GRAPH_DEFAULT].graph_options.graph_name = cls.graph_name
+        profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].graph_options.graph_name = cls.graph_name
+        cls.clear_schema()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.cluster.shutdown()
+
+    @classmethod
+    def clear_schema(self):
+        self.session.execute_graph('schema.clear()')
+
+    @classmethod
     def reset_graph(self):
         reset_graph(self.session, self.graph_name)
 
