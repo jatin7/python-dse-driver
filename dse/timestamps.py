@@ -40,17 +40,15 @@ class MonotonicTimestampGenerator(object):
     :attr:`warning_threshold` and :attr:`warning_interval`.
     """
 
-    warning_threshold = 1
+    warning_threshold = 0
     """
     This object will only issue warnings when the returned timestamp drifts
     more than ``warning_threshold`` seconds into the future.
-    Defaults to 1 second.
     """
 
-    warning_interval = 1
+    warning_interval = 0
     """
     This object will only issue warnings every ``warning_interval`` seconds.
-    Defaults to 1 second.
     """
 
     def __init__(self, warn_on_drift=True, warning_threshold=0, warning_interval=0):
@@ -97,8 +95,8 @@ class MonotonicTimestampGenerator(object):
         since_last_warn = now - self._last_warn
 
         warn = (self.warn_on_drift and
-                (diff > self.warning_threshold * 1e6) and
-                (since_last_warn >= self.warning_interval * 1e6))
+                (diff >= self.warning_threshold) and
+                (since_last_warn >= self.warning_interval))
         if warn:
             log.warn(
                 "Clock skew detected: current tick ({now}) was {diff} "
