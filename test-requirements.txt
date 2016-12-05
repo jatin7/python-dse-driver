@@ -15,4 +15,3 @@ cython>=0.20,<0.25
 packaging
 kerberos
 requests
-packaging
