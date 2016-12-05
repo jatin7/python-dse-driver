@@ -32,7 +32,7 @@ class AlterTableTest(BaseCassEngTestCase):
     def test_alter_is_called_table(self):
         drop_table(LeveledCompactionTestTable)
         sync_table(LeveledCompactionTestTable)
-        with patch('cassandra.cqlengine.management._update_options') as mock:
+        with patch('dse.cqlengine.management._update_options') as mock:
             sync_table(LeveledCompactionTestTable)
         assert mock.called == 1
 

@@ -68,30 +68,30 @@ class StatementCounter(object):
 
 def execute_count(expected):
     """
-    A decorator used wrap cassandra.cqlengine.connection.execute. It counts the number of times this method is invoked
+    A decorator used wrap dse.cqlengine.connection.execute. It counts the number of times this method is invoked
     then compares it to the number expected. If they don't match it throws an assertion error.
     This function can be disabled by running the test harness with the env variable CQL_SKIP_EXECUTE=1 set
     """
     def innerCounter(fn):
         def wrapped_function(*args, **kwargs):
-            # Create a counter monkey patch into cassandra.cqlengine.connection.execute
-            count = StatementCounter(cassandra.cqlengine.connection.execute)
-            original_function = cassandra.cqlengine.connection.execute
+            # Create a counter monkey patch into dse.cqlengine.connection.execute
+            count = StatementCounter(dse.cqlengine.connection.execute)
+            original_function = dse.cqlengine.connection.execute
             # Monkey patch in our StatementCounter wrapper
-            cassandra.cqlengine.connection.execute = count.wrapped_execute
+            dse.cqlengine.connection.execute = count.wrapped_execute
             # Invoked the underlying unit test
             to_return = fn(*args, **kwargs)
             # Get the count from our monkey patched counter
             count.get_counter()
             # DeMonkey Patch our code
-            cassandra.cqlengine.connection.execute = original_function
+            dse.cqlengine.connection.execute = original_function
             # Check to see if we have a pre-existing test case to work from.
             if len(args) is 0:
                 test_case = unittest.TestCase("__init__")
             else:
                 test_case = args[0]
             # Check to see if the count is what you expect
-            test_case.assertEqual(count.get_counter(), expected, msg="Expected number of cassandra.cqlengine.connection.execute calls ({0}) doesn't match actual number invoked ({1})".format(expected, count.get_counter()))
+            test_case.assertEqual(count.get_counter(), expected, msg="Expected number of dse.cqlengine.connection.execute calls ({0}) doesn't match actual number invoked ({1})".format(expected, count.get_counter()))
             return to_return
         # Name of the wrapped function must match the original or unittest will error out.
         wrapped_function.__name__ = fn.__name__

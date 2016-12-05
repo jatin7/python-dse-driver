@@ -16,7 +16,7 @@ except ImportError:
 from dse.cqlengine.models import Model
 from dse.cqlengine import columns, connection
 from dse.cqlengine.management import sync_table
-from dse.cluster import Cluster
+from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.query import dict_factory
 
 from tests.integration import PROTOCOL_VERSION, execute_with_long_wait_retry
@@ -57,11 +57,10 @@ class ConnectionTest(BaseCassEngTestCase):
         models.DEFAULT_KEYSPACE
 
     def setUp(self):
-        self.c = Cluster(protocol_version=PROTOCOL_VERSION)
+        self.c = Cluster(protocol_version=PROTOCOL_VERSION,
+                         execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=dict_factory)})
         self.session1 = self.c.connect(keyspace=self.keyspace1)
-        self.session1.row_factory = dict_factory
         self.session2 = self.c.connect(keyspace=self.keyspace2)
-        self.session2.row_factory = dict_factory
 
     def tearDown(self):
         self.c.shutdown()

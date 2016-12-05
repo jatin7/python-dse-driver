@@ -236,7 +236,7 @@ class BatchQueryCallbacksTests(BaseCassEngTestCase):
         def my_callback(*args, **kwargs):
             call_history.append(args)
 
-        with patch('cassandra.cqlengine.query.BatchQuery.warn_multiple_exec', False):
+        with patch('dse.cqlengine.query.BatchQuery.warn_multiple_exec', False):
             with warnings.catch_warnings(record=True) as w:
                 with BatchQuery() as batch:
                     batch.add_callback(my_callback)

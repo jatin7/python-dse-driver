@@ -12,7 +12,8 @@ import logging
 import six
 import threading
 
-from dse.cluster import Cluster, _NOT_SET, NoHostAvailable, UserTypeDoesNotExist
+from dse import ConsistencyLevel
+from dse.cluster import Cluster, _NOT_SET, NoHostAvailable, UserTypeDoesNotExist, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.query import SimpleStatement, dict_factory
 
 from dse.cqlengine import CQLEngineException
@@ -66,7 +67,7 @@ class Connection(object):
     cluster = None
     session = None
 
-    def __init__(self, name, hosts, consistency=None,
+    def __init__(self, name, hosts, consistency=ConsistencyLevel.LOCAL_ONE,
                  lazy_connect=False, retry_connect=False, cluster_options=None):
         self.hosts = hosts
         self.name = name
@@ -74,6 +75,15 @@ class Connection(object):
         self.lazy_connect = lazy_connect
         self.retry_connect = retry_connect
         self.cluster_options = cluster_options if cluster_options else {}
+        ep_kwargs = dict((k, self.cluster_options[k]) for k in ('load_balancing_policy', 'retry_policy') if k in self.cluster_options)
+        try:
+            ep = self.cluster_options['execution_profiles'][EXEC_PROFILE_DEFAULT]
+            ep.consistency_level = self.consistency
+            for k, v in ep_kwargs:
+                setattr(ep, k, v)
+        except KeyError:
+            ep = ExecutionProfile(consistency_level=self.consistency, row_factory=dict_factory, **ep_kwargs)
+            self.cluster_options['execution_profiles'] = {EXEC_PROFILE_DEFAULT: ep}
         self.lazy_connect_lock = threading.RLock()
 
     def setup(self):
@@ -95,9 +105,6 @@ class Connection(object):
                 log.warning(format_log_context("connect failed, setting up for re-attempt on first use", connection=self.name))
                 self.lazy_connect = True
             raise
-
-        if self.consistency is not None:
-            self.session.default_consistency_level = self.consistency
 
         if DEFAULT_CONNECTION in _connections and _connections[DEFAULT_CONNECTION] == self:
             cluster = _connections[DEFAULT_CONNECTION].cluster
@@ -127,7 +134,7 @@ class Connection(object):
                 self.setup()
 
 
-def register_connection(name, hosts, consistency=None, lazy_connect=False,
+def register_connection(name, hosts, consistency=ConsistencyLevel.LOCAL_ONE, lazy_connect=False,
                         retry_connect=False, cluster_options=None, default=False):
 
     if name in _connections:
@@ -240,7 +247,7 @@ def set_session(s):
 def setup(
         hosts,
         default_keyspace,
-        consistency=None,
+        consistency=ConsistencyLevel.LOCAL_ONE,
         lazy_connect=False,
         retry_connect=False,
         **kwargs):

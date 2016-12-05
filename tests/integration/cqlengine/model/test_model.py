@@ -117,7 +117,7 @@ class TestModel(unittest.TestCase):
 
         # neither set should raise CQLEngineException before failing or formatting an invalid name
         del TestModel.__keyspace__
-        with patch('cassandra.cqlengine.models.DEFAULT_KEYSPACE', None):
+        with patch('dse.cqlengine.models.DEFAULT_KEYSPACE', None):
             self.assertRaises(CQLEngineException, TestModel.column_family_name)
             # .. but we can still get the bare CF name
             self.assertEqual(TestModel.column_family_name(include_keyspace=False), "test_model")
@@ -144,7 +144,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(TestModel.column_family_name(), '%s."TestModel"' % (TestModel.__keyspace__,))
 
         del TestModel.__keyspace__
-        with patch('cassandra.cqlengine.models.DEFAULT_KEYSPACE', None):
+        with patch('dse.cqlengine.models.DEFAULT_KEYSPACE', None):
             self.assertRaises(CQLEngineException, TestModel.column_family_name)
             self.assertEqual(TestModel.column_family_name(include_keyspace=False), '"TestModel"')
 
