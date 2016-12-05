@@ -132,6 +132,8 @@
 
    .. autoattribute:: use_client_timestamp
 
+   .. autoattribute:: timestamp_generator
+
    .. autoattribute:: encoder
 
    .. autoattribute:: client_protocol_handler
