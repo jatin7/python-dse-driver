@@ -5,7 +5,10 @@
 #
 # You may obtain a copy of the License at
 #
-# http://www.datastax.com/terms/datastax-dse-driver-license-terms
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest  # noqa# http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from copy import copy
 from itertools import chain
@@ -464,7 +467,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
 
 class GraphTimeoutTests(BasicGraphUnitTestCase):
 
-        def test_server_timeout(self):
+        def test_should_wait_indefinitely_by_default(self):
             """
             Tests that by default the client should wait indefinitely for server timeouts
 
@@ -473,16 +476,19 @@ class GraphTimeoutTests(BasicGraphUnitTestCase):
 
             @test_category dse graph
             """
+            desired_timeout = 1000
+
             graph_source = "test_timeout_1"
+            ep_name = graph_source
             ep = self.session.execution_profile_clone_update(EXEC_PROFILE_GRAPH_DEFAULT)
             ep.graph_options = ep.graph_options.copy()
             ep.graph_options.graph_source = graph_source
+            self.cluster.add_execution_profile(ep_name, ep)
 
-            desired_timeout = 1000
             to_run = '''graph.schema().config().option("graph.traversal_sources.{0}.evaluation_timeout").set('{1} ms')'''.format(graph_source, desired_timeout)
-            self.session.execute_graph(to_run)
+            self.session.execute_graph(to_run, execution_profile=ep_name)
             with self.assertRaises(InvalidRequest) as ir:
-                self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep)
+                self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep_name)
             self.assertTrue("Script evaluation exceeded the configured threshold of 1000" in str(ir.exception))
 
         def test_request_timeout_less_then_server(self):
@@ -495,16 +501,20 @@ class GraphTimeoutTests(BasicGraphUnitTestCase):
 
             @test_category dse graph
             """
+            desired_timeout = 1000
             graph_source = "test_timeout_2"
+            ep_name = graph_source
             ep = self.session.execution_profile_clone_update(EXEC_PROFILE_GRAPH_DEFAULT, request_timeout=32)
             ep.graph_options = ep.graph_options.copy()
             ep.graph_options.graph_source = graph_source
-            desired_timeout = 1000
+            self.cluster.add_execution_profile(ep_name, ep)
+
+
 
             to_run = '''graph.schema().config().option("graph.traversal_sources.{0}.evaluation_timeout").set('{1} ms')'''.format(graph_source, desired_timeout)
-            self.session.execute_graph(to_run, execution_profile=ep)
+            self.session.execute_graph(to_run, execution_profile=ep_name)
             with self.assertRaises(InvalidRequest) as ir:
-                self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep)
+                self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep_name)
             self.assertTrue("Script evaluation exceeded the configured threshold of 1000" in str(ir.exception))
 
         def test_server_timeout_less_then_request(self):
@@ -518,15 +528,18 @@ class GraphTimeoutTests(BasicGraphUnitTestCase):
             @test_category dse graph
             """
             graph_source = "test_timeout_3"
+            ep_name = graph_source
             ep = self.session.execution_profile_clone_update(EXEC_PROFILE_GRAPH_DEFAULT, request_timeout=1)
             ep.graph_options = ep.graph_options.copy()
             ep.graph_options.graph_source = graph_source
+            self.cluster.add_execution_profile(ep_name, ep)
             server_timeout = 10000
             to_run = '''graph.schema().config().option("graph.traversal_sources.{0}.evaluation_timeout").set('{1} ms')'''.format(graph_source, server_timeout)
-            self.session.execute_graph(to_run, execution_profile=ep)
-            with self.assertRaises(OperationTimedOut) as oto:
-                self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep)
-            self.assertTrue("Client request timeout" in str(oto.exception))
+            self.session.execute_graph(to_run, execution_profile=ep_name)
+            #import time; time.sleep(10)
+            with self.assertRaises(InvalidRequest) as ir:
+                self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep_name)
+                self.assertTrue("Script evaluation exceeded the configured threshold of 1000" in str(ir.exception))
 
 
 class GraphProfileTests(BasicGraphUnitTestCase):

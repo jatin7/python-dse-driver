@@ -105,10 +105,6 @@ def wait_for_spark_workers(num_of_expected_workers, timeout):
     return match
 
 
-def teardown_package():
-    base_teardown()
-
-
 def use_single_node_with_graph(start=True):
     use_single_node(start=start, workloads=['graph'])
 
