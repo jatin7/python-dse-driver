@@ -26,6 +26,10 @@ except ImportError:
     SASLClient = None
 
 
+# Custom payload keys related to DSE Unified Auth
+_proxy_execute_key = 'ProxyExecute'
+
+
 class AuthProvider(object):
     """
     An abstract class that defines the interface that will be used for

@@ -42,6 +42,7 @@ from dse.connection import (ConnectionException, ConnectionShutdown,
                             ConnectionHeartbeat, ProtocolVersionUnsupported)
 from dse.cqltypes import UserType
 from dse.encoder import Encoder
+from dse.auth import _proxy_execute_key
 from dse.graph import GraphOptions, SimpleGraphStatement, graph_object_row_factory, _request_timeout_key
 from dse.protocol import (QueryMessage, ResultMessage,
                           ErrorMessage, ReadTimeoutErrorMessage,
@@ -1904,7 +1905,8 @@ class Session(object):
         while futures.not_done and not any(f.result() for f in futures.done):
             futures = wait_futures(futures.not_done, return_when=FIRST_COMPLETED)
 
-    def execute(self, query, parameters=None, timeout=_NOT_SET, trace=False, custom_payload=None, execution_profile=EXEC_PROFILE_DEFAULT, paging_state=None):
+    def execute(self, query, parameters=None, timeout=_NOT_SET, trace=False, custom_payload=None,
+                execution_profile=EXEC_PROFILE_DEFAULT, paging_state=None, execute_as=None):
         """
         Execute the given query and synchronously wait for the response.
 
@@ -1936,10 +1938,13 @@ class Session(object):
         for example
 
         `paging_state` is an optional paging state, reused from a previous :class:`ResultSet`.
-        """
-        return self.execute_async(query, parameters, trace, custom_payload, timeout, execution_profile, paging_state).result()
 
-    def execute_async(self, query, parameters=None, trace=False, custom_payload=None, timeout=_NOT_SET, execution_profile=EXEC_PROFILE_DEFAULT, paging_state=None):
+        `execute_as` the user that will be used on the server to execute the request.
+        """
+        return self.execute_async(query, parameters, trace, custom_payload, timeout, execution_profile, paging_state, execute_as).result()
+
+    def execute_async(self, query, parameters=None, trace=False, custom_payload=None, timeout=_NOT_SET,
+                      execution_profile=EXEC_PROFILE_DEFAULT, paging_state=None, execute_as=None):
         """
         Execute the given query and return a :class:`~.ResponseFuture` object
         which callbacks may be attached to for asynchronous response
@@ -1974,13 +1979,17 @@ class Session(object):
             ...     log.exception("Operation failed:")
 
         """
+        custom_payload = custom_payload if custom_payload else {}
+        if execute_as:
+            custom_payload[_proxy_execute_key] = execute_as
+
         future = self._create_response_future(query, parameters, trace, custom_payload, timeout, execution_profile, paging_state)
         future._protocol_handler = self.client_protocol_handler
         self._on_request(future)
         future.send_request()
         return future
 
-    def execute_graph(self, query, parameters=None, trace=False, execution_profile=EXEC_PROFILE_GRAPH_DEFAULT):
+    def execute_graph(self, query, parameters=None, trace=False, execution_profile=EXEC_PROFILE_GRAPH_DEFAULT, execute_as=None):
         """
         Executes a Gremlin query string or SimpleGraphStatement synchronously,
         and returns a ResultSet from this execution.
@@ -1990,9 +1999,9 @@ class Session(object):
 
         `execution_profile`: Selects an execution profile for the request.
         """
-        return self.execute_graph_async(query, parameters, trace, execution_profile).result()
+        return self.execute_graph_async(query, parameters, trace, execution_profile, execute_as).result()
 
-    def execute_graph_async(self, query, parameters=None, trace=False, execution_profile=EXEC_PROFILE_GRAPH_DEFAULT):
+    def execute_graph_async(self, query, parameters=None, trace=False, execution_profile=EXEC_PROFILE_GRAPH_DEFAULT, execute_as=None):
         """
         Execute the graph query and return a `ResponseFuture <###TBD###>`_
         object which callbacks may be attached to for asynchronous response delivery. You may also call ``ResponseFuture.result()`` to synchronously block for
@@ -2016,6 +2025,10 @@ class Session(object):
         custom_payload[_request_timeout_key] = int64_pack(long(execution_profile.request_timeout * 1000))
         future = self._create_response_future(query, parameters=None, trace=trace, custom_payload=custom_payload,
                                               timeout=_NOT_SET, execution_profile=execution_profile)
+
+        if execute_as:
+            custom_payload[_proxy_execute_key] = execute_as
+
         future.message._query_params = graph_parameters
         future._protocol_handler = self.client_protocol_handler
 
