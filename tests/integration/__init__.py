@@ -328,6 +328,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
             else:
                 CCM_CLUSTER = CCMCluster(path, cluster_name, **CCM_KWARGS)
             CCM_CLUSTER.set_configuration_options({'start_native_transport': True})
+            CCM_CLUSTER.set_configuration_options({'batch_size_warn_threshold_in_kb': 5})
             if CASSANDRA_VERSION >= '2.2':
                 CCM_CLUSTER.set_configuration_options({'enable_user_defined_functions': True})
                 if CASSANDRA_VERSION >= '3.0':
@@ -349,10 +350,12 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
                 node.set_workloads(workloads)
         if start:
             log.debug("Starting CCM cluster: {0}".format(cluster_name))
-            CCM_CLUSTER.start(wait_for_binary_proto=True, wait_other_notice=True, jvm_args=jvm_args)
+            CCM_CLUSTER.start(no_wait=True, jvm_args=jvm_args)
             # Added to wait for slow nodes to start up
+            log.debug("Cluster started waiting for binary ports")
             for node in CCM_CLUSTER.nodes.values():
                 wait_for_node_socket(node, 120)
+            log.debug("Binary port are open")
             setup_keyspace(ipformat=ipformat)
     except Exception:
         log.exception("Failed to start CCM cluster; removing cluster.")

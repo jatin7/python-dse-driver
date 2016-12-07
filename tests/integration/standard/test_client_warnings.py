@@ -67,7 +67,7 @@ class ClientWarningTests(unittest.TestCase):
         @test_category queries:client_warning
         """
         future = self.session.execute_async(self.warn_batch)
-        future.result()
+        result= future.result()
         self.assertEqual(len(future.warnings), 1)
         self.assertRegexpMatches(future.warnings[0], 'Batch.*exceeding.*')
 
