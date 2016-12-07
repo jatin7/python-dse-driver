@@ -26,6 +26,7 @@ build:
       if [[ $EVENT_LOOP_MANAGER == 'libev' ]]; then
         sudo apt-get install -y libev4 libev-dev
       fi
+      echo "Installing test-requirements.txt"
       pip install -r test-requirements.txt
       pip install nose-ignore-docstring
       FORCE_CYTHON=False
