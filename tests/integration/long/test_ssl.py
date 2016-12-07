@@ -18,6 +18,13 @@ from dse import ConsistencyLevel
 from dse.query import SimpleStatement
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, remove_cluster
 
+if not hasattr(ssl, 'match_hostname'):
+    try:
+        from backports.ssl_match_hostname import match_hostname
+        ssl.match_hostname = match_hostname
+    except ImportError:
+        pass  # tests will fail
+
 log = logging.getLogger(__name__)
 
 DEFAULT_PASSWORD = "pythondriver"
