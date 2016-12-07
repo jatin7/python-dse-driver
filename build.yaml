@@ -42,7 +42,7 @@ build:
       fi
 
       echo "==========RUNNING UNIT TESTS==============="
-      DSE_VERSION=$CCM_VERSION DSE_DRIVER_PERMIT_UNSUPPORTED_CORE=True ADS_HOME=$HOME/ nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=unit_results.xml tests/unit/ || true
+      DSE_VERSION=$CCM_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=unit_results.xml tests/unit/ || true
 
       echo "==========RUNNING CQLENGINE TESTS=========="
       DSE_VERSION=$CCM_CASSANDRA_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=cqle_results.xml tests/integration/cqlengine/ || true
@@ -56,6 +56,8 @@ build:
       echo "==========RUNNING LONG INTEGRATION TESTS=========="
       DSE_VERSION=$CCM_CASSANDRA_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=long_results.xml tests/integration/long/ || true
 
+  - xunit:
+    - "*_results.xml"
 
 
 
