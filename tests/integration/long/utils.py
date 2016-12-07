@@ -14,8 +14,6 @@ import time
 from collections import defaultdict
 from ccmlib.node import Node
 
-from dse.query import named_tuple_factory
-
 from tests.integration import get_node, get_cluster
 
 IP_FORMAT = '127.0.0.%s'
@@ -52,9 +50,6 @@ class CoordinatorStats():
 
 def create_schema(cluster, session, keyspace, simple_strategy=True,
                   replication_factor=1, replication_strategy=None):
-    row_factory = session.row_factory
-    session.row_factory = named_tuple_factory
-
     if keyspace in cluster.metadata.keyspaces.keys():
         session.execute('DROP KEYSPACE %s' % keyspace, timeout=20)
 
@@ -73,8 +68,6 @@ def create_schema(cluster, session, keyspace, simple_strategy=True,
     ddl = 'CREATE TABLE %s.cf (k int PRIMARY KEY, i int)'
     session.execute(ddl % keyspace, timeout=10)
     session.execute('USE %s' % keyspace)
-
-    session.row_factory = row_factory
 
 
 def start(node):
