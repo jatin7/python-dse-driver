@@ -9,10 +9,11 @@
 
 import sys,logging, traceback, time
 
+from cassandra.policies import WhiteListRoundRobinPolicy
 from dse import ConsistencyLevel, OperationTimedOut, ReadTimeout, WriteTimeout, ReadFailure, WriteFailure,\
     FunctionFailure
 from dse.protocol import MAX_SUPPORTED_VERSION
-from dse.cluster import Cluster, NoHostAvailable
+from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.concurrent import execute_concurrent_with_args
 from dse.query import SimpleStatement
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, setup_keyspace, remove_cluster, get_node
@@ -318,12 +319,8 @@ class TimeoutTimerTest(unittest.TestCase):
         """
         Setup sessions and pause node1
         """
-        self.cluster = Cluster(protocol_version=PROTOCOL_VERSION)
-        self.session = self.cluster.connect()
-
-        # self.node1, self.node2, self.node3 = get_cluster().nodes.values()
-        self.node1 = get_node(1)
-        self.cluster = Cluster(protocol_version=PROTOCOL_VERSION)
+        self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                               execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))})
         self.session = self.cluster.connect()
 
         ddl = '''
@@ -331,6 +328,7 @@ class TimeoutTimerTest(unittest.TestCase):
                 k int PRIMARY KEY,
                 v int )'''
         self.session.execute(ddl)
+        self.node1 = get_node(1)
         self.node1.pause()
 
     def tearDown(self):
@@ -367,13 +365,14 @@ class TimeoutTimerTest(unittest.TestCase):
             future.result()
         end_time = time.time()
         total_time = end_time-start_time
-        expected_time = self.session.default_timeout
+        expected_time = self.cluster.profile_manager.default.request_timeout
         # check timeout and ensure it's within a reasonable range
         self.assertAlmostEqual(expected_time, total_time, delta=.05)
 
         # Test with user defined timeout (Should be 1)
+        expected_time = 1
         start_time = time.time()
-        future = self.session.execute_async(ss, timeout=1)
+        future = self.session.execute_async(ss, timeout=expected_time)
         mock_callback = Mock(return_value=None)
         mock_errorback = Mock(return_value=None)
         future.add_callback(mock_callback)
@@ -383,7 +382,6 @@ class TimeoutTimerTest(unittest.TestCase):
             future.result()
         end_time = time.time()
         total_time = end_time-start_time
-        expected_time = 1
         # check timeout and ensure it's within a reasonable range
         self.assertAlmostEqual(expected_time, total_time, delta=.05)
         self.assertTrue(mock_errorback.called)
