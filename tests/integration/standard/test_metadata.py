@@ -489,7 +489,6 @@ class SchemaMetadataTests(BasicSegregatedKeyspaceUnitTestCase):
 
         @test_category metadata
         """
-
         cluster2 = Cluster(protocol_version=PROTOCOL_VERSION, schema_event_refresh_window=-1)
         cluster2.connect()
 
@@ -530,7 +529,7 @@ class SchemaMetadataTests(BasicSegregatedKeyspaceUnitTestCase):
             self.session.execute("""CREATE FUNCTION {0}.sum_int(key int, val int)
                                 RETURNS NULL ON NULL INPUT
                                 RETURNS int
-                                LANGUAGE javascript AS 'key + val';""".format(self.keyspace_name))
+                                LANGUAGE java AS 'return key+val;';""".format(self.keyspace_name))
 
             self.assertEqual(cluster2.metadata.keyspaces[self.keyspace_name].functions, {})
             cluster2.refresh_schema_metadata()
@@ -769,7 +768,7 @@ class SchemaMetadataTests(BasicSegregatedKeyspaceUnitTestCase):
         self.session.execute("""CREATE FUNCTION {0}.sum_int(key int, val int)
                             RETURNS NULL ON NULL INPUT
                             RETURNS int
-                            LANGUAGE javascript AS 'key + val';""".format(self.keyspace_name))
+                            LANGUAGE java AS ' return key + val;';""".format(self.keyspace_name))
 
         self.assertEqual(cluster2.metadata.keyspaces[self.keyspace_name].functions, {})
         cluster2.refresh_user_function_metadata(self.keyspace_name, UserFunctionDescriptor("sum_int", ["int", "int"]))
@@ -805,7 +804,7 @@ class SchemaMetadataTests(BasicSegregatedKeyspaceUnitTestCase):
         self.session.execute("""CREATE FUNCTION {0}.sum_int(key int, val int)
                             RETURNS NULL ON NULL INPUT
                             RETURNS int
-                            LANGUAGE javascript AS 'key + val';""".format(self.keyspace_name))
+                            LANGUAGE java AS 'return key + val;';""".format(self.keyspace_name))
 
         self.session.execute("""CREATE AGGREGATE {0}.sum_agg(int)
                              SFUNC sum_int
@@ -1821,15 +1820,15 @@ class AggregateMetadata(FunctionTest):
             cls.session.execute("""CREATE OR REPLACE FUNCTION sum_int(s int, i int)
                                    RETURNS NULL ON NULL INPUT
                                    RETURNS int
-                                   LANGUAGE javascript AS 's + i';""")
+                                   LANGUAGE java AS 'return s + i;';""")
             cls.session.execute("""CREATE OR REPLACE FUNCTION sum_int_two(s int, i int, j int)
                                    RETURNS NULL ON NULL INPUT
                                    RETURNS int
-                                   LANGUAGE javascript AS 's + i + j';""")
+                                   LANGUAGE java AS 'return s + i + j;';""")
             cls.session.execute("""CREATE OR REPLACE FUNCTION "List_As_String"(l list<text>)
                                    RETURNS NULL ON NULL INPUT
                                    RETURNS int
-                                   LANGUAGE javascript AS ''''' + l';""")
+                                   LANGUAGE java AS 'return l.size();';""")
             cls.session.execute("""CREATE OR REPLACE FUNCTION extend_list(s list<text>, i int)
                                    CALLED ON NULL INPUT
                                    RETURNS list<text>
@@ -2124,7 +2123,7 @@ class BadMetaTest(unittest.TestCase):
         self.session.execute("""CREATE FUNCTION IF NOT EXISTS %s (key int, val int)
                                 RETURNS NULL ON NULL INPUT
                                 RETURNS int
-                                LANGUAGE javascript AS 'key + val';""" % self.function_name)
+                                LANGUAGE java AS 'return key + val;';""" % self.function_name)
         with patch.object(self.parser_class, '_build_function', side_effect=self.BadMetaException):
             self.cluster.refresh_schema_metadata()   # presently do not capture these errors on udt direct refresh -- make sure it's contained during full refresh
             m = self.cluster.metadata.keyspaces[self.keyspace_name]
@@ -2136,7 +2135,7 @@ class BadMetaTest(unittest.TestCase):
         self.session.execute("""CREATE FUNCTION IF NOT EXISTS sum_int (key int, val int)
                                 RETURNS NULL ON NULL INPUT
                                 RETURNS int
-                                LANGUAGE javascript AS 'key + val';""")
+                                LANGUAGE java AS 'return key + val;';""")
         self.session.execute("""CREATE AGGREGATE %s(int)
                                  SFUNC sum_int
                                  STYPE int
