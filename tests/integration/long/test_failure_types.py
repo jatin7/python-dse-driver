@@ -9,7 +9,7 @@
 
 import sys,logging, traceback, time
 
-from cassandra.policies import WhiteListRoundRobinPolicy
+from dse.policies import WhiteListRoundRobinPolicy
 from dse import ConsistencyLevel, OperationTimedOut, ReadTimeout, WriteTimeout, ReadFailure, WriteFailure,\
     FunctionFailure
 from dse.protocol import MAX_SUPPORTED_VERSION
