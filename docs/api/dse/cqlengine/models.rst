@@ -1,7 +1,7 @@
-``cassandra.cqlengine.models`` - Table models for object mapping
+``dse.cqlengine.models`` - Table models for object mapping
 ================================================================
 
-.. module:: cassandra.cqlengine.models
+.. module:: dse.cqlengine.models
 
 Model
 -----
@@ -96,7 +96,7 @@ Model
         object is determined by its primary key(s). And please note using this flag
         would incur performance cost.
 
-        If the insertion isn't applied, a :class:`~cassandra.cqlengine.query.LWTException` is raised.
+        If the insertion isn't applied, a :class:`~dse.cqlengine.query.LWTException` is raised.
 
         .. code-block:: python
 
@@ -114,7 +114,7 @@ Model
         object is determined by its primary key(s). And please note using this flag
         would incur performance cost.
 
-        If the update or delete isn't applied, a :class:`~cassandra.cqlengine.query.LWTException` is raised.
+        If the update or delete isn't applied, a :class:`~dse.cqlengine.query.LWTException` is raised.
 
         .. code-block:: python
 
@@ -136,7 +136,7 @@ Model
         Simply specify the column(s) and the expected value(s).  As with if_not_exists,
         this incurs a performance cost.
 
-        If the insertion isn't applied, a :class:`~cassandra.cqlengine.query.LWTException` is raised.
+        If the insertion isn't applied, a :class:`~dse.cqlengine.query.LWTException` is raised.
 
         .. code-block:: python
 

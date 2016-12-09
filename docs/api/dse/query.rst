@@ -1,7 +1,7 @@
-``cassandra.query`` - Prepared Statements, Batch Statements, Tracing, and Row Factories
+``dse.query`` - Prepared Statements, Batch Statements, Tracing, and Row Factories
 =======================================================================================
 
-.. module:: cassandra.query
+.. module:: dse.query
 
 .. autofunction:: tuple_factory
 
@@ -37,11 +37,11 @@
 
     .. autoattribute:: COUNTER
 
-.. autoclass:: cassandra.query.ValueSequence
+.. autoclass:: dse.query.ValueSequence
 
     A wrapper class that is used to specify that a sequence of values should
     be treated as a CQL list of values instead of a single column collection when used
-    as part of the `parameters` argument for :meth:`.Session.execute()`. 
+    as part of the `parameters` argument for :meth:`.Session.execute()`.
 
     This is typically needed when supplying a list of keys to select.
     For example::

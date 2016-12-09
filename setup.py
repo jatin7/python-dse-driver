@@ -75,7 +75,7 @@ class DocCommand(Command):
     user_options = []
 
     def initialize_options(self):
-        pass
+        self.test = False
 
     def finalize_options(self):
         pass
@@ -389,11 +389,11 @@ def run_setup(extensions):
         dependencies.append('futures')
 
     setup(
-        name='cassandra-driver-dse',
+        name='dse-driver',
         version=__version__,
-        description='DataStax Enterprise Driver',
+        description='DataStax Enterprise Python Driver',
         long_description=long_description,
-        url='http://github.com/datastax/python-driver',
+        url='http://docs.datastax.com/en/developer/python-dse-driver/',
         author='Tyler Hobbs',
         author_email='tyler@datastax.com',
         packages=['dse', 'dse.io', 'dse.cqlengine'],

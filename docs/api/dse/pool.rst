@@ -1,7 +1,7 @@
-``cassandra.pool`` - Hosts and Connection Pools
+``dse.pool`` - Hosts and Connection Pools
 ===============================================
 
-.. automodule:: cassandra.pool
+.. automodule:: dse.pool
 
 .. autoclass:: Host ()
     :members:

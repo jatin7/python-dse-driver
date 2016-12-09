@@ -72,17 +72,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/cassandra-driver.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/dse-driver.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/cassandra-driver.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/dse-driver.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/cassandra-driver"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/cassandra-driver"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/dse-driver"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/dse-driver"
 	@echo "# devhelp"
 
 epub:

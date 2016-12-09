@@ -31,8 +31,6 @@ class AuthProvider(object):
     An abstract class that defines the interface that will be used for
     creating :class:`~.Authenticator` instances when opening new
     connections to Cassandra.
-
-    .. versionadded:: 2.0.0
     """
 
     def new_authenticator(self, host):
@@ -69,8 +67,6 @@ class Authenticator(object):
 
     The exact nature of the negotiation between the client and server is specific
     to the authentication mechanism configured server-side.
-
-    .. versionadded:: 2.0.0
     """
 
     server_authenticator_class = None
@@ -113,7 +109,6 @@ class PlainTextAuthProvider(AuthProvider):
                 username='cassandra', password='cassandra')
         cluster = Cluster(auth_provider=auth_provider)
 
-    .. versionadded:: 2.0.0
     """
 
     def __init__(self, username, password):
@@ -141,7 +136,6 @@ class SaslAuthProvider(AuthProvider):
         auth_provider = SaslAuthProvider(**sasl_kwargs)
         cluster = Cluster(auth_provider=auth_provider)
 
-    .. versionadded:: 2.1.4
     """
 
     def __init__(self, **sasl_kwargs):
@@ -159,8 +153,6 @@ class SaslAuthenticator(Authenticator):
     """
     A pass-through :class:`~.Authenticator` using the third party package
     'pure-sasl' for authentication
-
-    .. versionadded:: 2.1.4
     """
 
     def __init__(self, host, service, mechanism='GSSAPI', **sasl_kwargs):

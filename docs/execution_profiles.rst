@@ -34,7 +34,7 @@ Default
 
 .. code:: python
 
-    from cassandra.cluster import Cluster
+    from dse.cluster import Cluster
     cluster = Cluster()
     session = cluster.connect()
     local_query = 'SELECT rpc_address FROM system.local'
@@ -56,8 +56,8 @@ Initializing cluster with profiles
 
 .. code:: python
 
-    from cassandra.cluster import ExecutionProfile
-    from cassandra.policies import WhiteListRoundRobinPolicy
+    from dse.cluster import ExecutionProfile
+    from dse.policies import WhiteListRoundRobinPolicy
 
     node1_profile = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))
     node2_profile = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2']))
@@ -102,7 +102,7 @@ present. To override the default, specify a policy with the :data:`~.cluster.EXE
 
 .. code:: python
 
-    from cassandra.cluster import EXEC_PROFILE_DEFAULT
+    from dse.cluster import EXEC_PROFILE_DEFAULT
     profile = ExecutionProfile(request_timeout=30)
     cluster = Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: profile})
 
@@ -117,7 +117,7 @@ New profiles can be added constructing from scratch, or deriving from default:
     locked_execution = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))
     node1_profile = 'node1_whitelist'
     cluster.add_execution_profile(node1_profile, locked_execution)
-    
+
     for _ in cluster.metadata.all_hosts():
         print session.execute(local_query, execution_profile=node1_profile)[0]
 
@@ -136,8 +136,8 @@ We also have the ability to pass profile instances to be used for execution, but
 
 .. code:: python
 
-    from cassandra.query import tuple_factory
-    
+    from dse.query import tuple_factory
+
     tmp = session.execution_profile_clone_update('node1', request_timeout=100, row_factory=tuple_factory)
 
     print session.execute(local_query, execution_profile=tmp)[0]

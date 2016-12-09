@@ -1,7 +1,7 @@
-``cassandra.cqlengine.columns`` - Column types for object mapping models
+``dse.cqlengine.columns`` - Column types for object mapping models
 ========================================================================
 
-.. module:: cassandra.cqlengine.columns
+.. module:: dse.cqlengine.columns
 
 Columns
 -------
@@ -37,7 +37,7 @@ Column Types
 ------------
 
 Columns of all types are initialized by passing :class:`.Column` attributes to the constructor by keyword.
-    
+
 .. autoclass:: Ascii(**kwargs)
 
 .. autoclass:: BigInt(**kwargs)

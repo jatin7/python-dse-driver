@@ -12,7 +12,7 @@ To use cqlengine, you need at least a default connection. This is currently done
 
     .. code-block:: python
 
-        from cassandra.cqlengine import connection
+        from dse.cqlengine import connection
 
         connection.setup(['127.0.0.1')
         connection.register_connection('cluster2', ['127.0.0.2'])
@@ -24,7 +24,7 @@ You can change the default cqlengine connection on registration:
 
     .. code-block:: python
 
-        from cassandra.cqlengine import connection
+        from dse.cqlengine import connection
 
         connection.register_connection('cluster2', ['127.0.0.2'] default=True)
 
@@ -50,7 +50,7 @@ When using multiples connections, you also need to sync your models on all conne
 
     .. code-block:: python
 
-       from cassandra.cqlengine import management
+       from dse.cqlengine import management
 
        keyspaces = ['ks1', 'ks2']
        conns = ['cluster1', 'cluster2']

@@ -20,8 +20,8 @@ This example defines a ``Person`` table, with the columns ``first_name`` and ``l
 
 .. code-block:: python
 
-   from cassandra.cqlengine import columns
-   from cassandra.cqlengine.models import Model
+   from dse.cqlengine import columns
+   from dse.cqlengine.models import Model
 
     class Person(Model):
         id = columns.UUID(primary_key=True)
@@ -44,8 +44,8 @@ Here's an example of a comment table created with clustering keys, in descending
 
 .. code-block:: python
 
-    from cassandra.cqlengine import columns
-    from cassandra.cqlengine.models import Model
+    from dse.cqlengine import columns
+    from dse.cqlengine.models import Model
 
     class Comment(Model):
         photo_id = columns.UUID(primary_key=True)
@@ -67,7 +67,7 @@ To sync the models to the database, you may do the following*:
 
 .. code-block:: python
 
-    from cassandra.cqlengine.management import sync_table
+    from dse.cqlengine.management import sync_table
     sync_table(Person)
     sync_table(Comment)
 
@@ -119,7 +119,7 @@ extend the model's validation method:
             if self.name == 'jon':
                 raise ValidationError('no jon\'s allowed')
 
-*Note*: while not required, the convention is to raise a ``ValidationError`` (``from cassandra.cqlengine import ValidationError``)
+*Note*: while not required, the convention is to raise a ``ValidationError`` (``from dse.cqlengine import ValidationError``)
 if validation fails.
 
 .. _model_inheritance:
@@ -186,9 +186,9 @@ User Defined Types
 cqlengine models User Defined Types (UDTs) much like tables, with fields defined by column type attributes. However, UDT instances
 are only created, presisted, and queried via table Models. A short example to introduce the pattern::
 
-    from cassandra.cqlengine.columns import *
-    from cassandra.cqlengine.models import Model
-    from cassandra.cqlengine.usertype import UserType
+    from dse.cqlengine.columns import *
+    from dse.cqlengine.models import Model
+    from dse.cqlengine.usertype import UserType
 
     class address(UserType):
         street = Text()

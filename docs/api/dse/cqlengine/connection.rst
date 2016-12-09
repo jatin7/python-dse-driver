@@ -1,7 +1,7 @@
-``cassandra.cqlengine.connection`` - Connection management for cqlengine
+``dse.cqlengine.connection`` - Connection management for cqlengine
 ========================================================================
 
-.. module:: cassandra.cqlengine.connection
+.. module:: dse.cqlengine.connection
 
 .. autofunction:: default
 

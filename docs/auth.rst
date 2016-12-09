@@ -9,4 +9,4 @@ and in advance of any server upgrade. These auth providers are configured in the
     cluster = Cluster(auth_provider=auth_provider)
     session = cluster.connect()
 
-Implementations are :class:`.DSEPlainTextAuthProvider` and :class:`.DSEGSSAPIAuthProvider`.
+Implementations are :attr:`.DSEPlainTextAuthProvider`, :class:`.DSEGSSAPIAuthProvider` and :class:`.SaslAuthProvider`.
