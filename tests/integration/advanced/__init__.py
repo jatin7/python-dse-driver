@@ -39,7 +39,7 @@ MAKE_STRICT = "schema.config().option('graph.schema_mode').set('production')"
 MAKE_NON_STRICT = "schema.config().option('graph.schema_mode').set('development')"
 ALLOW_SCANS = "schema.config().option('graph.allow_scan').set('true')"
 
-# A map of common types and their corresponding groovy decleration for use in schema creation and inseration
+# A map of common types and their corresponding groovy declaration for use in schema creation and insertion
 MAX_LONG = 9223372036854775807
 MIN_LONG = -9223372036854775808
 ZERO_LONG = 0
