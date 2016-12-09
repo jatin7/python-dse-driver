@@ -185,8 +185,7 @@ class Statement(object):
     keyspace = None
     """
     The string name of the keyspace this query acts on. This is used when
-    :class:`~.TokenAwarePolicy` is configured for
-    :attr:`.Cluster.load_balancing_policy`
+    :class:`~.TokenAwarePolicy` is configured in the profile load balancing policy.
 
     It is set implicitly on :class:`.BoundStatement`, and :class:`.BatchStatement`,
     but must be set explicitly on :class:`.SimpleStatement`.
