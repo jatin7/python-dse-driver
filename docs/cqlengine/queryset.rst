@@ -348,7 +348,7 @@ None means no timeout.
 Default TTL and Per Query TTL
 =============================
 
-Model default TTL now relies on the *default_time_to_live* feature, introduced in Cassandra 2.0. It is not handled anymore in the CQLEngine Model (cassandra-driver >=3.6). You can set the default TTL of a table like this:
+Model default TTL now relies on the *default_time_to_live* feature, introduced in Cassandra 2.0. You can set the default TTL of a table like this:
 
     Example:
 
@@ -387,10 +387,10 @@ Named tables are a way of querying a table without creating an class.  They're u
 
     .. code-block:: python
 
-        from cassandra.cqlengine.connection import setup
+        from dse.cqlengine.connection import setup
         setup("127.0.0.1", "cqlengine_test")
 
-        from cassandra.cqlengine.named import NamedTable
+        from dse.cqlengine.named import NamedTable
         user = NamedTable("cqlengine_test", "user")
         user.objects()
         user.objects()[0]

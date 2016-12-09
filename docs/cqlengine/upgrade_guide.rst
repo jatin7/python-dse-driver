@@ -3,7 +3,7 @@ Upgrade Guide
 ========================
 
 This is an overview of things that changed as the cqlengine project was merged into
-cassandra-driver. While efforts were taken to preserve the API and most functionality exactly,
+dse-driver. While efforts were taken to preserve the API and most functionality exactly,
 conversion to this package will still require certain minimal updates (namely, imports).
 
 **THERE IS ONE FUNCTIONAL CHANGE**, described in the first section below.
@@ -37,22 +37,22 @@ Organization
 ============
 Imports
 -------
-cqlengine is now integrated as a sub-package of the driver base package 'cassandra'.
+cqlengine is now integrated as a sub-package of the driver base package 'dse'.
 Upgrading will require adjusting imports to cqlengine. For example::
 
-    from cassandra.cqlengine import columns
+    from dse.cqlengine import columns
 
 is now::
 
-    from cassandra.cqlengine import columns
+    from dse.cqlengine import columns
 
 Package-Level Aliases
 ---------------------
 Legacy cqlengine defined a number of aliases at the package level, which became redundant
 when the package was integrated for a driver. These have been removed in favor of absolute
 imports, and referring to cannonical definitions. For example, ``cqlengine.ONE`` was an alias
-of ``cassandra.ConsistencyLevel.ONE``. In the integrated package, only the
-:class:`cassandra.ConsistencyLevel` remains.
+of ``dse.ConsistencyLevel.ONE``. In the integrated package, only the
+:class:`dse.ConsistencyLevel` remains.
 
 Additionally, submodule aliases are removed from cqlengine in favor of absolute imports.
 
@@ -69,12 +69,12 @@ listing of updated locations:
 ============================  ==========
 Exception class               New module
 ============================  ==========
-CQLEngineException            cassandra.cqlengine
-ModelException                cassandra.cqlengine.models
-ValidationError               cassandra.cqlengine
-UndefinedKeyspaceException    cassandra.cqlengine.connection
-LWTException                  cassandra.cqlengine.query
-IfNotExistsWithCounterColumn  cassandra.cqlengine.query
+CQLEngineException            dse.cqlengine
+ModelException                dse.cqlengine.models
+ValidationError               dse.cqlengine
+UndefinedKeyspaceException    dse.cqlengine.connection
+LWTException                  dse.cqlengine.query
+IfNotExistsWithCounterColumn  dse.cqlengine.query
 ============================  ==========
 
 UnicodeMixin Consolidation
@@ -97,13 +97,13 @@ for CQL ``float``.
 
 Schema Management
 -----------------
-``cassandra.cqlengine.management.create_keyspace`` is deprecated. Instead, use the new replication-strategy-specific
+``dse.cqlengine.management.create_keyspace`` is deprecated. Instead, use the new replication-strategy-specific
 functions that accept explicit options for known strategies:
 
 - :func:`~.create_keyspace_simple`
 - :func:`~.create_keyspace_network_topology`
 
-``cassandra.cqlengine.management.delete_keyspace`` is deprecated in favor of a new function, :func:`~.drop_keyspace`. The
+``dse.cqlengine.management.delete_keyspace`` is deprecated in favor of a new function, :func:`~.drop_keyspace`. The
 intent is simply to make the function match the CQL verb it invokes.
 
 Model Inheritance

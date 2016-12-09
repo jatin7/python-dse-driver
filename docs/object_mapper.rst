@@ -49,11 +49,11 @@ Getting Started
     .. code-block:: python
 
         import uuid
-        from cassandra.cqlengine import columns
-        from cassandra.cqlengine import connection
+        from dse.cqlengine import columns
+        from dse.cqlengine import connection
         from datetime import datetime
-        from cassandra.cqlengine.management import sync_table
-        from cassandra.cqlengine.models import Model
+        from dse.cqlengine.management import sync_table
+        from dse.cqlengine.models import Model
 
         #first, define a model
         class ExampleModel(Model):

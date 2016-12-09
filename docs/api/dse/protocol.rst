@@ -1,7 +1,7 @@
-``cassandra.protocol`` - Protocol Features
+``dse.protocol`` - Protocol Features
 =====================================================================
 
-.. module:: cassandra.protocol
+.. module:: dse.protocol
 
 .. _custom_payload:
 
@@ -37,8 +37,8 @@ and ``NumpyProtocolHandler``. They can be used as follows:
 
 .. code:: python
 
-    from cassandra.protocol import NumpyProtocolHandler, LazyProtocolHandler
-    from cassandra.query import tuple_factory
+    from dse.protocol import NumpyProtocolHandler, LazyProtocolHandler
+    from dse.query import tuple_factory
     s.client_protocol_handler = LazyProtocolHandler   # for a result iterator
     s.row_factory = tuple_factory  #required for Numpy results
     s.client_protocol_handler = NumpyProtocolHandler  # for a dict of NumPy arrays as result

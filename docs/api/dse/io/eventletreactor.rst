@@ -1,7 +1,7 @@
-``cassandra.io.eventletreactor`` - ``eventlet``-compatible Connection
+``dse.io.eventletreactor`` - ``eventlet``-compatible Connection
 =====================================================================
 
-.. module:: cassandra.io.eventletreactor
+.. module:: dse.io.eventletreactor
 
 .. autoclass:: EventletConnection
    :members:

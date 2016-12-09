@@ -1,7 +1,7 @@
-``cassandra.io.asyncorereactor`` - ``asyncore`` Event Loop
+``dse.io.asyncorereactor`` - ``asyncore`` Event Loop
 ==========================================================
 
-.. module:: cassandra.io.asyncorereactor
+.. module:: dse.io.asyncorereactor
 
 .. autoclass:: AsyncoreConnection
    :members:

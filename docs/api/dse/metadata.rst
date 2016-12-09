@@ -1,7 +1,7 @@
-``cassandra.metadata`` - Schema and Ring Topology
+``dse.metadata`` - Schema and Ring Topology
 =================================================
 
-.. module:: cassandra.metadata
+.. module:: dse.metadata
 
 .. autodata:: cql_keywords
    :annotation:

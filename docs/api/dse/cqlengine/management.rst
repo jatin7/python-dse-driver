@@ -1,7 +1,7 @@
-``cassandra.cqlengine.management`` - Schema management for cqlengine
+``dse.cqlengine.management`` - Schema management for cqlengine
 ========================================================================
 
-.. module:: cassandra.cqlengine.management
+.. module:: dse.cqlengine.management
 
 A collection of functions for managing keyspace and table schema.
 
@@ -16,4 +16,3 @@ A collection of functions for managing keyspace and table schema.
 .. autofunction:: sync_type
 
 .. autofunction:: drop_table
-

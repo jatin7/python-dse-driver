@@ -1,11 +1,11 @@
-``cassandra.cqlengine.query`` - Query and filter model objects
+``dse.cqlengine.query`` - Query and filter model objects
 =================================================================
 
-.. module:: cassandra.cqlengine.query
+.. module:: dse.cqlengine.query
 
 QuerySet
 --------
-QuerySet objects are typically obtained by calling :meth:`~.cassandra.cqlengine.models.Model.objects` on a model class.
+QuerySet objects are typically obtained by calling :meth:`~.dse.cqlengine.models.Model.objects` on a model class.
 The methods here are used to filter, order, and constrain results.
 
 .. autoclass:: ModelQuerySet
@@ -20,7 +20,7 @@ The methods here are used to filter, order, and constrain results.
 
     .. method:: len(queryset)
 
-       Returns the number of rows matched by this query. This function uses :meth:`~.cassandra.cqlengine.query.ModelQuerySet.count` internally.
+       Returns the number of rows matched by this query. This function uses :meth:`~.dse.cqlengine.query.ModelQuerySet.count` internally.
 
        *Note: This function executes a SELECT COUNT() and has a performance cost on large datasets*
 

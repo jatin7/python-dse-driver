@@ -1,7 +1,7 @@
-``cassandra.concurrent`` - Utilities for Concurrent Statement Execution
+``dse.concurrent`` - Utilities for Concurrent Statement Execution
 =======================================================================
 
-.. module:: cassandra.concurrent
+.. module:: dse.concurrent
 
 .. autofunction:: execute_concurrent
 

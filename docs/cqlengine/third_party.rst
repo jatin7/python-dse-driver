@@ -13,12 +13,12 @@ Here's how, in substance, CQLengine can be plugged to `Celery
 
     from celery import Celery
     from celery.signals import worker_process_init, beat_init
-    from cassandra.cqlengine import connection
-    from cassandra.cqlengine.connection import (
+    from dse.cqlengine import connection
+    from dse.cqlengine.connection import (
         cluster as cql_cluster, session as cql_session)
 
-    def cassandra_init(**kwargs):
-        """ Initialize a clean Cassandra connection. """
+    def dse_init(**kwargs):
+        """ Initialize a clean DSE connection. """
         if cql_cluster is not None:
             cql_cluster.shutdown()
         if cql_session is not None:
@@ -26,8 +26,8 @@ Here's how, in substance, CQLengine can be plugged to `Celery
         connection.setup()
 
     # Initialize worker context for both standard and periodic tasks.
-    worker_process_init.connect(cassandra_init)
-    beat_init.connect(cassandra_init)
+    worker_process_init.connect(dse_init)
+    beat_init.connect(dse_init)
 
     app = Celery()
 
@@ -40,20 +40,20 @@ This is the code required for proper connection handling of CQLengine for a
 
 .. code-block:: python
 
-    from cassandra.cqlengine import connection
-    from cassandra.cqlengine.connection import (
+    from dse.cqlengine import connection
+    from dse.cqlengine.connection import (
         cluster as cql_cluster, session as cql_session)
 
     try:
         from uwsgidecorators import postfork
     except ImportError:
-        # We're not in a uWSGI context, no need to hook Cassandra session
+        # We're not in a uWSGI context, no need to hook DSE session
         # initialization to the postfork event.
         pass
     else:
         @postfork
-        def cassandra_init(**kwargs):
-            """ Initialize a new Cassandra session in the context.
+        def dse_init(**kwargs):
+            """ Initialize a new DSE session in the context.
 
             Ensures that a new session is returned for every new request.
             """

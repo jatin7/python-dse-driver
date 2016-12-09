@@ -21,7 +21,7 @@ instance of :class:`~.PagedResult` will be returned instead of a normal
 list.  This class implements the iterator interface, so you can treat
 it like a normal iterator over rows::
 
-    from cassandra.query import SimpleStatement
+    from dse.query import SimpleStatement
     query = "SELECT * FROM users"  # users contains 100 rows
     statement = SimpleStatement(query, fetch_size=10)
     for user_row in session.execute(statement):
@@ -80,7 +80,7 @@ Resume Paged Results
 
 You can resume the pagination when executing a new query by using the :attr:`.ResultSet.paging_state`. This can be useful if you want to provide some stateless pagination capabilities to your application (ie. via http). For example::
 
-    from cassandra.query import SimpleStatement
+    from dse.query import SimpleStatement
     query = "SELECT * FROM users"
     statement = SimpleStatement(query, fetch_size=10)
     results = session.execute(statement)
