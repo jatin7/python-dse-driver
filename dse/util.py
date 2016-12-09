@@ -1369,7 +1369,7 @@ class Polygon(object):
         if not self.exterior.coords:
             return "POLYGON EMPTY"
         rings = [ring.coords for ring in chain((self.exterior,), self.interiors)]
-        rings = ("(%s)" % ', '.join("%r %r" % (x, y) for x, y in ring) for ring in rings)
+        rings = ["(%s)" % ', '.join("%r %r" % (x, y) for x, y in ring) for ring in rings]
         return "POLYGON (%s)" % ', '.join(rings)
 
     def __repr__(self):
