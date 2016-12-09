@@ -25,7 +25,6 @@ from itertools import groupby
 from dse import OperationTimedOut, ReadTimeout, ReadFailure, WriteTimeout, WriteFailure, AlreadyExists
 from dse.cluster import Cluster
 from dse.protocol import ConfigurationException
-from dse.policies import RoundRobinPolicy
 
 try:
     from ccmlib.cluster import Cluster as CCMCluster
