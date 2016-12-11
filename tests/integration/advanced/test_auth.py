@@ -46,6 +46,7 @@ class BasicDseAuthTest(unittest.TestCase):
         """
 
         clear_kerberos_tickets()
+        self.cluster = None
 
         # Setup variables for various keytab and other files
         self.conf_file_dir = ADS_HOME+"conf/"
@@ -103,7 +104,8 @@ class BasicDseAuthTest(unittest.TestCase):
         This will clear any existing kerberos tickets by using kdestroy
         """
         clear_kerberos_tickets()
-        self.cluster.shutdown()
+        if self.cluster:
+            self.cluster.shutdown()
 
     def refresh_kerberos_tickets(self, keytab_file, user_name, krb_conf):
         """
