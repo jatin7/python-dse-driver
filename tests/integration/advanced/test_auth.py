@@ -10,8 +10,9 @@
 from nose.plugins.attrib import attr
 from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT
 from dse.cluster import NoHostAvailable
+from dse.protocol import Unauthorized
 from dse.query import SimpleStatement
-from dse.auth import DSEGSSAPIAuthProvider
+from dse.auth import DSEGSSAPIAuthProvider, DSEPlainTextAuthProvider, SaslAuthProvider
 import os, time, logging
 import subprocess
 from tests.integration.advanced import ADS_HOME, use_single_node_with_graph, generate_classic, reset_graph
@@ -54,6 +55,8 @@ class BasicDseAuthTest(unittest.TestCase):
         self.dse_keytab = self.conf_file_dir+"dse.keytab"
         self.dseuser_keytab = self.conf_file_dir+"dseuser.keytab"
         self.cassandra_keytab = self.conf_file_dir+"cassandra.keytab"
+        self.bob_keytab = self.conf_file_dir + "bob.keytab"
+        self.charlie_keytab = self.conf_file_dir + "charlie.keytab"
         actual_jar = ADS_HOME+"embedded-ads.jar"
 
         # Create configuration directories if they don't already exists
@@ -80,12 +83,15 @@ class BasicDseAuthTest(unittest.TestCase):
                                                          'scheme_permissions': 'true',
                                                          'allow_digest_with_kerberos': 'true',
                                                          'plain_text_without_ssl': 'warn',
-                                                         'transitional_mode': 'disabled'}
-                              }
+                                                         'transitional_mode': 'disabled'},
+                              'authorization_options': {'enabled': 'true'}}
 
             krb5java = "-Djava.security.krb5.conf=" + self.krb_conf
             # Setup dse authenticator in cassandra.yaml
-            ccm_cluster.set_configuration_options({'authenticator': 'com.datastax.bdp.cassandra.auth.DseAuthenticator'})
+            ccm_cluster.set_configuration_options({
+                'authenticator': 'com.datastax.bdp.cassandra.auth.DseAuthenticator',
+                'authorizer': 'com.datastax.bdp.cassandra.auth.DseAuthorizer'
+            })
             ccm_cluster.set_dse_configuration_options(config_options)
             ccm_cluster.start(wait_for_binary_proto=True, wait_other_notice=True, jvm_args=[krb5java])
         else:
@@ -98,6 +104,19 @@ class BasicDseAuthTest(unittest.TestCase):
         """
 
         self.proc.terminate()
+
+    # def setUp(self):
+    #     """ TO REMOVE """
+    #     os.environ['KRB5_CONFIG'] = self.krb_conf
+    #     self.refresh_kerberos_tickets(self.cassandra_keytab, "cassandra@DATASTAX.COM", self.krb_conf)
+    #     auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"])
+    #     c = Cluster(auth_provider=auth_provider)
+    #     s = c.connect()
+    #     s.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
+    #     for r in rs:
+    #         print r
+    #     c.shutdown()
+    #     clear_kerberos_tickets()
 
     def tearDown(self):
         """
@@ -113,14 +132,14 @@ class BasicDseAuthTest(unittest.TestCase):
         """
         self.ads_pid = subprocess.call(['kinit', '-t', keytab_file, user_name], env={'KRB5_CONFIG': krb_conf}, shell=False)
 
-    def connect_and_query(self, auth_provider):
+    def connect_and_query(self, auth_provider, query=None):
         """
         Runs a simple system query with the auth_provided specified.
         """
         os.environ['KRB5_CONFIG'] = self.krb_conf
         self.cluster = Cluster(auth_provider=auth_provider)
         self.session = self.cluster.connect()
-        query = "SELECT * FROM system.local"
+        query = query if query else "SELECT * FROM system.local"
         statement = SimpleStatement(query)
         rs = self.session.execute(statement)
         return rs
@@ -228,7 +247,170 @@ class BasicDseAuthTest(unittest.TestCase):
         auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="notauser@DATASTAX.COM")
         self.assertRaises(NoHostAvailable, self.connect_and_query, auth_provider)
 
+    # def test_proxy_login_with_kerberos(self):
+    #     """
+    #     Test that the proxy login works with kerberos.
+    #     """
+    #
+    #     # Set up users for proxy login test
+    #     os.environ['KRB5_CONFIG'] = self.krb_conf
+    #     self.refresh_kerberos_tickets(self.bob_keytab, "bob@DATASTAX.COM", self.krb_conf)
+    #     auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"])
+    #     self.cluster = Cluster(auth_provider=auth_provider)
+    #     session = self.cluster.connect()
+    #
+    #     session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
+    #     session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('dseuser@DATASTAX.COM'))
+    #     session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('charlie@DATASTAX.COM'))
+    #
+    #     # # Create a keyspace and allow only charlie to query it.
+    #     # session.execute(
+    #     #     "CREATE KEYSPACE testkrbproxy WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
+    #     # session.execute("CREATE TABLE testkrbproxy.testproxy (id int PRIMARY KEY, value text)")
+    #     # session.execute("GRANT ALL PERMISSIONS ON KEYSPACE testkrbproxy to '{0}'".format('charlie@DATASTAX.COM'))
+    #     #
+    #     # clear_kerberos_tickets()
+    #     # self.refresh_kerberos_tickets(self.dseuser_keytab, "dseuser@DATASTAX.COM", self.krb_conf)
+    #     # auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"])
+    #     # self.connect_and_query(auth_provider, 'select * from testkrbproxy.testproxy;')
+    #
+    #     #self.ot_session.execute("GRANT PROXY.LOGIN on role {0} to {1}".format(self.user_role, self.server_role))
+
 
 def clear_kerberos_tickets():
         subprocess.call(['kdestroy'], shell=False)
 
+
+@attr('long')
+class BaseDseProxyAuthTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        """
+        This will setup the necessary infrastructure to run unified authentication tests.
+        """
+
+        self.cluster = None
+
+        ccm_cluster = get_cluster()
+        # Stop cluster if running and configure it with the correct options
+        ccm_cluster.stop()
+        if isinstance(ccm_cluster, DseCluster):
+            # Setup dse options in dse.yaml
+            config_options = {'authentication_options': {'enabled': 'true',
+                                                         'default_scheme': 'internal',
+                                                         'scheme_permissions': 'true',
+                                                         'transitional_mode': 'normal'},
+                              'authorization_options': {'enabled': 'true'}
+            }
+
+
+            # Setup dse authenticator in cassandra.yaml
+            ccm_cluster.set_configuration_options({
+                'authenticator': 'com.datastax.bdp.cassandra.auth.DseAuthenticator',
+                'authorizer': 'com.datastax.bdp.cassandra.auth.DseAuthorizer'
+            })
+            ccm_cluster.set_dse_configuration_options(config_options)
+            ccm_cluster.start(wait_for_binary_proto=True, wait_other_notice=True)
+        else:
+            log.error("Cluster is not dse cluster test will fail")
+
+        # Create users and test keyspace
+        self.user_role = 'user1'
+        self.server_role = 'server'
+        self.root_cluster = Cluster(auth_provider=DSEPlainTextAuthProvider('cassandra', 'cassandra'))
+        self.root_session = self.root_cluster.connect()
+        self.root_session.execute("CREATE USER {0} WITH PASSWORD '{1}'".format(self.server_role, self.server_role))
+        self.root_session.execute("CREATE USER {0} WITH PASSWORD '{1}'".format(self.user_role, self.user_role))
+        self.root_session.execute("CREATE KEYSPACE testproxy WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
+        self.root_session.execute("CREATE TABLE testproxy.testproxy (id int PRIMARY KEY, value text)")
+        self.root_session.execute("GRANT ALL PERMISSIONS ON KEYSPACE testproxy to {0}".format(self.user_role))
+
+    @classmethod
+    def tearDownClass(self):
+        """
+        Shutdown the root session.
+        """
+
+        self.root_session.execute('DROP KEYSPACE testproxy;')
+        self.root_session.execute('DROP USER {0}'.format(self.user_role))
+        self.root_session.execute('DROP USER {0}'.format(self.server_role))
+        self.root_cluster.shutdown()
+
+    def tearDown(self):
+        """
+        Shutdown the cluster and reset proxy permissions
+        """
+        self.cluster.shutdown()
+
+        self.root_session.execute("REVOKE PROXY.LOGIN ON ROLE {0} from {1}".format(self.user_role, self.server_role))
+        self.root_session.execute("REVOKE PROXY.EXECUTE ON ROLE {0} from {1}".format(self.user_role, self.server_role))
+
+    def grant_proxy_login(self):
+        """
+        Grant PROXY.LOGIN permission on a role to a specific user.
+        """
+        self.root_session.execute("GRANT PROXY.LOGIN on role {0} to {1}".format(self.user_role, self.server_role))
+
+    def grant_proxy_execute(self):
+        """
+        Grant PROXY.EXECUTE permission on a role to a specific user.
+        """
+        self.root_session.execute("GRANT PROXY.EXECUTE on role {0} to {1}".format(self.user_role, self.server_role))
+
+
+@attr('long')
+class DseProxyAuthTest(BaseDseProxyAuthTest):
+    """
+    Tests Unified Auth. Proxy Login using SASL and Proxy Execute.
+    """
+
+    @classmethod
+    def get_sasl_options(self, mechanism='PLAIN'):
+        sasl_options = {
+            "service": 'dse',
+            "username": 'server',
+            "mechanism": 'PLAIN',
+            'password':  self.server_role,
+            'identity': self.user_role
+        }
+        return sasl_options
+
+    def connect_and_query(self, auth_provider, execute_as=None):
+        self.cluster = Cluster(auth_provider=auth_provider)
+        self.session = self.cluster.connect()
+        query = "SELECT * FROM testproxy.testproxy"
+        rs = self.session.execute(query, execute_as=execute_as)
+        return rs
+
+    def test_proxy_login_forbidden(self):
+        """
+        Test that a proxy login is forbidden by default for a user.
+        """
+        auth_provider = SaslAuthProvider(**self.get_sasl_options())
+        with self.assertRaises(Unauthorized):
+            self.connect_and_query(auth_provider)
+
+    def test_proxy_login_allowed(self):
+        """
+        Test that a proxy login is allowed with proper permissions.
+        """
+        auth_provider = SaslAuthProvider(**self.get_sasl_options())
+        self.grant_proxy_login()
+        self.connect_and_query(auth_provider)
+
+    def test_proxy_execute_forbidden(self):
+        """
+        Test that a proxy execute is forbidden by default for a user.
+        """
+        auth_provider = DSEPlainTextAuthProvider(self.server_role, self.server_role)
+        with self.assertRaises(Unauthorized):
+            self.connect_and_query(auth_provider, execute_as=self.user_role)
+
+    def test_proxy_execute_allowed(self):
+        """
+        Test that a proxy execute is allowed with proper permissions.
+        """
+        auth_provider = DSEPlainTextAuthProvider(self.server_role, self.server_role)
+        self.grant_proxy_execute()
+        self.connect_and_query(auth_provider, execute_as=self.user_role)
