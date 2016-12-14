@@ -7,7 +7,11 @@ sections:
     type: sphinx
     directory: docs
 versions:
-  - name: 2.0.0b1
+- name: 1.1
+    ref: 1.1.0
+- name: 1.0
+    ref: 1.0.0
+- name: 2.0.0b1
     ref: HEAD
 redirects:
   - \A\/(.*)/\Z: /\1.html
