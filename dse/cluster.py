@@ -1998,6 +1998,8 @@ class Session(object):
         JSON-serializable.
 
         `execution_profile`: Selects an execution profile for the request.
+
+        `execute_as` the user that will be used on the server to execute the request.
         """
         return self.execute_graph_async(query, parameters, trace, execution_profile, execute_as).result()
 

@@ -383,7 +383,7 @@ class DseProxyAuthTest(BaseDseProxyAuthTest):
         rs = self.session.execute(query, execute_as=execute_as)
         return rs
 
-    def test_proxy_login_forbidden(self):
+    def test_proxy_login_forbidden(self):   
         """
         Test that a proxy login is forbidden by default for a user.
         """

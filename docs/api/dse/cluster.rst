@@ -153,13 +153,13 @@
 
    .. autoattribute:: client_protocol_handler
 
-   .. automethod:: execute(statement[, parameters][, timeout][, trace][, custom_payload])
+   .. automethod:: execute(statement[, parameters][, timeout][, trace][, custom_payload][, execute_as])
 
-   .. automethod:: execute_async(statement[, parameters][, trace][, custom_payload])
+   .. automethod:: execute_async(statement[, parameters][, trace][, custom_payload][, execute_as])
 
-   .. automethod:: execute_graph(statement[, parameters][, trace][, execution_profile])
+   .. automethod:: execute_graph(statement[, parameters][, trace][, execution_profile][, execute_as])
 
-   .. automethod:: execute_graph_async(statement[, parameters][, trace][, execution_profile])
+   .. automethod:: execute_graph_async(statement[, parameters][, trace][, execution_profile][, execute_as])
 
    .. automethod:: prepare(statement)
 
