@@ -17,10 +17,10 @@ _graph_options = (
     ('graph_name', 'name of the targeted graph.', 'graph-name'),
     ('graph_source', 'choose the graph traversal source, configured on the server side.', 'graph-source'),
     ('graph_language', 'the language used in the queries (default "gremlin-groovy")', 'graph-language'),
-    ('graph_read_consistency_level', '''read `dse.ConsistencyLevel <###TBD###dse.ConsistencyLevel>`_ for graph queries (if distinct from session default).
-Setting this overrides the native `Statement.consistency_level <###TBD###dse.query.Statement.consistency_level>`_ for read operations from Cassandra persistence''', 'graph-read-consistency'),
-    ('graph_write_consistency_level', '''write `dse.ConsistencyLevel <###TBD###dse.ConsistencyLevel>`_ for graph queries (if distinct from session default).
-Setting this overrides the native `Statement.consistency_level <###TBD###dse.query.Statement.consistency_level>`_ for write operations to Cassandra persistence.''', 'graph-write-consistency')
+    ('graph_read_consistency_level', '''read `dse.ConsistencyLevel <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse.html#dse.ConsistencyLevel>`_ for graph queries (if distinct from session default).
+Setting this overrides the native `Statement.consistency_level <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/query.html#dse.query.Statement.consistency_level>`_ for read operations from Cassandra persistence''', 'graph-read-consistency'),
+    ('graph_write_consistency_level', '''write `dse.ConsistencyLevel <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse.html#dse.ConsistencyLevel>`_ for graph queries (if distinct from session default).
+Setting this overrides the native `Statement.consistency_level <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/query.html#dse.query.Statement.consistency_level>`_ for write operations to Cassandra persistence.''', 'graph-write-consistency')
 )
 
 # this is defined by the execution profile attribute, not in graph options
@@ -124,7 +124,7 @@ for opt in _graph_options:
 class SimpleGraphStatement(SimpleStatement):
     """
     Simple graph statement for :meth:`.Session.execute_graph`.
-    Takes the same parameters as `dse.query.SimpleStatement <###TBD###dse.query.SimpleStatement>`_
+    Takes the same parameters as `dse.query.SimpleStatement <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/query.html#dse.query.SimpleStatement>`_
     """
     def __init__(self, *args, **kwargs):
         super(SimpleGraphStatement, self).__init__(*args, **kwargs)

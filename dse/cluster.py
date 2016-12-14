@@ -276,7 +276,7 @@ class GraphExecutionProfile(ExecutionProfile):
         """
         Default execution profile for graph execution.
 
-        See `ExecutionProfile <##TBD##>`_
+        See `ExecutionProfile <http://docs.datastax.com/en/developer/python-driver-dse/latest/execution_profiles.html>`_
         for base attributes.
 
         In addition to default parameters shown in the signature, this profile also defaults ``retry_policy`` to
@@ -368,7 +368,7 @@ EXEC_PROFILE_GRAPH_DEFAULT = object()
 Key for the default graph execution profile, used when no other profile is selected in
 ``Session.execute_graph(execution_profile)``.
 
-Use this as the key in `Cluster(execution_profiles) <###TBD###>`_
+Use this as the key in `Cluster(execution_profiles) <http://docs.datastax.com/en/developer/python-driver-dse/latest/execution_profiles.html>`_
 to override the default graph profile.
 """
 
@@ -464,7 +464,6 @@ class Cluster(object):
     The following table describes the native protocol versions that
     are supported by each version of Cassandra:
 
-    ###TBD###
     +-------------------+-------------------+
     | Cassandra Version | Protocol Versions |
     +===================+===================+
@@ -1170,7 +1169,7 @@ class Cluster(object):
             if new_version >= MIN_SUPPORTED_VERSION:
                 log.warning("Downgrading core protocol version from %d to %d for %s. "
                             "To avoid this, it is best practice to explicitly set Cluster(protocol_version) to the version supported by your cluster. "
-                            "###TBD###", self.protocol_version, new_version, host_addr)
+                            "http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/cluster.html#dse.cluster.Cluster.protocol_version", self.protocol_version, new_version, host_addr)
                 self.protocol_version = new_version
             else:
                 raise DriverException("Cannot downgrade protocol version (%d) below minimum supported version: %d" % (new_version, MIN_SUPPORTED_VERSION))
@@ -2005,7 +2004,7 @@ class Session(object):
 
     def execute_graph_async(self, query, parameters=None, trace=False, execution_profile=EXEC_PROFILE_GRAPH_DEFAULT, execute_as=None):
         """
-        Execute the graph query and return a `ResponseFuture <###TBD###>`_
+        Execute the graph query and return a `ResponseFuture <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/cluster.html#dse.cluster.ResponseFuture.result>`_
         object which callbacks may be attached to for asynchronous response delivery. You may also call ``ResponseFuture.result()`` to synchronously block for
         results at any time.
         """
