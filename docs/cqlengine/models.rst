@@ -11,7 +11,7 @@ Columns in your models map to columns in your CQL table. You define CQL columns 
 For a model to be valid it needs at least one primary key column and one non-primary key column. Just as in CQL, the order you define
 your columns in is important, and is the same order they are defined in on a model's corresponding table.
 
-Some basic examples defining models are shown below. Consult the :doc:`Model API docs </api/cassandra/cqlengine/models>` and :doc:`Column API docs </api/cassandra/cqlengine/columns>` for complete details.
+Some basic examples defining models are shown below. Consult the :doc:`Model API docs </api/dse/cqlengine/models>` and :doc:`Column API docs </api/dse/cqlengine/columns>` for complete details.
 
 Example Definitions
 ===================
@@ -72,7 +72,7 @@ To sync the models to the database, you may do the following*:
     sync_table(Comment)
 
 \*Note: synchronizing models causes schema changes, and should be done with caution.
-Please see the discussion in :doc:`/api/cassandra/cqlengine/management` for considerations.
+Please see the discussion in :doc:`/api/dse/cqlengine/management` for considerations.
 
 For examples on manipulating data and creating queries, see :doc:`queryset`
 

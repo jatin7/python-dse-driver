@@ -24,7 +24,7 @@ Proxy Login
 
 Proxy login allows you to authenticate with a user but act as another one. You need to ensure the authenticated user has the permission to use the authorization of resources of the other user. ie. this example will allow the `server` user to authenticate as usual but use the authorization of `user1`:
 
-.. code-block::
+.. code-block:: text
 
     GRANT PROXY.LOGIN on role user1 to server
 
@@ -67,7 +67,7 @@ Proxy Execute
 
 Proxy execute allows you to execute requests as another user than the authenticated one. You need to ensure the authenticated user has the permission to use the authorization of resources of the specified user. ie. this example will allow the `server` user to execute requests as `user1`:
 
-.. code-block::
+.. code-block:: text
 
     GRANT PROXY.EXECUTE on role user1 to server
 
