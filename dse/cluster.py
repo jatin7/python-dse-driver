@@ -3584,7 +3584,7 @@ class ResponseFuture(object):
                     self._paging_state = response.paging_state
                     self._col_names = response.column_names
                     self._col_types = response.column_types
-                    if self.message.continuous_paging_options:
+                    if getattr(self.message, 'continuous_paging_options', None):
                         self._handle_continuous_paging_first_response(connection, response)
                     else:
                         self._set_final_result(self.row_factory(response.column_names, response.parsed_rows))
