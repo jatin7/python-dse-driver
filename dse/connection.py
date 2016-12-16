@@ -32,17 +32,17 @@ if 'gevent.monkey' in sys.modules:
 else:
     from six.moves.queue import Queue, Empty  # noqa
 
-from cassandra import ConsistencyLevel, AuthenticationFailed, OperationTimedOut
-from cassandra.marshal import int32_pack
-from cassandra.protocol import (ReadyMessage, AuthenticateMessage, OptionsMessage,
+from dse import ConsistencyLevel, AuthenticationFailed, OperationTimedOut
+from dse.marshal import int32_pack
+from dse.protocol import (ReadyMessage, AuthenticateMessage, OptionsMessage,
                                 StartupMessage, ErrorMessage, CredentialsMessage,
                                 QueryMessage, ResultMessage, ProtocolHandler,
                                 InvalidRequestException, SupportedMessage,
                                 AuthResponseMessage, AuthChallengeMessage,
                                 AuthSuccessMessage, ProtocolException,
                                 MAX_SUPPORTED_VERSION, RegisterMessage,
-                                CONTINUOUS_PAGING_OP_TYPE, CancelMessage, EventMessage)
-from cassandra.util import OrderedDict
+                                CONTINUOUS_PAGING_OP_TYPE, CancelMessage)
+from dse.util import OrderedDict
 
 
 log = logging.getLogger(__name__)
