@@ -630,6 +630,25 @@ class ExecuteMessage(_QueryMessage):
         write_string(f, self.query_id)
         self._write_query_params(f, protocol_version)
 
+    def _write_query_params(self, f, protocol_version):
+        # TODO: remove specialization when we drop protocol v1
+        if protocol_version == 1:
+            if self.serial_consistency_level:
+                raise UnsupportedOperation(
+                    "Serial consistency levels require the use of protocol version "
+                    "2 or higher. Consider setting Cluster.protocol_version to 2 "
+                    "to support serial consistency levels.")
+            if self.fetch_size or self.paging_state:
+                raise UnsupportedOperation(
+                    "Automatic query paging may only be used with protocol version "
+                    "2 or higher. Consider setting Cluster.protocol_version to 2.")
+            write_short(f, len(self.query_params))
+            for param in self.query_params:
+                write_value(f, param)
+            write_consistency_level(f, self.consistency_level)
+        else:
+            super(ExecuteMessage, self)._write_query_params(f, protocol_version)
+
 
 CUSTOM_TYPE = object()
 
