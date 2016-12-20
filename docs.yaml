@@ -1,6 +1,10 @@
 title: DataStax Enterprise Python Driver
 summary: DataStax Enterprise Python Driver Documentation
 output: docs/_build/
+checks:
+  external_links:
+    exclude:
+    - 'http://aka.ms/vcpython27'
 sections:
   - title: N/A
     prefix: /

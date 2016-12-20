@@ -25,7 +25,7 @@ from dse import (Unavailable, WriteTimeout, ReadTimeout,
                  UserAggregateDescriptor, SchemaTargetType)
 from dse.marshal import (int32_pack, int32_unpack, uint16_pack, uint16_unpack,
                          int8_pack, int8_unpack, uint64_pack, header_pack,
-                         v3_header_pack)
+                         v3_header_pack, uint32_pack)
 from dse.cqltypes import (AsciiType, BytesType, BooleanType,
                           CounterColumnType, DateType, DecimalType,
                           DoubleType, FloatType, Int32Type,
@@ -556,7 +556,7 @@ class QueryMessage(_MessageType):
             flags |= _PROTOCOL_TIMESTAMP
 
         if protocol_version >= 5:
-            write_int(f, flags)
+            write_uint(f, flags)
         else:
             write_byte(f, flags)
 
@@ -640,13 +640,14 @@ class ResultMessage(_MessageType):
                       for ctype, val in zip(coltypes, row))
                 for row in rows]
         except Exception:
-            for i in range(len(row)):
-                try:
-                    coltypes[i].from_binary(row[i], protocol_version)
-                except Exception as e:
-                    raise DriverException('Failed decoding result column "%s" of type %s: %s' % (colnames[i],
-                                                                                                 coltypes[i].cql_parameterized_type(),
-                                                                                                 str(e)))
+            for row in rows:
+                for i in range(len(row)):
+                    try:
+                        coltypes[i].from_binary(row[i], protocol_version)
+                    except Exception as e:
+                        raise DriverException('Failed decoding result column "%s" of type %s: %s' % (colnames[i],
+                                                                                                     coltypes[i].cql_parameterized_type(),
+                                                                                                     str(e)))
         return paging_state, coltypes, (colnames, parsed_rows)
 
     @classmethod
@@ -769,6 +770,9 @@ class PrepareMessage(_MessageType):
 
     def send_body(self, f, protocol_version):
         write_longstring(f, self.query)
+        if protocol_version >= 5:
+            # Write the flags byte; with 0 value for now, but this should change in PYTHON-678
+            write_uint(f, 0)
 
 
 class ExecuteMessage(_MessageType):
@@ -823,7 +827,7 @@ class ExecuteMessage(_MessageType):
                 flags |= _SKIP_METADATA_FLAG
 
             if protocol_version >= 5:
-                write_int(f, flags)
+                write_uint(f, flags)
             else:
                 write_byte(f, flags)
 
@@ -1156,6 +1160,10 @@ def read_int(f):
 
 def write_int(f, i):
     f.write(int32_pack(i))
+
+
+def write_uint(f, i):
+    f.write(uint32_pack(i))
 
 
 def write_long(f, i):

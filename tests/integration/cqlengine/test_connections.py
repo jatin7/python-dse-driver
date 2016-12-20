@@ -8,7 +8,7 @@
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from dse import InvalidRequest
-from dse.cluster import NoHostAvailable
+from dse.cluster import Cluster, NoHostAvailable
 from dse.cqlengine import columns, CQLEngineException
 from dse.cqlengine import connection as conn
 from dse.cqlengine.management import drop_keyspace, sync_table, drop_table, create_keyspace_simple
@@ -211,6 +211,12 @@ class ManagementConnectionTests(BaseCassEngTestCase):
         # Model connection
         for ks in self.keyspaces:
             drop_keyspace(ks, connections=self.conns)
+
+    def test_connection_creation_from_session(self):
+        session = Cluster(['127.0.0.1']).connect()
+        connection_name = 'from_session'
+        conn.register_connection(connection_name, session=session)
+        self.addCleanup(conn.unregister_connection, connection_name)
 
 
 class BatchQueryConnectionTests(BaseCassEngTestCase):
