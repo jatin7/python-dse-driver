@@ -13,6 +13,7 @@ except ImportError:
     import unittest  # noqa
 
 from functools import partial
+from mock import patch
 from six.moves import range
 import sys
 from threading import Thread, Event
@@ -22,7 +23,6 @@ from dse import ConsistencyLevel, OperationTimedOut
 from dse.cluster import NoHostAvailable, Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import QueryMessage
-from dse.connection import Connection
 from dse.policies import WhiteListRoundRobinPolicy, HostStateListener
 from dse.pool import HostConnectionPool
 
@@ -42,16 +42,14 @@ def setup_module():
 class ConnectionTimeoutTest(unittest.TestCase):
 
     def setUp(self):
-        self.defaultInFlight = Connection.max_in_flight
-        Connection.max_in_flight = 2
         self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
                                execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))})
         self.session = self.cluster.connect()
 
     def tearDown(self):
-        Connection.max_in_flight = self.defaultInFlight
         self.cluster.shutdown()
 
+    @patch('dse.connection.Connection.max_in_flight', 2)
     def test_in_flight_timeout(self):
         """
         Test to ensure that connection id fetching will block when max_id is reached/
@@ -68,7 +66,7 @@ class ConnectionTimeoutTest(unittest.TestCase):
         """
         futures = []
         query = '''SELECT * FROM system.local'''
-        for i in range(100):
+        for _ in range(100):
             futures.append(self.session.execute_async(query))
 
         for future in futures:
