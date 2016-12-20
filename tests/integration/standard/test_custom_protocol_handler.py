@@ -118,14 +118,13 @@ class CustomResultMessageRaw(ResultMessage):
     my_type_codes[0xc] = UUIDType
     type_codes = my_type_codes
 
-    @classmethod
-    def recv_results_rows(cls, f, protocol_version, user_type_map, result_metadata):
-            paging_state, column_metadata = cls.recv_results_metadata(f, user_type_map)
+    def recv_results_rows(self, f, protocol_version, user_type_map, result_metadata):
+            self.recv_results_metadata(f, user_type_map)
+            column_metadata = self.column_metadata or result_metadata
             rowcount = read_int(f)
-            rows = [cls.recv_row(f, len(column_metadata)) for _ in range(rowcount)]
-            colnames = [c[2] for c in column_metadata]
-            coltypes = [c[3] for c in column_metadata]
-            return paging_state, coltypes, (colnames, rows)
+            self.parsed_rows = [self.recv_row(f, len(column_metadata)) for _ in range(rowcount)]
+            self.column_names = [c[2] for c in column_metadata]
+            self.column_types = [c[3] for c in column_metadata]
 
 
 class CustomTestRawRowType(ProtocolHandler):
@@ -148,19 +147,18 @@ class CustomResultMessageTracked(ResultMessage):
     type_codes = my_type_codes
     checked_rev_row_set = set()
 
-    @classmethod
-    def recv_results_rows(cls, f, protocol_version, user_type_map, result_metadata):
-        paging_state, column_metadata = cls.recv_results_metadata(f, user_type_map)
+    def recv_results_rows(self, f, protocol_version, user_type_map, result_metadata):
+        self.recv_results_metadata(f, user_type_map)
+        column_metadata = self.column_metadata or result_metadata
         rowcount = read_int(f)
-        rows = [cls.recv_row(f, len(column_metadata)) for _ in range(rowcount)]
-        colnames = [c[2] for c in column_metadata]
-        coltypes = [c[3] for c in column_metadata]
-        cls.checked_rev_row_set.update(coltypes)
-        parsed_rows = [
+        rows = [self.recv_row(f, len(column_metadata)) for _ in range(rowcount)]
+        self.column_names = [c[2] for c in column_metadata]
+        self.column_types = [c[3] for c in column_metadata]
+        self.checked_rev_row_set.update(self.column_types)
+        self.parsed_rows = [
             tuple(ctype.from_binary(val, protocol_version)
-                  for ctype, val in zip(coltypes, row))
+                  for ctype, val in zip(self.column_types, row))
             for row in rows]
-        return paging_state, coltypes, (colnames, parsed_rows)
 
 
 class CustomProtocolHandlerResultMessageTracked(ProtocolHandler):
