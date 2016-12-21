@@ -3304,6 +3304,7 @@ class ResponseFuture(object):
     _protocol_handler = ProtocolHandler
     _spec_execution_plan = NoSpeculativeExecutionPlan()
     _continuous_paging_options = None
+    _continuous_paging_session = None
 
     _warned_timeout = False
 
@@ -4026,7 +4027,7 @@ class ResultSet(object):
                     self._current_rows = []
                 raise
 
-        if not hasattr(self.response_future, '_continuous_paging_session'):
+        if not self.response_future._continuous_paging_session:
             self.fetch_next_page()
             self._page_iter = iter(self._current_rows)
 
@@ -4102,7 +4103,6 @@ class ResultSet(object):
         try:
             self.response_future._continuous_paging_session.cancel()
         except AttributeError:
-            log.exception('asdflkajsdflkjasdf')
             raise DriverException("Attempted to cancel paging with no active session. This is only for requests with ContinuousdPagingOptions.")
 
     @property
