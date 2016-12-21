@@ -25,7 +25,6 @@ from dse.concurrent import execute_concurrent
 from dse.policies import (RoundRobinPolicy, ExponentialReconnectionPolicy,
                           SimpleConvictionPolicy, HostDistance,
                           WhiteListRoundRobinPolicy, AddressTranslator)
-from dse.protocol import MAX_SUPPORTED_VERSION
 from dse.query import SimpleStatement, TraceUnavailable, tuple_factory
 
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_server_versions, CASSANDRA_VERSION, execute_until_pass, execute_with_long_wait_retry, get_node,\
@@ -184,7 +183,7 @@ class ClusterTests(unittest.TestCase):
         """
 
         cluster = Cluster()
-        self.assertLessEqual(cluster.protocol_version,  MAX_SUPPORTED_VERSION)
+        self.assertLessEqual(cluster.protocol_version,  cassandra.ProtocolVersion.MAX_SUPPORTED)
         session = cluster.connect()
         updated_protocol_version = session._protocol_version
         updated_cluster_version = cluster.protocol_version
@@ -1103,7 +1102,7 @@ class BetaProtocolTest(unittest.TestCase):
         @test_category connection
         """
 
-        cluster = Cluster(protocol_version=MAX_SUPPORTED_VERSION, allow_beta_protocol_version=False)
+        cluster = Cluster(protocol_version=cassandra.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=False)
         try:
             with self.assertRaises(NoHostAvailable):
                 cluster.connect()
@@ -1122,9 +1121,9 @@ class BetaProtocolTest(unittest.TestCase):
 
         @test_category connection
         """
-        cluster = Cluster(protocol_version=MAX_SUPPORTED_VERSION, allow_beta_protocol_version=True)
+        cluster = Cluster(protocol_version=cassandra.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=True)
         session = cluster.connect()
-        self.assertEqual(cluster.protocol_version, MAX_SUPPORTED_VERSION)
+        self.assertEqual(cluster.protocol_version, cassandra.ProtocolVersion.MAX_SUPPORTED)
         self.assertTrue(session.execute("select release_version from system.local")[0])
 
 

@@ -37,7 +37,7 @@ except ImportError:
 
 from dse import (ConsistencyLevel, AuthenticationFailed,
                  OperationTimedOut, UnsupportedOperation,
-                 SchemaTargetType, DriverException)
+                 SchemaTargetType, DriverException, ProtocolVersion)
 from dse.connection import (ConnectionException, ConnectionShutdown,
                             ConnectionHeartbeat, ProtocolVersionUnsupported)
 from dse.cqltypes import UserType
@@ -55,7 +55,7 @@ from dse.protocol import (QueryMessage, ResultMessage,
                           BatchMessage, RESULT_KIND_PREPARED,
                           RESULT_KIND_SET_KEYSPACE, RESULT_KIND_ROWS,
                           RESULT_KIND_SCHEMA_CHANGE, RESULT_KIND_VOID,
-                          MIN_SUPPORTED_VERSION, ProtocolHandler)
+                          ProtocolHandler)
 from dse.marshal import int64_pack
 from dse.metadata import Metadata, protect_name, murmur3
 from dse.policies import (TokenAwarePolicy, DCAwareRoundRobinPolicy, SimpleConvictionPolicy,
@@ -481,9 +481,11 @@ class Cluster(object):
     server will be automatically used.
     """
 
-    protocol_version = 4
+    protocol_version = ProtocolVersion.V4
     """
     The maximum version of the native protocol to use.
+
+    See :class:`.ProtocolVersion` for more information about versions.
 
     If not set in the constructor, the driver will automatically downgrade
     version based on a negotiation with the server, but it is most efficient
@@ -491,35 +493,6 @@ class Cluster(object):
     Setting this will also prevent conflicting versions negotiated if your
     cluster is upgraded.
 
-    Version 2 of the native protocol adds support for lightweight transactions,
-    batch operations, and automatic query paging. The v2 protocol is
-    supported by Cassandra 2.0+.
-
-    Version 3 of the native protocol adds support for protocol-level
-    client-side timestamps (see :attr:`.Session.use_client_timestamp`),
-    serial consistency levels for :class:`~.BatchStatement`, and an
-    improved connection pool.
-
-    Version 4 of the native protocol adds a number of new types, server warnings,
-    new failure messages, and custom payloads. Details in the
-    `project docs <https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v4.spec>`_
-
-    The following table describes the native protocol versions that
-    are supported by each version of Cassandra:
-
-    +-------------------+-------------------+
-    | Cassandra Version | Protocol Versions |
-    +===================+===================+
-    | 1.2               | 1                 |
-    +-------------------+-------------------+
-    | 2.0               | 1, 2              |
-    +-------------------+-------------------+
-    | 2.1               | 1, 2, 3           |
-    +-------------------+-------------------+
-    | 2.2               | 1, 2, 3, 4        |
-    +-------------------+-------------------+
-    | 3.x               | 3, 4              |
-    +-------------------+-------------------+
     """
 
     allow_beta_protocol_version = False
@@ -1207,15 +1180,14 @@ class Cluster(object):
         if self._protocol_version_explicit:
             raise DriverException("ProtocolError returned from server while using explicitly set client protocol_version %d" % (previous_version,))
 
-        new_version = previous_version - 1
-        if new_version < self.protocol_version:
-            if new_version >= MIN_SUPPORTED_VERSION:
-                log.warning("Downgrading core protocol version from %d to %d for %s. "
-                            "To avoid this, it is best practice to explicitly set Cluster(protocol_version) to the version supported by your cluster. "
-                            "http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/cluster.html#dse.cluster.Cluster.protocol_version", self.protocol_version, new_version, host_addr)
-                self.protocol_version = new_version
-            else:
-                raise DriverException("Cannot downgrade protocol version (%d) below minimum supported version: %d" % (new_version, MIN_SUPPORTED_VERSION))
+        try:
+            new_version = next(v for v in sorted(ProtocolVersion.SUPPORTED_VERSIONS, reversed=True) if v < previous_version)
+            log.warning("Downgrading core protocol version from %d to %d for %s. "
+                        "To avoid this, it is best practice to explicitly set Cluster(protocol_version) to the version supported by your cluster. "
+                        "http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/cluster.html#dse.cluster.Cluster.protocol_version", self.protocol_version, new_version, host_addr)
+            self.protocol_version = new_version
+        except StopIteration:
+            raise DriverException("Cannot downgrade protocol version below minimum supported version: %d" % (ProtocolVersion.MIN_SUPPORTED,))
 
     def connect(self, keyspace=None, wait_for_all_pools=False):
         """
