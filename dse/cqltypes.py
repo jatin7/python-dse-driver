@@ -175,11 +175,7 @@ def lookup_casstype(casstype):
     Example:
 
         >>> lookup_casstype('org.apache.cassandra.db.marshal.MapType(org.apache.cassandra.db.marshal.UTF8Type,org.apache.cassandra.db.marshal.Int32Type)')
-<<<<<<< HEAD:dse/cqltypes.py
         <class 'dse.cqltypes.MapType(UTF8Type, Int32Type)'>
-=======
-        <class 'cassandra.cqltypes.MapType(UTF8Type, Int32Type)'>
->>>>>>> oss/master:cassandra/cqltypes.py
 
     """
     if isinstance(casstype, (CassandraType, CassandraTypeType)):

@@ -141,7 +141,7 @@ class Connection(object):
                 self.setup()
 
 
-def register_connection(name, hosts=None, consistency=None, lazy_connect=False,
+def register_connection(name, hosts=None, consistency=ConsistencyLevel.LOCAL_ONE, lazy_connect=False,
                         retry_connect=False, cluster_options=None, default=False,
                         session=None):
     """
