@@ -22,6 +22,7 @@ import os
 from six import BytesIO
 import socket
 from socket import error as socket_error
+from dse import ProtocolVersion
 from dse.connection import (HEADER_DIRECTION_TO_CLIENT,
                                   ConnectionException, ProtocolError,Timer)
 from dse.io.asyncorereactor import AsyncoreConnection
@@ -110,11 +111,11 @@ class AsyncoreConnectionTest(unittest.TestCase):
         self.assertTrue(c.connected_event.is_set())
         return c
 
-    def test_egain_on_buffer_size(self, *args):
+    def test_eagain_on_buffer_size(self, *args):
         # get a connection that's already fully started
         c = self.test_successful_connection()
 
-        header = six.b('\x00\x00\x00\x00') + int32_pack(20000)
+        header = six.b('\x02\x00\x00\x00') + int32_pack(20000)  # assumes protocol < v3
         responses = [
             header + (six.b('a') * (4096 - len(header))),
             six.b('a') * 4096,
@@ -150,7 +151,7 @@ class AsyncoreConnectionTest(unittest.TestCase):
         c.handle_write()
 
         # read in a SupportedMessage response
-        header = self.make_header_prefix(SupportedMessage, version=0xa4)
+        header = self.make_header_prefix(SupportedMessage, version=ProtocolVersion.MAX_SUPPORTED+1)
         options = self.make_options_body()
         c.socket.recv.return_value = self.make_msg(header, options)
         c.handle_read()
