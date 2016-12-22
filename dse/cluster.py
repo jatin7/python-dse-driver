@@ -481,7 +481,7 @@ class Cluster(object):
     server will be automatically used.
     """
 
-    protocol_version = ProtocolVersion.V4
+    protocol_version = ProtocolVersion.DSE_V1
     """
     The maximum version of the native protocol to use.
 
@@ -492,7 +492,6 @@ class Cluster(object):
     to set this to the maximum supported by your version of Cassandra.
     Setting this will also prevent conflicting versions negotiated if your
     cluster is upgraded.
-
     """
 
     allow_beta_protocol_version = False

@@ -183,7 +183,7 @@ class ClusterTests(unittest.TestCase):
         """
 
         cluster = Cluster()
-        self.assertLessEqual(cluster.protocol_version,  cassandra.ProtocolVersion.MAX_SUPPORTED)
+        self.assertLessEqual(cluster.protocol_version,  dse.ProtocolVersion.MAX_SUPPORTED)
         session = cluster.connect()
         updated_protocol_version = session._protocol_version
         updated_cluster_version = cluster.protocol_version
@@ -1102,7 +1102,7 @@ class BetaProtocolTest(unittest.TestCase):
         @test_category connection
         """
 
-        cluster = Cluster(protocol_version=cassandra.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=False)
+        cluster = Cluster(protocol_version=dse.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=False)
         try:
             with self.assertRaises(NoHostAvailable):
                 cluster.connect()
@@ -1121,9 +1121,9 @@ class BetaProtocolTest(unittest.TestCase):
 
         @test_category connection
         """
-        cluster = Cluster(protocol_version=cassandra.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=True)
+        cluster = Cluster(protocol_version=dse.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=True)
         session = cluster.connect()
-        self.assertEqual(cluster.protocol_version, cassandra.ProtocolVersion.MAX_SUPPORTED)
+        self.assertEqual(cluster.protocol_version, dse.ProtocolVersion.MAX_SUPPORTED)
         self.assertTrue(session.execute("select release_version from system.local")[0])
 
 
