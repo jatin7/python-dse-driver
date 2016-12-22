@@ -1181,7 +1181,7 @@ class Cluster(object):
             raise DriverException("ProtocolError returned from server while using explicitly set client protocol_version %d" % (previous_version,))
 
         try:
-            new_version = next(v for v in sorted(ProtocolVersion.SUPPORTED_VERSIONS, reversed=True) if v < previous_version)
+            new_version = next(v for v in sorted(ProtocolVersion.SUPPORTED_VERSIONS, reverse=True) if v < previous_version)
             log.warning("Downgrading core protocol version from %d to %d for %s. "
                         "To avoid this, it is best practice to explicitly set Cluster(protocol_version) to the version supported by your cluster. "
                         "http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/cluster.html#dse.cluster.Cluster.protocol_version", self.protocol_version, new_version, host_addr)
