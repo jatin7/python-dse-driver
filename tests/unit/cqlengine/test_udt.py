@@ -17,9 +17,9 @@ try:
 except ImportError:
     import unittest  # noqa
 
-from cassandra.cqlengine import columns
-from cassandra.cqlengine.models import Model
-from cassandra.cqlengine.usertype import UserType
+from dse.cqlengine import columns
+from dse.cqlengine.models import Model
+from dse.cqlengine.usertype import UserType
 
 
 class UDTTest(unittest.TestCase):

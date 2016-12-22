@@ -17,8 +17,8 @@ try:
 except ImportError:
     import unittest  # noqa
 
-from cassandra.cqlengine import connection
-from cassandra.query import dict_factory
+from dse.cqlengine import connection
+from dse.query import dict_factory
 
 from mock import Mock
 
