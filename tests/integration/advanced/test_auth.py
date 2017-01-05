@@ -6,7 +6,10 @@
 # You may obtain a copy of the License at
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
-
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest  # noqa
 from nose.plugins.attrib import attr
 from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT
 from dse.cluster import NoHostAvailable
@@ -360,6 +363,7 @@ class BaseDseProxyAuthTest(unittest.TestCase):
 
 
 @attr('long')
+@unittest.skipIf("skipping until development is complete")
 class DseProxyAuthTest(BaseDseProxyAuthTest):
     """
     Tests Unified Auth. Proxy Login using SASL and Proxy Execute.

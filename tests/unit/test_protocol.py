@@ -70,5 +70,5 @@ class MessageTest(unittest.TestCase):
         self.assertEqual(io.write.mock_calls[0][1],(b'\x00\x00\x00\x01',))
         self.assertEqual(io.write.mock_calls[1][1],(b'a',))
         self.assertEqual(io.write.mock_calls[2][1],(b'\x00\x03',))
-        #m ust be unsigned int
+        # must be unsigned int
         self.assertEqual(io.write.mock_calls[3][1],(b'\x00\x00\x00\x00',))
