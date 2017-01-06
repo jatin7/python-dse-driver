@@ -363,7 +363,7 @@ class BaseDseProxyAuthTest(unittest.TestCase):
 
 
 @attr('long')
-@unittest.skipIf("skipping until development is complete")
+@unittest.skip("skipping until development is complete")
 class DseProxyAuthTest(BaseDseProxyAuthTest):
     """
     Tests Unified Auth. Proxy Login using SASL and Proxy Execute.
