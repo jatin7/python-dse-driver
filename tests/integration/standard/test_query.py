@@ -18,6 +18,7 @@ import logging
 from dse import ConsistencyLevel, Unavailable, InvalidRequest
 from dse.query import (PreparedStatement, BoundStatement, SimpleStatement,
                              BatchStatement, BatchType, dict_factory, TraceUnavailable)
+
 import dse.cluster
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy

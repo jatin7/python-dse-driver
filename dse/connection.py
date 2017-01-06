@@ -32,7 +32,7 @@ if 'gevent.monkey' in sys.modules:
 else:
     from six.moves.queue import Queue, Empty  # noqa
 
-from dse import ConsistencyLevel, AuthenticationFailed, OperationTimedOut
+from dse import ConsistencyLevel, AuthenticationFailed, OperationTimedOut, ProtocolVersion
 from dse.marshal import int32_pack
 from dse.protocol import (ReadyMessage, AuthenticateMessage, OptionsMessage,
                           StartupMessage, ErrorMessage, CredentialsMessage,
@@ -40,8 +40,9 @@ from dse.protocol import (ReadyMessage, AuthenticateMessage, OptionsMessage,
                           InvalidRequestException, SupportedMessage,
                           AuthResponseMessage, AuthChallengeMessage,
                           AuthSuccessMessage, ProtocolException,
-                          MAX_SUPPORTED_VERSION, RegisterMessage)
+                          RegisterMessage)
 from dse.util import OrderedDict
+
 
 
 log = logging.getLogger(__name__)
@@ -192,7 +193,7 @@ class Connection(object):
     out_buffer_size = 4096
 
     cql_version = None
-    protocol_version = MAX_SUPPORTED_VERSION
+    protocol_version = ProtocolVersion.MAX_SUPPORTED
 
     keyspace = None
     compression = True
@@ -247,7 +248,7 @@ class Connection(object):
 
     def __init__(self, host='127.0.0.1', port=9042, authenticator=None,
                  ssl_options=None, sockopts=None, compression=True,
-                 cql_version=None, protocol_version=MAX_SUPPORTED_VERSION, is_control_connection=False,
+                 cql_version=None, protocol_version=ProtocolVersion.MAX_SUPPORTED, is_control_connection=False,
                  user_type_map=None, connect_timeout=None, allow_beta_protocol_version=False):
         self.host = host
         self.port = port
@@ -536,7 +537,7 @@ class Connection(object):
         pos = len(buf)
         if pos:
             version = int_from_buf_item(buf[0]) & PROTOCOL_VERSION_MASK
-            if version > MAX_SUPPORTED_VERSION:
+            if version > ProtocolVersion.MAX_SUPPORTED:
                 raise ProtocolError("This version of the driver does not support protocol version %d" % version)
             frame_header = frame_header_v3 if version >= 3 else frame_header_v1_v2
             # this frame header struct is everything after the version byte

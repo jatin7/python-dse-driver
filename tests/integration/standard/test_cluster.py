@@ -14,7 +14,7 @@ except ImportError:
 
 from collections import deque
 from copy import copy
-from mock import patch
+from mock import Mock, call, patch
 import time
 from uuid import uuid4
 import logging
@@ -25,8 +25,8 @@ from dse.concurrent import execute_concurrent
 from dse.policies import (RoundRobinPolicy, ExponentialReconnectionPolicy,
                           SimpleConvictionPolicy, HostDistance,
                           WhiteListRoundRobinPolicy, AddressTranslator)
-from dse.protocol import MAX_SUPPORTED_VERSION
 from dse.query import SimpleStatement, TraceUnavailable, tuple_factory
+
 
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_server_versions, CASSANDRA_VERSION, execute_until_pass, execute_with_long_wait_retry, get_node,\
     MockLoggingHandler, get_unsupported_lower_protocol, get_unsupported_upper_protocol, protocolv5
@@ -184,7 +184,7 @@ class ClusterTests(unittest.TestCase):
         """
 
         cluster = Cluster()
-        self.assertLessEqual(cluster.protocol_version,  MAX_SUPPORTED_VERSION)
+        self.assertLessEqual(cluster.protocol_version,  dse.ProtocolVersion.MAX_SUPPORTED)
         session = cluster.connect()
         updated_protocol_version = session._protocol_version
         updated_cluster_version = cluster.protocol_version
@@ -1050,6 +1050,43 @@ class HostStateTest(unittest.TestCase):
             self.assertTrue(was_marked_down)
 
 
+class DontPrepareOnIgnoredHostsTest(unittest.TestCase):
+
+    ignored_addresses = ['127.0.0.3']
+    ignore_node_3_policy = IgnoredHostPolicy(ignored_addresses)
+
+    def test_prepare_on_ignored_hosts(self):
+
+        cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=self.ignore_node_3_policy)})
+        session = cluster.connect()
+        cluster.reprepare_on_up, cluster.prepare_on_all_hosts = True, False
+
+        hosts = cluster.metadata.all_hosts()
+        session.execute("CREATE KEYSPACE clustertests "
+                        "WITH replication = "
+                        "{'class': 'SimpleStrategy', 'replication_factor': '1'}")
+        session.execute("CREATE TABLE clustertests.tab (a text, PRIMARY KEY (a))")
+        # assign to an unused variable so cluster._prepared_statements retains
+        # reference
+        _ = session.prepare("INSERT INTO clustertests.tab (a) VALUES ('a')")  # noqa
+
+        cluster.connection_factory = Mock(wraps=cluster.connection_factory)
+
+        unignored_address = '127.0.0.1'
+        unignored_host = next(h for h in hosts if h.address == unignored_address)
+        ignored_host = next(h for h in hosts if h.address in self.ignored_addresses)
+        unignored_host.is_up = ignored_host.is_up = False
+
+        cluster.on_up(unignored_host)
+        cluster.on_up(ignored_host)
+
+        # the length of mock_calls will vary, but all should use the unignored
+        # address
+        for c in cluster.connection_factory.mock_calls:
+            self.assertEqual(call(unignored_address), c)
+
+
 class DuplicateRpcTest(unittest.TestCase):
 
     load_balancing_policy = WhiteListRoundRobinPolicy(['127.0.0.1'])
@@ -1103,7 +1140,7 @@ class BetaProtocolTest(unittest.TestCase):
         @test_category connection
         """
 
-        cluster = Cluster(protocol_version=MAX_SUPPORTED_VERSION, allow_beta_protocol_version=False)
+        cluster = Cluster(protocol_version=dse.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=False)
         try:
             with self.assertRaises(NoHostAvailable):
                 cluster.connect()
@@ -1122,12 +1159,7 @@ class BetaProtocolTest(unittest.TestCase):
 
         @test_category connection
         """
-        cluster = Cluster(protocol_version=MAX_SUPPORTED_VERSION, allow_beta_protocol_version=True)
+        cluster = Cluster(protocol_version=dse.ProtocolVersion.MAX_SUPPORTED, allow_beta_protocol_version=True)
         session = cluster.connect()
-        self.assertEqual(cluster.protocol_version, MAX_SUPPORTED_VERSION)
+        self.assertEqual(cluster.protocol_version, dse.ProtocolVersion.MAX_SUPPORTED)
         self.assertTrue(session.execute("select release_version from system.local")[0])
-
-
-
-
-

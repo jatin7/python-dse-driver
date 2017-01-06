@@ -229,7 +229,7 @@ class ManagementConnectionTests(BaseCassEngTestCase):
     def test_connection_param_validation(self):
         """
         Test to validate that invalid parameter combinations for registering connections via session are not tolerated
-        @since 2.0
+        @since 3.8
         @jira_ticket PYTHON-649
         @expected_result queries should execute appropriately
 
@@ -420,7 +420,6 @@ class UsingDescriptorTests(BaseCassEngTestCase):
 
         for ks in self.keyspaces:
             drop_keyspace(ks, connections=self.conns)
-
         for ks in self.keyspaces:
             create_keyspace_simple(ks, 1, connections=self.conns)
         sync_table(TestModel, keyspaces=self.keyspaces, connections=self.conns)
