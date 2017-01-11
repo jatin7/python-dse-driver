@@ -105,11 +105,11 @@ class LibevConnectionTest(unittest.TestCase):
         self.assertTrue(c.connected_event.is_set())
         return c
 
-    def test_egain_on_buffer_size(self, *args):
+    def test_eagain_on_buffer_size(self, *args):
         # get a connection that's already fully started
         c = self.test_successful_connection()
 
-        header = six.b('\x00\x00\x00\x00') + int32_pack(20000)
+        header = six.b('\x02\x00\x00\x00') + int32_pack(20000)  # assumes protocol version < v3
         responses = [
             header + (six.b('a') * (4096 - len(header))),
             six.b('a') * 4096,

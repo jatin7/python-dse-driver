@@ -403,7 +403,7 @@ class ForcedHostSwitchPolicy(RoundRobinPolicy):
             return list(self._live_hosts)
 
 
-class PreparedStatementMetdataTest(unittest.TestCase):
+class PreparedStatementMetadataTest(unittest.TestCase):
 
     def test_prepared_metadata_generation(self):
         """

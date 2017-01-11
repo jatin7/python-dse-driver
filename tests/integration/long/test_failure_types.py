@@ -10,8 +10,8 @@
 import sys,logging, traceback, time
 
 from dse.policies import WhiteListRoundRobinPolicy
-from dse import ConsistencyLevel, OperationTimedOut, ReadTimeout, WriteTimeout, ReadFailure, WriteFailure,\
-    FunctionFailure, ProtocolVersion
+from dse import (ConsistencyLevel, OperationTimedOut, ReadTimeout, WriteTimeout, ReadFailure, WriteFailure,
+                 FunctionFailure, ProtocolVersion)
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.concurrent import execute_concurrent_with_args
 from dse.query import SimpleStatement

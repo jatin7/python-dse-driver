@@ -8,9 +8,8 @@
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 import sys
 
-import dse
+from dse import ProtocolVersion
 from dse.marshal import bitlength
-
 
 try:
     import unittest2 as unittest
@@ -149,10 +148,10 @@ class UnmarshalTest(unittest.TestCase):
             # Just verifying expected exception here
             f = converted_types[-1]
             self.assertIsInstance(f, float)
-            self.assertRaises(TypeError, DecimalType.to_binary, f, dse.ProtocolVersion.MAX_SUPPORTED)
+            self.assertRaises(TypeError, DecimalType.to_binary, f, ProtocolVersion.MAX_SUPPORTED)
             converted_types = converted_types[:-1]
 
-        for proto_ver in range(1, dse.ProtocolVersion.MAX_SUPPORTED + 1):
+        for proto_ver in range(1, ProtocolVersion.MAX_SUPPORTED + 1):
             for n in converted_types:
                 expected = Decimal(n)
                 self.assertEqual(DecimalType.from_binary(DecimalType.to_binary(n, proto_ver), proto_ver), expected)

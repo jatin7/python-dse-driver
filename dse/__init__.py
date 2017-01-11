@@ -153,7 +153,12 @@ class ProtocolVersion(object):
     v5, in beta from 3.x+
     """
 
-    SUPPORTED_VERSIONS = (V5, V4, V3, V2, V1)
+    DSE_V1 = 0x41
+    """
+    DSE private protocol v1, supported in DSE 5.1+
+    """
+
+    SUPPORTED_VERSIONS = (DSE_V1, V5, V4, V3, V2, V1)
     """
     A tuple of all supported protocol versions
     """
