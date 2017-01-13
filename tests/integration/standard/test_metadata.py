@@ -23,14 +23,17 @@ from dse import AlreadyExists, SignatureDescriptor, UserFunctionDescriptor, User
 from dse.cluster import Cluster
 from dse.encoder import Encoder
 from dse.metadata import (Metadata, KeyspaceMetadata, IndexMetadata,
-                                Token, MD5Token, TokenMap, murmur3, Function, Aggregate, protect_name, protect_names,
-                                get_schema_parser, RegisteredTableExtension)
+                          Token, MD5Token, TokenMap, murmur3, Function, Aggregate, protect_name, protect_names,
+                          get_schema_parser, RegisteredTableExtension)
 from dse.policies import SimpleConvictionPolicy
 from dse.pool import Host
+from dse.util import SortedSet
 
-from tests.integration import get_cluster, use_singledc, PROTOCOL_VERSION, get_server_versions, execute_until_pass, \
-    BasicSegregatedKeyspaceUnitTestCase, BasicSharedKeyspaceUnitTestCase, BasicExistingKeyspaceUnitTestCase, drop_keyspace_shutdown_cluster, CASSANDRA_VERSION, \
-    BasicExistingSegregatedKeyspaceUnitTestCase, dseonly, DSE_VERSION, get_supported_protocol_versions, greaterthanorequalcass30
+from tests.integration import (get_cluster, use_singledc, PROTOCOL_VERSION, get_server_versions, execute_until_pass,
+                               BasicSegregatedKeyspaceUnitTestCase, BasicSharedKeyspaceUnitTestCase,
+                               BasicExistingKeyspaceUnitTestCase, drop_keyspace_shutdown_cluster, CASSANDRA_VERSION,
+                               BasicExistingSegregatedKeyspaceUnitTestCase, dseonly, DSE_VERSION,
+                               get_supported_protocol_versions, greaterthanorequalcass30, greaterthanorequaldse51)
 
 
 def setup_module():
@@ -2571,4 +2574,20 @@ class DSEMetadataTest(BasicExistingSegregatedKeyspaceUnitTestCase):
         for host in self.cluster.metadata.all_hosts():
             self.assertIsNotNone(host.dse_version, "Dse version not populated as expected")
             self.assertEqual(host.dse_version, DSE_VERSION)
-            self.assertTrue("Cassandra" in host.dse_workload)
+            self.assertIn("Cassandra", host.dse_workload)
+
+    @greaterthanorequaldse51
+    def test_dse_workloads(self):
+        """
+        Test to ensure dse_workloads is populated appropriately.
+        Field added in DSE 5.1
+
+        @since DSE 2.0
+        @jira_ticket PYTHON-667
+        @expected_result dse_workloads set is set on host model
+
+        @test_category metadata
+        """
+        for host in self.cluster.metadata.all_hosts():
+            self.assertIsInstance(host.dse_workloads, SortedSet)
+            self.assertIn("Cassandra", host.dse_workloads)
