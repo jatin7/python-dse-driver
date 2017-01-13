@@ -2046,7 +2046,7 @@ class Session(object):
         if execute_as:
             custom_payload[_proxy_execute_key] = execute_as
 
-        future.message._query_params = graph_parameters
+        future.message.query_params = graph_parameters
         future._protocol_handler = self.client_protocol_handler
 
         if options.is_analytics_source and isinstance(execution_profile.load_balancing_policy, DSELoadBalancingPolicy):
