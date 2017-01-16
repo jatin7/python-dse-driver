@@ -171,7 +171,7 @@ class ExecutionProfileTest(unittest.TestCase):
         self.assertEqual(cluster.profile_manager.default.row_factory, named_tuple_factory)
 
     def test_default_profile(self):
-        non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(5)])
+        non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'non-default': non_default_profile})
         session = Session(cluster, hosts=[])
 
@@ -183,7 +183,7 @@ class ExecutionProfileTest(unittest.TestCase):
         self._verify_response_future_profile(rf, non_default_profile)
 
     def test_statement_params_override_profile(self):
-        non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(5)])
+        non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'non-default': non_default_profile})
         session = Session(cluster, hosts=[])
 
@@ -205,14 +205,14 @@ class ExecutionProfileTest(unittest.TestCase):
 
     def test_profile_name_value(self):
 
-        internalized_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(5)])
+        internalized_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'by-name': internalized_profile})
         session = Session(cluster, hosts=[])
 
         rf = session.execute_async("query", execution_profile='by-name')
         self._verify_response_future_profile(rf, internalized_profile)
 
-        by_value = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(5)])
+        by_value = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         rf = session.execute_async("query", execution_profile=by_value)
         self._verify_response_future_profile(rf, by_value)
 
