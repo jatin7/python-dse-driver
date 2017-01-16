@@ -8,7 +8,7 @@
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 # from tests.integration import BasicSharedKeyspaceUnitTestCase, use_single_node
 
-from tests.integration import use_single_node, BasicSharedKeyspaceUnitTestCase, greaterthandse51
+from tests.integration import use_single_node, BasicSharedKeyspaceUnitTestCase, greaterthanorequaldse51
 
 try:
     import unittest2 as unittest
@@ -20,7 +20,7 @@ def setup_module():
 
 class RLACMetadataTests(BasicSharedKeyspaceUnitTestCase):
 
-    @greaterthandse51
+    @greaterthanorequaldse51
     def test_rlac_on_table(self):
         """
         Checks to ensure that the RLAC table extension appends the proper cql on export to tables
@@ -43,7 +43,7 @@ class RLACMetadataTests(BasicSharedKeyspaceUnitTestCase):
         table_meta = self.cluster.metadata.keyspaces[self.keyspace_name].tables['reports']
         self.assertTrue(restrict_cql in table_meta.export_as_string())
 
-    @greaterthandse51
+    @greaterthanorequaldse51
     @unittest.skip("NPE ON SERVER")
     def test_rlac_on_mv(self):
         """
