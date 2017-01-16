@@ -17,7 +17,7 @@ import six
 from six.moves import range
 import io
 
-from dse import type_codes, DriverException
+from dse import type_codes, DriverException, ProtocolVersion
 from dse import (Unavailable, WriteTimeout, ReadTimeout,
                  WriteFailure, ReadFailure, FunctionFailure,
                  AlreadyExists, InvalidRequest, Unauthorized,
@@ -564,12 +564,12 @@ class _QueryMessage(_MessageType):
             flags |= _PROTOCOL_TIMESTAMP_FLAG
 
         if self.continuous_paging_options:
-            if protocol_version >= 65:
+            if protocol_version >= ProtocolVersion.DSE_V1:
                 flags |= _PAGING_OPTIONS_FLAG
             else:
                 raise UnsupportedOperation(
                     "Continuous paging may only be used with protocol version "
-                    "65 or higher. Consider setting Cluster.protocol_version to 65.")
+                    "ProtocolVersion.DSE_V1 or higher. Consider setting Cluster.protocol_version to ProtocolVersion.DSE_V1.")
 
         if protocol_version >= 5:
             write_uint(f, flags)
