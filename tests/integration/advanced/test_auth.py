@@ -18,9 +18,9 @@ from dse.query import SimpleStatement
 from dse.auth import DSEGSSAPIAuthProvider, DSEPlainTextAuthProvider, SaslAuthProvider
 import os, time, logging
 import subprocess
-from tests.integration.advanced import ADS_HOME, use_single_node_with_graph, generate_classic, reset_graph
+from tests.integration.advanced import ADS_HOME, use_single_node_with_graph, generate_classic, reset_graph, DSE_VERSION
 
-from tests.integration import get_cluster, remove_cluster
+from tests.integration import get_cluster, remove_cluster, greaterthanorequaldse51
 from ccmlib.dse_cluster import DseCluster
 try:
     import unittest2 as unittest
@@ -107,19 +107,6 @@ class BasicDseAuthTest(unittest.TestCase):
         """
 
         self.proc.terminate()
-
-    # def setUp(self):
-    #     """ TO REMOVE """
-    #     os.environ['KRB5_CONFIG'] = self.krb_conf
-    #     self.refresh_kerberos_tickets(self.cassandra_keytab, "cassandra@DATASTAX.COM", self.krb_conf)
-    #     auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"])
-    #     c = Cluster(auth_provider=auth_provider)
-    #     s = c.connect()
-    #     s.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
-    #     for r in rs:
-    #         print r
-    #     c.shutdown()
-    #     clear_kerberos_tickets()
 
     def tearDown(self):
         """
@@ -250,36 +237,6 @@ class BasicDseAuthTest(unittest.TestCase):
         auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="notauser@DATASTAX.COM")
         self.assertRaises(NoHostAvailable, self.connect_and_query, auth_provider)
 
-    # def test_proxy_login_with_kerberos(self):
-    #     """
-    #     Test that the proxy login works with kerberos.
-    #     """
-    #
-    #     # Set up users for proxy login test
-    #     os.environ['KRB5_CONFIG'] = self.krb_conf
-    #     self.refresh_kerberos_tickets(self.bob_keytab, "bob@DATASTAX.COM", self.krb_conf)
-    #     auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"])
-    #     self.cluster = Cluster(auth_provider=auth_provider)
-    #     session = self.cluster.connect()
-    #
-    #     session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
-    #     session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('dseuser@DATASTAX.COM'))
-    #     session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('charlie@DATASTAX.COM'))
-    #
-    #     # # Create a keyspace and allow only charlie to query it.
-    #     # session.execute(
-    #     #     "CREATE KEYSPACE testkrbproxy WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
-    #     # session.execute("CREATE TABLE testkrbproxy.testproxy (id int PRIMARY KEY, value text)")
-    #     # session.execute("GRANT ALL PERMISSIONS ON KEYSPACE testkrbproxy to '{0}'".format('charlie@DATASTAX.COM'))
-    #     #
-    #     # clear_kerberos_tickets()
-    #     # self.refresh_kerberos_tickets(self.dseuser_keytab, "dseuser@DATASTAX.COM", self.krb_conf)
-    #     # auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"])
-    #     # self.connect_and_query(auth_provider, 'select * from testkrbproxy.testproxy;')
-    #
-    #     #self.ot_session.execute("GRANT PROXY.LOGIN on role {0} to {1}".format(self.user_role, self.server_role))
-
-
 def clear_kerberos_tickets():
         subprocess.call(['kdestroy'], shell=False)
 
@@ -292,7 +249,8 @@ class BaseDseProxyAuthTest(unittest.TestCase):
         """
         This will setup the necessary infrastructure to run unified authentication tests.
         """
-
+        if DSE_VERSION and DSE_VERSION < '5.1':
+            return
         self.cluster = None
 
         ccm_cluster = get_cluster()
@@ -334,7 +292,8 @@ class BaseDseProxyAuthTest(unittest.TestCase):
         """
         Shutdown the root session.
         """
-
+        if DSE_VERSION and DSE_VERSION < '5.1':
+            return
         self.root_session.execute('DROP KEYSPACE testproxy;')
         self.root_session.execute('DROP USER {0}'.format(self.user_role))
         self.root_session.execute('DROP USER {0}'.format(self.server_role))
@@ -363,7 +322,7 @@ class BaseDseProxyAuthTest(unittest.TestCase):
 
 
 @attr('long')
-@unittest.skip("skipping until development is complete")
+@greaterthanorequaldse51
 class DseProxyAuthTest(BaseDseProxyAuthTest):
     """
     Tests Unified Auth. Proxy Login using SASL and Proxy Execute.
@@ -387,9 +346,13 @@ class DseProxyAuthTest(BaseDseProxyAuthTest):
         rs = self.session.execute(query, execute_as=execute_as)
         return rs
 
-    def test_proxy_login_forbidden(self):   
+    def test_proxy_login_forbidden(self):
         """
         Test that a proxy login is forbidden by default for a user.
+        @since 2.0.0
+        @jira_ticket PYTHON-662
+        @test_category dse auth
+        @expected_result connect and query should not be allowed
         """
         auth_provider = SaslAuthProvider(**self.get_sasl_options())
         with self.assertRaises(Unauthorized):
@@ -398,6 +361,10 @@ class DseProxyAuthTest(BaseDseProxyAuthTest):
     def test_proxy_login_allowed(self):
         """
         Test that a proxy login is allowed with proper permissions.
+        @since 2.0.0
+        @jira_ticket PYTHON-662
+        @test_category dse auth
+        @expected_result connect and query should be allowed
         """
         auth_provider = SaslAuthProvider(**self.get_sasl_options())
         self.grant_proxy_login()
@@ -406,6 +373,10 @@ class DseProxyAuthTest(BaseDseProxyAuthTest):
     def test_proxy_execute_forbidden(self):
         """
         Test that a proxy execute is forbidden by default for a user.
+        @since 2.0.0
+        @jira_ticket PYTHON-662
+        @test_category dse auth
+        @expected_result connect and query should not be allowed
         """
         auth_provider = DSEPlainTextAuthProvider(self.server_role, self.server_role)
         with self.assertRaises(Unauthorized):
@@ -414,6 +385,10 @@ class DseProxyAuthTest(BaseDseProxyAuthTest):
     def test_proxy_execute_allowed(self):
         """
         Test that a proxy execute is allowed with proper permissions.
+        @since 2.0.0
+        @jira_ticket PYTHON-662
+        @test_category dse auth
+        @expected_result connect and query should be allowed
         """
         auth_provider = DSEPlainTextAuthProvider(self.server_role, self.server_role)
         self.grant_proxy_execute()
