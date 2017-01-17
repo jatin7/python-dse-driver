@@ -16,7 +16,7 @@ import os, sys, traceback, logging, ssl, time
 from dse.cluster import Cluster, NoHostAvailable
 from dse import ConsistencyLevel
 from dse.query import SimpleStatement
-from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, remove_cluster
+from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, remove_cluster, use_single_node, wait_for_node_socket
 
 if not hasattr(ssl, 'match_hostname'):
     try:
@@ -46,7 +46,7 @@ def setup_cluster_ssl(client_auth=False):
     ssl connectivity, and client authenticiation if needed.
     """
 
-    use_singledc(start=False)
+    use_single_node(start=False)
     ccm_cluster = get_cluster()
     ccm_cluster.stop()
 
@@ -67,7 +67,9 @@ def setup_cluster_ssl(client_auth=False):
         client_encyrption_options['truststore_password'] = DEFAULT_PASSWORD
 
     ccm_cluster.set_configuration_options(config_options)
-    ccm_cluster.start(wait_for_binary_proto=True, wait_other_notice=True)
+    ccm_cluster.start(no_wait=True)
+    for node in ccm_cluster.nodes.values():
+        wait_for_node_socket(node, 120)
 
 
 def teardown_module():
@@ -101,7 +103,7 @@ def validate_ssl_options(ssl_options):
             WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3'}
             """
         statement = SimpleStatement(insert_keyspace)
-        statement.consistency_level = 3
+        statement.consistency_level = 1
         session.execute(statement)
 
         drop_keyspace = "DROP KEYSPACE ssltest"
