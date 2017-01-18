@@ -33,7 +33,7 @@ from dse.cqltypes import (AsciiType, BytesType, BooleanType,
                           LongType, MapType, SetType, TimeUUIDType,
                           UTF8Type, VarcharType, UUIDType, UserType,
                           TupleType, lookup_casstype, SimpleDateType,
-                          TimeType, ByteType, ShortType)
+                          TimeType, ByteType, ShortType, DurationType)
 from dse.policies import WriteType
 from dse.cython_deps import HAVE_CYTHON, HAVE_NUMPY
 from dse import util

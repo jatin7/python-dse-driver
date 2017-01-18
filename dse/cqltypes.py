@@ -40,10 +40,11 @@ import sys
 from uuid import UUID
 
 from dse.marshal import (int8_pack, int8_unpack, int16_pack, int16_unpack,
-                               uint16_pack, uint16_unpack, uint32_pack, uint32_unpack,
-                               int32_pack, int32_unpack, int64_pack, int64_unpack,
-                               float_pack, float_unpack, double_pack, double_unpack,
-                               varint_pack, varint_unpack, point_be, point_le)
+                         uint16_pack, uint16_unpack, uint32_pack, uint32_unpack,
+                         int32_pack, int32_unpack, int64_pack, int64_unpack,
+                         float_pack, float_unpack, double_pack, double_unpack,
+                         varint_pack, varint_unpack, point_be, point_le,
+                         vints_pack, vints_unpack)
 from dse import util
 
 _little_endian_flag = 1  # we always serialize LE
@@ -657,6 +658,23 @@ class TimeType(_CassandraType):
         except AttributeError:
             nano = util.Time(val).nanosecond_time
         return int64_pack(nano)
+
+
+class DurationType(_CassandraType):
+    typename = 'duration'
+
+    @staticmethod
+    def deserialize(byts, protocol_version):
+        months, days, nanoseconds = vints_unpack(byts)
+        return util.Duration(months, days, nanoseconds)
+
+    @staticmethod
+    def serialize(duration, protocol_version):
+        try:
+            m, d, n = duration.months, duration.days, duration.nanoseconds
+        except AttributeError:
+            raise TypeError('DurationType arguments must be a Duration.')
+        return vints_pack([m, d, n])
 
 
 class UTF8Type(_CassandraType):
