@@ -7,7 +7,7 @@
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
-from tests.integration import use_singledc, greaterthanorequaldse51, BasicSharedKeyspaceUnitTestCaseWTable
+from tests.integration import use_singledc, greaterthanorequaldse51, BasicSharedKeyspaceUnitTestCaseWTable, DSE_VERSION
 
 import logging
 log = logging.getLogger(__name__)
@@ -35,6 +35,8 @@ class ContPagingTests(BasicSharedKeyspaceUnitTestCaseWTable):
 
     @classmethod
     def setUpClass(cls):
+        if DSE_VERSION and DSE_VERSION < '5.1':
+            return
         super(ContPagingTests, cls).setUpClass()
         cls.default_cont = object
         cls.one_page_cont = object()
@@ -54,6 +56,11 @@ class ContPagingTests(BasicSharedKeyspaceUnitTestCaseWTable):
 
         cls.select_all_statement = "SELECT * FROM {0}.{0}".format(cls.ks_name)
 
+    @classmethod
+    def tearDownClass(cls):
+        if DSE_VERSION and DSE_VERSION < '5.1':
+            return
+        super(ContPagingTests, cls).tearDownClass()
 
     def test_continous_paging(self):
         """
