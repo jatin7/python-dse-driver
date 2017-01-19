@@ -72,16 +72,6 @@ def setup_cluster_ssl(client_auth=False):
         wait_for_node_socket(node, 120)
 
 
-def teardown_module():
-    """
-    The rest of the tests don't need ssl enabled, remove the cluster so as to not interfere with other tests.
-    """
-
-    ccm_cluster = get_cluster()
-    ccm_cluster.stop()
-    remove_cluster()
-
-
 def validate_ssl_options(ssl_options):
         # find absolute path to client CA_CERTS
         tries = 0
@@ -119,6 +109,12 @@ class SSLConnectionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         setup_cluster_ssl()
+
+    @classmethod
+    def tearDownClass(cls):
+        ccm_cluster = get_cluster()
+        ccm_cluster.stop()
+        remove_cluster()
 
     def test_can_connect_with_ssl_ca(self):
         """
@@ -207,6 +203,12 @@ class SSLConnectionAuthTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         setup_cluster_ssl(client_auth=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        ccm_cluster = get_cluster()
+        ccm_cluster.stop()
+        remove_cluster()
 
     def test_can_connect_with_ssl_client_auth(self):
         """
