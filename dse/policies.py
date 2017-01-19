@@ -317,10 +317,6 @@ class TokenAwarePolicy(LoadBalancingPolicy):
 
     If no :attr:`~.Statement.routing_key` is set on the query, the child
     policy's query plan will be used as is.
-
-    If :attr:`.shuffle_replicas` is truthy, :attr:`~.HostDistance.LOCAL`
-    replicas will be yielded in a random order, followed by the remaining 
-    hosts in the order provided child policy's query plan.
     """
 
     _child_policy = None
