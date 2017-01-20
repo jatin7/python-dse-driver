@@ -11,16 +11,15 @@ Feedback Requested
 
 Features
 --------
-##### TBD: point to unified documentation
-* `Synchronous <http://datastax.github.io/python-driver/api/cassandra/cluster.html#cassandra.cluster.Session.execute>`_ and `Asynchronous <http://datastax.github.io/python-driver/api/cassandra/cluster.html#cassandra.cluster.Session.execute_async>`_ APIs
-* `Simple, Prepared, and Batch statements <http://datastax.github.io/python-driver/api/cassandra/query.html#cassandra.query.Statement>`_
+* `Synchronous <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster.html#dse.cluster.Session.execute>`_ and `Asynchronous <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster.html#dse.cluster.Session.execute_async>`_ APIs
+* `Simple, Prepared, and Batch statements <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/query.html#dse.query.Statement>`_
 * Asynchronous IO, parallel execution, request pipelining
-* `Connection pooling <http://datastax.github.io/python-driver/api/cassandra/cluster.html#cassandra.cluster.Cluster.get_core_connections_per_host>`_
+* `Connection pooling <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster.html#dse.cluster.Cluster.get_core_connections_per_host>`_
 * Automatic node discovery
-* `Automatic reconnection <http://datastax.github.io/python-driver/api/cassandra/policies.html#reconnecting-to-dead-hosts>`_
-* Configurable `load balancing <http://datastax.github.io/python-driver/api/cassandra/policies.html#load-balancing>`_ and `retry policies <http://datastax.github.io/python-driver/api/cassandra/policies.html#retrying-failed-operations>`_
-* `Concurrent execution utilities <http://datastax.github.io/python-driver/api/cassandra/concurrent.html>`_
-* `Object mapper <http://datastax.github.io/python-driver/object_mapper.html>`_
+* `Automatic reconnection <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies.html#reconnecting-to-dead-hosts>`_
+* Configurable `load balancing <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies.html#load-balancing>`_ and `retry policies <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies.html#retrying-failed-operations>`_
+* `Concurrent execution utilities <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/concurrent.html>`_
+* `Object mapper <http://docs.datastax.com/en/developer/python-dse-driver/latest/object_mapper.html>`_
 * DSE Graph execution API
 * DSE Geometric type serialization
 * DSE PlainText and GSSAPI authentication
@@ -29,19 +28,19 @@ Installation
 ------------
 Installation through pip is recommended::
 
-    $ pip install cassandra-driver-dse
+    $ pip install dse-driver
 
-For more complete installation instructions, see the `installation guide <http://docs.datastax.com/en/developer/python-driver-dse/1.1/installation/>`_.
+For more complete installation instructions, see the `installation guide <http://docs.datastax.com/en/developer/python-dse-driver/latest/installation/>`_.
 
 Documentation
 -------------
-The documentation can be found online `here <http://docs.datastax.com/en/latest-dse-python-driver/>`_.
+The documentation can be found online `here <http://docs.datastax.com/en/developer/python-dse-driver/latest>`_.
 
 A couple of links for getting up to speed:
 
-* `Installation <http://docs.datastax.com/en/developer/python-driver-dse/1.1/installation/>`_
-* `Getting started guide <http://docs.datastax.com/en/developer/python-driver-dse/1.1/getting_started/>`_
-* `API docs <http://docs.datastax.com/en/developer/python-driver-dse/1.1/api/>`_
+* `Installation <http://docs.datastax.com/en/developer/python-dse-driver/latest/installation/>`_
+* `Getting started guide <http://docs.datastax.com/en/developer/python-dse-driver/latest/getting_started/>`_
+* `API docs <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/>`_
 
 Reporting Problems
 ------------------
