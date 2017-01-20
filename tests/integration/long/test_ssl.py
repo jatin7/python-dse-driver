@@ -16,7 +16,7 @@ import os, sys, traceback, logging, ssl, time
 from dse.cluster import Cluster, NoHostAvailable
 from dse import ConsistencyLevel
 from dse.query import SimpleStatement
-from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, remove_cluster, use_single_node, wait_for_node_socket
+from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, remove_cluster, use_single_node, wait_for_node_socket, start_cluster_wait_for_up
 
 if not hasattr(ssl, 'match_hostname'):
     try:
@@ -67,9 +67,7 @@ def setup_cluster_ssl(client_auth=False):
         client_encyrption_options['truststore_password'] = DEFAULT_PASSWORD
 
     ccm_cluster.set_configuration_options(config_options)
-    ccm_cluster.start(no_wait=True)
-    for node in ccm_cluster.nodes.values():
-        wait_for_node_socket(node, 120)
+    start_cluster_wait_for_up(ccm_cluster)
 
 
 def validate_ssl_options(ssl_options):

@@ -52,10 +52,8 @@ if sys.version_info < (3, 0):
 
 TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
             "point2": ["Point()", Point(-5, .0)],
-            "linestring1": ["Linestring()", LineString(((1.0, 2.0), (3.0, 4.0), (9871234.0, 1235487215.0)))],
-            "linestring2": ["Linestring()", LineString()],
-            "polygon1": ["Polygon()", Polygon([(10.0, 10.0), (110.0, 10.0), (110., 110.0), (10., 110.0), (10., 10.0)], [[(20., 20.0), (20., 30.0), (30., 30.0), (30., 20.0), (20., 20.0)], [(40., 20.0), (40., 30.0), (50., 30.0), (50., 20.0), (40., 20.0)]])],
-            "polygon2": ["Polygon()", Polygon()],
+            "linestring1": ["Linestring()", LineString(((1.0, 2.0), (3.0, 4.0), (-89.0, 90.0)))],
+            "polygon1": ["Polygon()", Polygon([(10.0, 10.0), (80.0, 10.0), (80., 88.0), (10., 89.0), (10., 10.0)], [[(20., 20.0), (20., 30.0), (30., 30.0), (30., 20.0), (20., 20.0)], [(40., 20.0), (40., 30.0), (50., 30.0), (50., 20.0), (40., 20.0)]])],
             "smallint1": ["Smallint()", 1],
             "varint1": ["Varint()", 2147483647],
             "bigint1": ["Bigint()", MAX_LONG],
@@ -248,6 +246,35 @@ class BasicSharedGraphUnitTestCase(BasicKeyspaceUnitTestCase):
     def wait_for_graph_inserted(self):
         wait_for_graph_inserted(self.session, self.graph_name)
 
+def fetchCustomGeoType(type):
+    if type.lower().startswith("point"):
+        return getPointType()
+    elif type.lower().startswith("line"):
+        return getLineType()
+    elif type.lower().startswith("poly"):
+        return getPolygonType()
+    else:
+        return None
+
+def getPointType():
+    if DSE_VERSION.startswith("5.0"):
+        return "Point()"
+
+    return "Point().withGeoBounds()"
+
+def getLineType():
+    if DSE_VERSION.startswith("5.0"):
+        return "Linestring()"
+
+    return "Linestring().withGeoBounds()"
+
+def getPolygonType():
+    if DSE_VERSION.startswith("5.0"):
+        return "Polygon()"
+
+    return "Polygon().withGeoBounds()"
+
+
 
 class BasicGeometricUnitTestCase(BasicKeyspaceUnitTestCase):
     """
@@ -376,11 +403,13 @@ def generate_type_graph_schema(session, prime_schema=True):
     session.execute_graph(ALLOW_SCANS)
     if(prime_schema):
         for key in TYPE_MAP.keys():
-
+            prop_type = fetchCustomGeoType(key)
+            if prop_type is None:
+                prop_type=TYPE_MAP[key][0]
             vertex_label = key
             prop_name = key+"value"
             insert_string = ""
-            insert_string += "schema.propertyKey('{0}').{1}.ifNotExists().create();".format(prop_name, TYPE_MAP[key][0])
+            insert_string += "schema.propertyKey('{0}').{1}.ifNotExists().create();".format(prop_name, prop_type)
             insert_string += "schema.vertexLabel('{0}').properties('{1}').ifNotExists().create();".format(vertex_label, prop_name)
             session.execute_graph(insert_string)
     else:
@@ -390,7 +419,7 @@ def generate_type_graph_schema(session, prime_schema=True):
 def generate_address_book_graph(session, size):
     to_run = [ALLOW_SCANS,
               "schema.propertyKey('name').Text().create()\n" +
-              "schema.propertyKey('coordinates').Point().create()\n" +
+              "schema.propertyKey('coordinates')."+getPointType()+".create()\n" +
               "schema.propertyKey('city').Text().create()\n" +
               "schema.propertyKey('state').Text().create()\n" +
               "schema.propertyKey('description').Text().create()\n" +
