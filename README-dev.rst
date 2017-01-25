@@ -141,7 +141,7 @@ You can also specify a cassandra directory (to test unreleased versions)::
 
 Specifying the usage of an already running Cassandra cluster
 ----------------------------------------------------
-The test will start the appropriate Cassandra clusters when necessary  but if you don't want this to happen because a Cassandra cluster is already running the flag ``USE_CASS_EXTERNAL`` can be used, for example: 
+The test will start the appropriate Cassandra clusters when necessary  but if you don't want this to happen because a Cassandra cluster is already running the flag ``USE_CASS_EXTERNAL`` can be used, for example:
 
 	USE_CASS_EXTERNAL=1 python setup.py nosetests -w tests/integration/standard
 
@@ -170,7 +170,7 @@ and change ``tests/unit/`` to ``tests/``.
 Running the Benchmarks
 ======================
 There needs to be a version of cassandra running locally so before running the benchmarks, if ccm is installed:
-	
+
 	ccm create benchmark_cluster -v 3.0.1 -n 1 -s
 
 To run the benchmarks, pick one of the files under the ``benchmarks/`` dir and run it::
@@ -181,9 +181,9 @@ There are a few options.  Use ``--help`` to see them all::
 
     python benchmarks/future_batches.py --help
 
-Packaging for Cassandra
-=======================
-A source distribution is included in Cassandra, which uses the driver internally for ``cqlsh``.
+Packaging for dse-driver
+========================
+A source distribution is included in dse-driver, which uses the driver internally for ``cqlsh``.
 To package a released version, checkout the tag and build a source zip archive::
 
     python setup.py sdist --formats=zip
@@ -193,8 +193,36 @@ name to specify the built version::
 
     python setup.py egg_info -b-`git rev-parse --short HEAD` sdist --formats=zip
 
-The file (``dist/cassandra-driver-<version spec>.zip``) is packaged with Cassandra in ``cassandra/lib/cassandra-driver-internal-only*zip``.
+The file (``dist/dse-driver-<version spec>.zip``) is packaged with Cassandra in ``dse-driver/lib/dse-driver-internal-only*zip``.
 
-Most notes on releasing and testing are the same as those in the core driver `README-dev <https://github.com/datastax/python-driver/blob/master/README-dev.rst>`_.
+Most notes on releasing and testing are the same as those in the core driver `README-dev <https://github.com/riptano/python-dse-driver/blob/master/README-dev.rst>`_.
 
 Here we discuss any differences.
+
+Releasing an EAP
+================
+
+An EAP release is only uploaded on a private server and it is not published on pypi.
+
+* Clean the environment
+python setup.py clean
+
+* Package the source distribution::
+
+    python setup.py sdist
+
+* Test the source distribution::
+
+    pip install dist/dse-driver-<version>.tar.gz
+
+* Upload the package on the EAP download server::
+
+    scp dist/dse-driver-<version>.tar.gz username@jenkins2.datastax.lan:/datastax/www/eap.datastax.com/drivers/python
+
+* Build the documentation::
+
+    python setup.py doc
+
+* Upload the docs on the EAP download server::
+
+    scp -r docs/_build/<version>/  username@jenkins2.datastax.lan:/datastax/www/eap.datastax.com/drivers/python/docs
