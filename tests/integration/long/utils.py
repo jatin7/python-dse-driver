@@ -13,7 +13,7 @@ import time
 
 from collections import defaultdict
 
-from tests.integration import get_node, get_cluster
+from tests.integration import get_node, get_cluster, DSE_VERSION
 
 IP_FORMAT = '127.0.0.%s'
 
@@ -84,7 +84,10 @@ def force_stop(node):
 
 
 def decommission(node):
-    get_node(node).decommission()
+    if(DSE_VERSION >= "5.1"):
+        get_node(node).decommission(force=True)
+    else:
+        get_node(node).decommission()
     get_node(node).stop()
 
 

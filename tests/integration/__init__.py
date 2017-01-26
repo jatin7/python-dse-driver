@@ -117,7 +117,7 @@ else:
     CASSANDRA_VERSION = os.getenv('CASSANDRA_VERSION', default_cassandra_version)
 
 CCM_KWARGS = {}
-if CASSANDRA_DIR:
+if CASSANDRA_DIR and (len(CASSANDRA_DIR) >= 1):
     log.info("Using Cassandra dir: %s", CASSANDRA_DIR)
     CCM_KWARGS['install_dir'] = CASSANDRA_DIR
 
@@ -297,6 +297,13 @@ def is_current_cluster(cluster_name, node_counts, workloads):
             return True
     return False
 
+def start_cluster_wait_for_up(cluster):
+    cluster.start(no_wait=True)
+    # Added to wait for slow nodes to start up
+    log.debug("Cluster started waiting for binary ports")
+    for node in CCM_CLUSTER.nodes.values():
+        wait_for_node_socket(node, 120)
+    log.debug("Binary port are open")
 
 def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
     global CCM_CLUSTER

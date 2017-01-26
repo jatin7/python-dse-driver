@@ -15,7 +15,7 @@ from dse import (ConsistencyLevel, OperationTimedOut, ReadTimeout, WriteTimeout,
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.concurrent import execute_concurrent_with_args
 from dse.query import SimpleStatement
-from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, setup_keyspace, remove_cluster, get_node
+from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, setup_keyspace, remove_cluster, get_node, start_cluster_wait_for_up
 from mock import Mock
 
 try:
@@ -40,7 +40,7 @@ def setup_module():
         ccm_cluster.stop()
         config_options = {'tombstone_failure_threshold': 2000, 'tombstone_warn_threshold': 1000}
         ccm_cluster.set_configuration_options(config_options)
-        ccm_cluster.start(wait_for_binary_proto=True, wait_other_notice=True)
+        start_cluster_wait_for_up(ccm_cluster)
         setup_keyspace()
 
 
