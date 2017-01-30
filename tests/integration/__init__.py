@@ -169,6 +169,13 @@ def get_supported_protocol_versions():
         return (1)
 
 
+def is_protocol_beta(protocol):
+    if Version(CASSANDRA_VERSION) >= Version('3.10') and protocol == 5:
+        return True
+    else:
+        return False
+
+
 def get_unsupported_lower_protocol():
     """
     This is used to determine the lowest protocol version that is NOT

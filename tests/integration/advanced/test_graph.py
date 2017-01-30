@@ -27,7 +27,7 @@ from dse.graph import (SimpleGraphStatement, graph_object_row_factory, single_ob
 from dse.util import SortedSet
 
 from tests.integration.advanced import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT,\
-    validate_classic_vertex, validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type
+    validate_classic_vertex, validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type, fetchCustomGeoType
 from tests.integration import PROTOCOL_VERSION, dseonly, greaterthanorequaldse51
 
 
@@ -282,8 +282,8 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         @test_category dse graph
         """
         self.session.execute_graph('''import org.apache.cassandra.db.marshal.geometry.Point;
-                                      schema.propertyKey('pointP').Point().ifNotExists().create();
-                                      schema.vertexLabel('PointV').properties('pointP').ifNotExists().create();''')
+                                      schema.propertyKey('pointP').{0}.ifNotExists().create();
+                                      schema.vertexLabel('PointV').properties('pointP').ifNotExists().create();'''.format(fetchCustomGeoType("point")))
 
         rs = self.session.execute_graph('''g.addV(label, 'PointV', 'pointP', 'POINT(0 1)');''')
 
@@ -490,7 +490,8 @@ class GraphTimeoutTests(BasicGraphUnitTestCase):
             self.session.execute_graph(to_run, execution_profile=ep_name)
             with self.assertRaises(InvalidRequest) as ir:
                 self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep_name)
-            self.assertTrue("Script evaluation exceeded the configured threshold of 1000" in str(ir.exception))
+            self.assertTrue("Script evaluation exceeded the configured threshold of 1000" in str(ir.exception) or
+                            "Script evaluation exceeded the configured threshold of evaluation_timeout at 1000" in str(ir.exception))
 
         def test_request_timeout_less_then_server(self):
             """
@@ -516,7 +517,8 @@ class GraphTimeoutTests(BasicGraphUnitTestCase):
             self.session.execute_graph(to_run, execution_profile=ep_name)
             with self.assertRaises(InvalidRequest) as ir:
                 self.session.execute_graph("java.util.concurrent.TimeUnit.MILLISECONDS.sleep(35000L);1+1", execution_profile=ep_name)
-            self.assertTrue("Script evaluation exceeded the configured threshold of 1000" in str(ir.exception))
+            self.assertTrue("Script evaluation exceeded the configured threshold of 1000" in str(ir.exception) or
+                            "Script evaluation exceeded the configured threshold of evaluation_timeout at 1000" in str(ir.exception))
 
         def test_server_timeout_less_then_request(self):
             """
