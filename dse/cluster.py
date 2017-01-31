@@ -2046,7 +2046,7 @@ class Session(object):
         if execute_as:
             custom_payload[_proxy_execute_key] = execute_as
 
-        future.message._query_params = graph_parameters
+        future.message.query_params = graph_parameters
         future._protocol_handler = self.client_protocol_handler
 
         if options.is_analytics_source and isinstance(execution_profile.load_balancing_policy, DSELoadBalancingPolicy):
@@ -2865,6 +2865,7 @@ class ControlConnection(object):
                 host.release_version = local_row.get("release_version")
                 host.dse_version = local_row.get("dse_version")
                 host.dse_workload = local_row.get("workload")
+                host.dse_workloads = local_row.get("workloads")
 
                 if partitioner and tokens:
                     token_map[host] = tokens
@@ -2900,6 +2901,7 @@ class ControlConnection(object):
             host.release_version = row.get("release_version")
             host.dse_version = row.get("dse_version")
             host.dse_workload = row.get("workload")
+            host.dse_workloads = row.get("workloads")
 
             if partitioner and tokens:
                 token_map[host] = tokens

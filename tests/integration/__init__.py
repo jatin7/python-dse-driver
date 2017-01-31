@@ -100,6 +100,8 @@ def _get_cass_version_from_dse(dse_version):
         cass_ver = "2.1"
     elif dse_version.startswith('5.0'):
         cass_ver = "3.0"
+    elif dse_version.startswith('5.1'):
+        cass_ver = "3.10"
     else:
         log.error("Uknown dse version found {0}, defaulting to 2.1".format(dse_version))
         cass_ver = "2.1"
@@ -115,7 +117,7 @@ else:
     CASSANDRA_VERSION = os.getenv('CASSANDRA_VERSION', default_cassandra_version)
 
 CCM_KWARGS = {}
-if CASSANDRA_DIR:
+if CASSANDRA_DIR and (len(CASSANDRA_DIR) >= 1):
     log.info("Using Cassandra dir: %s", CASSANDRA_DIR)
     CCM_KWARGS['install_dir'] = CASSANDRA_DIR
 
@@ -167,6 +169,13 @@ def get_supported_protocol_versions():
         return (1)
 
 
+def is_protocol_beta(protocol):
+    if Version(CASSANDRA_VERSION) >= Version('3.10') and protocol == 5:
+        return True
+    else:
+        return False
+
+
 def get_unsupported_lower_protocol():
     """
     This is used to determine the lowest protocol version that is NOT
@@ -211,7 +220,7 @@ greaterthanorequalcass36 = unittest.skipUnless(CASSANDRA_VERSION >= '3.6', 'Cass
 lessthancass30 = unittest.skipUnless(CASSANDRA_VERSION < '3.0', 'Cassandra version less then 3.0 required')
 
 dseonly = unittest.skipUnless(DSE_VERSION, "Test is only applicalbe to DSE clusters")
-greaterthandse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION >= '5.1', "DSE 5.1 or greater required for RLAC")
+greaterthanorequaldse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION >= '5.1', "DSE 5.1 or greater required for RLAC")
 
 pypy = unittest.skipUnless(platform.python_implementation() == "PyPy", "Test is skipped unless it's on PyPy")
 notpy3 = unittest.skipIf(sys.version_info >= (3, 0), "Test not applicable for Python 3.x runtime")
@@ -295,6 +304,13 @@ def is_current_cluster(cluster_name, node_counts, workloads):
             return True
     return False
 
+def start_cluster_wait_for_up(cluster):
+    cluster.start(no_wait=True)
+    # Added to wait for slow nodes to start up
+    log.debug("Cluster started waiting for binary ports")
+    for node in CCM_CLUSTER.nodes.values():
+        wait_for_node_socket(node, 120)
+    log.debug("Binary port are open")
 
 def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
     global CCM_CLUSTER

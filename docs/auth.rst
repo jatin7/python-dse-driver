@@ -19,6 +19,11 @@ With DSE (>=5.1), unified Authentication allows you to:
 * Proxy Login: Authenticate using a fixed set of authentication credentials but allow authorization of resources based another user id.
 * Proxy Execute: Authenticate using a fixed set of authentication credentials but execute requests based on another user id.
 
+Limitations
+~~~~~~~~~~~
+
+* Proxy Login cannot be used with Kerberos due to a known issue. It is currently investigated and a fix will be available soon.
+
 Proxy Login
 ~~~~~~~~~~~
 

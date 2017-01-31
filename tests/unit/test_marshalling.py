@@ -9,7 +9,6 @@
 import sys
 
 from dse import ProtocolVersion
-from dse.marshal import bitlength
 
 try:
     import unittest2 as unittest
@@ -128,11 +127,6 @@ class UnmarshalTest(unittest.TestCase):
             self.assertEqual(type(whatwegot), type(serializedval),
                              msg='Marshaller for %s (%s) gave wrong type (%s instead of %s)'
                                  % (valtype, marshaller, type(whatwegot), type(serializedval)))
-
-    def test_bitlength(self):
-        self.assertEqual(bitlength(9), 4)
-        self.assertEqual(bitlength(-10), 0)
-        self.assertEqual(bitlength(0), 0)
 
     def test_date(self):
         # separate test because it will deserialize as datetime

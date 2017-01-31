@@ -88,6 +88,15 @@ class Host(object):
     """
     DSE workload queried from the control connection system tables. Only populated when connecting to
     DSE with this property available. Not queried if :attr:`~.Cluster.token_metadata_enabled` is ``False``.
+    This is a legacy attribute that does not portray multiple workloads in a uniform fashion.
+    See also :attr:`~.Host.dse_workloads`.
+    """
+
+    dse_workloads = None
+    """
+    DSE workloads set, queried from the control connection system tables. Only populated when connecting to
+    DSE with this property available (added in DSE 5.1).
+    Not queried if :attr:`~.Cluster.token_metadata_enabled` is ``False``.
     """
 
     _datacenter = None

@@ -53,7 +53,7 @@ behavior in some other way, this is the place to do it:
 
 Profiles are passed in by ``execution_profile`` dict.
 
-In this case we can construct the base ``ExecutionProfile`` passing all attributes:
+In this case we can construct the base ``ExecutionProfile`` passing all attributes::
 
     from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
     from dse.policies import WhiteListRoundRobinPolicy, DowngradingConsistencyRetryPolicy

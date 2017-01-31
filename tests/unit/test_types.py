@@ -62,6 +62,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(lookup_casstype_simple('CompositeType'), dse.cqltypes.CompositeType)
         self.assertEqual(lookup_casstype_simple('ColumnToCollectionType'), dse.cqltypes.ColumnToCollectionType)
         self.assertEqual(lookup_casstype_simple('ReversedType'), dse.cqltypes.ReversedType)
+        self.assertEqual(lookup_casstype_simple('DurationType'), dse.cqltypes.DurationType)
 
         self.assertEqual(str(lookup_casstype_simple('unknown')), str(dse.cqltypes.mkUnrecognizedType('unknown')))
 
@@ -95,6 +96,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(lookup_casstype('CompositeType'), dse.cqltypes.CompositeType)
         self.assertEqual(lookup_casstype('ColumnToCollectionType'), dse.cqltypes.ColumnToCollectionType)
         self.assertEqual(lookup_casstype('ReversedType'), dse.cqltypes.ReversedType)
+        self.assertEqual(lookup_casstype('DurationType'), dse.cqltypes.DurationType)
 
         self.assertEqual(str(lookup_casstype('unknown')), str(dse.cqltypes.mkUnrecognizedType('unknown')))
 
