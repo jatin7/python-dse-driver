@@ -18,6 +18,7 @@ from mock import Mock, call, patch
 import time
 from uuid import uuid4
 import logging
+import sys
 
 import dse
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
@@ -877,7 +878,7 @@ class ClusterTests(unittest.TestCase):
             self.assertEqual(set(h.address for h in pools), set(('127.0.0.1',)))
 
             node2 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2']))
-            self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=0.000000001)
+            self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=sys.float_info.min)
 
 
 class LocalHostAdressTranslator(AddressTranslator):
@@ -1149,7 +1150,7 @@ class BetaProtocolTest(unittest.TestCase):
             with self.assertRaises(NoHostAvailable):
                 cluster.connect()
         except Exception as e:
-            self.fail("Unexpected error encountered {0}".format(e.message))
+            self.fail("Unexpected error encountered {0}".format(e))
             cluster.shutdown()
 
     @protocolv5
