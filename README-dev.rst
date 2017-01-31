@@ -109,35 +109,53 @@ Running the Tests
 =================
 In order for the extensions to be built and used in the test, run::
 
-    python setup.py nosetests
+    DSE_VERSION=5.0.4 python setup.py nosetests
 
 You can run a specific test module or package like so::
 
-    python setup.py nosetests -w tests/unit/
+    DSE_VERSION=5.0.4 python setup.py nosetests -w tests/unit/
 
 You can run a specific test method like so::
 
-    python setup.py nosetests -w tests/unit/test_connection.py:ConnectionTest.test_bad_protocol_version
+    DSE_VERSION=5.0.4 python setup.py nosetests -w tests/unit/test_connection.py:ConnectionTest.test_bad_protocol_version
+    
+Note that the version has to be specified, otherwise by default the Open Source version of Cassandra will run. You can also specify the version using a Cassandra directory (to test unreleased versions)::
+
+    CASSANDRA_DIR=/home/user/bdp python setup.py nosetests -w tests/integration/standard
+    
+For this to work DSE has to be built, so once the appropriate commit is checked out, inside the ``bdp`` folder:
+
+	./gradlew clean dist
+
+Running the advanced authentication tests
+-----------------------------
+This tests are in the file ``tests/integration/advanced/test_auth.py``. These tests are run the same way as the rest but first the we have to set the variable ADS_HOME:
+
+	git clone https://github.com/riptano/testeng-devtools.git
+	cd testeng-devtools/EmbeddedAds
+	mvn clean install
+	cp target/embedded-ads-1.0.1-SNAPSHOT-*.jar /tmp/
+	export ADS_HOME=`pwd`
+	
+After this we can run the tests normally from the appropriate folder:
+
+	DSE_VERSION=5.0.4 python setup.py nosetests -w tests/integration/advanced/test_auth.py
 
 Seeing Test Logs in Real Time
 -----------------------------
 Sometimes it's useful to output logs for the tests as they run::
 
-    python setup.py nosetests -w tests/unit/ --nocapture --nologcapture
+    DSE_VERSION=5.0.4 python setup.py nosetests -w tests/unit/ --nocapture --nologcapture
 
 Use tee to capture logs and see them on your terminal::
 
-    python setup.py nosetests -w tests/unit/ --nocapture --nologcapture 2>&1 | tee test.log
+    DSE_VERSION=5.0.4 python setup.py nosetests -w tests/unit/ --nocapture --nologcapture 2>&1 | tee test.log
 
-Specifying a Cassandra Version for Integration Tests
+Specifying the usage of an already running on the DSE cluster
 ----------------------------------------------------
-You can specify a cassandra version with the ``CASSANDRA_VERSION`` environment variable::
+The test will start the appropriate DSE clusters when necessary  but if you don't want this to happen because a DSE cluster is already running the flag ``USE_CASS_EXTERNAL`` can be used, for example: 
 
-    CASSANDRA_VERSION=2.0.9 python setup.py nosetests -w tests/integration/standard
-
-You can also specify a cassandra directory (to test unreleased versions)::
-
-    CASSANDRA_DIR=/home/thobbs/cassandra python setup.py nosetests -w tests/integration/standard
+	USE_CASS_EXTERNAL=1 python setup.py nosetests -w tests/integration/standard
 
 Specifying the usage of an already running Cassandra cluster
 ----------------------------------------------------
@@ -147,10 +165,9 @@ The test will start the appropriate Cassandra clusters when necessary  but if yo
 
 Specify a Protocol Version for Tests
 ------------------------------------
-The protocol version defaults to 1 for cassandra 1.2 and 2 otherwise.  You can explicitly set
-it with the ``PROTOCOL_VERSION`` environment variable::
+You can explicitly set it with the ``PROTOCOL_VERSION`` environment variable::
 
-    PROTOCOL_VERSION=3 python setup.py nosetests -w tests/integration/standard
+    DSE_VERSION=5.0.4 PROTOCOL_VERSION=3 python setup.py nosetests -w tests/integration/standard
 
 Testing Multiple Python Versions
 --------------------------------
@@ -169,10 +186,12 @@ and change ``tests/unit/`` to ``tests/``.
 
 Running the Benchmarks
 ======================
-There needs to be a version of cassandra running locally so before running the benchmarks, if ccm is installed:
-	
-	ccm create benchmark_cluster -v 3.0.1 -n 1 -s
 
+There needs to be a version of DSE running locally so before running the benchmarks, if ccm is installed:
+	
+	ccm create 5.0.4 --dse --dse-username=your_username@datastax.com --dse-password=your_password -v 5.0.4 -n 1 -s
+	
+  
 To run the benchmarks, pick one of the files under the ``benchmarks/`` dir and run it::
 
     python benchmarks/future_batches.py
@@ -181,9 +200,9 @@ There are a few options.  Use ``--help`` to see them all::
 
     python benchmarks/future_batches.py --help
 
-Packaging for Cassandra
+Packaging for DSE
 =======================
-A source distribution is included in Cassandra, which uses the driver internally for ``cqlsh``.
+A source distribution is included in DSE, which uses the driver internally for ``cqlsh``.
 To package a released version, checkout the tag and build a source zip archive::
 
     python setup.py sdist --formats=zip
@@ -193,7 +212,7 @@ name to specify the built version::
 
     python setup.py egg_info -b-`git rev-parse --short HEAD` sdist --formats=zip
 
-The file (``dist/cassandra-driver-<version spec>.zip``) is packaged with Cassandra in ``cassandra/lib/cassandra-driver-internal-only*zip``.
+The file ``dist/dse_driver-<version spec>.zip``) will be created.
 
 Most notes on releasing and testing are the same as those in the core driver `README-dev <https://github.com/datastax/python-driver/blob/master/README-dev.rst>`_.
 
