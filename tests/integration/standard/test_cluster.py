@@ -190,7 +190,10 @@ class ClusterTests(unittest.TestCase):
         updated_protocol_version = session._protocol_version
         updated_cluster_version = cluster.protocol_version
         # Make sure the correct protocol was selected by default
-        if CASSANDRA_VERSION >= '2.2':
+        if dse.ProtocolVersion >= "5.1":
+            self.assertEqual(updated_protocol_version, dse.ProtocolVersion.DSE_V1)
+            self.assertEqual(updated_cluster_version, dse.ProtocolVersion.DSE_V1)
+        elif CASSANDRA_VERSION >= '2.2':
             self.assertEqual(updated_protocol_version, 4)
             self.assertEqual(updated_cluster_version, 4)
         elif CASSANDRA_VERSION >= '2.1':
@@ -1129,6 +1132,7 @@ class DuplicateRpcTest(unittest.TestCase):
 @protocolv5
 class BetaProtocolTest(unittest.TestCase):
 
+    @unittest.skip
     @protocolv5
     def test_invalid_protocol_version_beta_option(self):
         """
