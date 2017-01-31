@@ -2159,11 +2159,17 @@ class BadMetaTest(unittest.TestCase):
                                 RETURNS NULL ON NULL INPUT
                                 RETURNS int
                                 LANGUAGE java AS 'return key + val;';""" % self.function_name)
-        with patch.object(self.parser_class, '_build_function', side_effect=self.BadMetaException):
-            self.cluster.refresh_schema_metadata()   # presently do not capture these errors on udt direct refresh -- make sure it's contained during full refresh
-            m = self.cluster.metadata.keyspaces[self.keyspace_name]
-            self.assertIs(m._exc_info[0], self.BadMetaException)
-            self.assertIn("/*\nWarning:", m.export_as_string())
+
+        #We need to patch as well the reconnect function because after patching the _build_function
+        #there will an Error refreshing schema which will trigger a reconnection. If this happened
+        #in a timely manner in the call self.cluster.refresh_schema_metadata() it would return an exception
+        #due to that a connection would be closed
+        with patch.object(self.cluster.control_connection, 'reconnect'):
+            with patch.object(self.parser_class, '_build_function', side_effect=self.BadMetaException):
+                self.cluster.refresh_schema_metadata()   # presently do not capture these errors on udt direct refresh -- make sure it's contained during full refresh
+                m = self.cluster.metadata.keyspaces[self.keyspace_name]
+                self.assertIs(m._exc_info[0], self.BadMetaException)
+                self.assertIn("/*\nWarning:", m.export_as_string())
 
     def test_bad_user_aggregate(self):
         self._skip_if_not_version((2, 2, 0))
@@ -2175,11 +2181,13 @@ class BadMetaTest(unittest.TestCase):
                                  SFUNC sum_int
                                  STYPE int
                                  INITCOND 0""" % self.function_name)
-        with patch.object(self.parser_class, '_build_aggregate', side_effect=self.BadMetaException):
-            self.cluster.refresh_schema_metadata()   # presently do not capture these errors on udt direct refresh -- make sure it's contained during full refresh
-            m = self.cluster.metadata.keyspaces[self.keyspace_name]
-            self.assertIs(m._exc_info[0], self.BadMetaException)
-            self.assertIn("/*\nWarning:", m.export_as_string())
+        #We have the same issue here as in test_bad_user_function
+        with patch.object(self.cluster.control_connection, 'reconnect'):
+            with patch.object(self.parser_class, '_build_aggregate', side_effect=self.BadMetaException):
+                self.cluster.refresh_schema_metadata()   # presently do not capture these errors on udt direct refresh -- make sure it's contained during full refresh
+                m = self.cluster.metadata.keyspaces[self.keyspace_name]
+                self.assertIs(m._exc_info[0], self.BadMetaException)
+                self.assertIn("/*\nWarning:", m.export_as_string())
 
 
 class DynamicCompositeTypeTest(BasicSharedKeyspaceUnitTestCase):

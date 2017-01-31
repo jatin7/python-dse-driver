@@ -43,6 +43,7 @@ class RLACMetadataTests(BasicSharedKeyspaceUnitTestCase):
         table_meta = self.cluster.metadata.keyspaces[self.keyspace_name].tables['reports']
         self.assertTrue(restrict_cql in table_meta.export_as_string())
 
+    @unittest.skip("Dse 5.1 doesn't current MV and RLAC remove after update")
     @greaterthanorequaldse51
     def test_rlac_on_mv(self):
         """

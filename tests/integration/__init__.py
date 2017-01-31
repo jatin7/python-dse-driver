@@ -695,7 +695,7 @@ class BasicSharedKeyspaceUnitTestCaseRF3WTable(BasicSharedKeyspaceUnitTestCase):
     """
     @classmethod
     def setUpClass(self):
-        self.common_setup(3, True)
+        self.common_setup(3, True, True)
 
 
 class BasicSharedKeyspaceUnitTestCaseWFunctionTable(BasicSharedKeyspaceUnitTestCase):

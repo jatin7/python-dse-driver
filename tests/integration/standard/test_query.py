@@ -23,7 +23,7 @@ import dse.cluster
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
-from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, get_server_versions, \
+from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, BasicSharedKeyspaceUnitTestCaseWTable, get_server_versions, \
     greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3, is_protocol_beta
 
 import time
@@ -391,7 +391,7 @@ class PreparedStatementTests(unittest.TestCase):
 class ForcedHostSwitchPolicy(RoundRobinPolicy):
 
     def make_query_plan(self, working_keyspace=None, query=None):
-        if query is not None and "system.local" in str(query):
+        if query is not None and "SELECT *" in str(query):
             if hasattr(self, 'counter'):
                 self.counter += 1
             else:
@@ -442,7 +442,7 @@ class PreparedStatementMetadataTest(unittest.TestCase):
             cluster.shutdown()
 
 
-class PreparedStatementArgTest(unittest.TestCase):
+class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
 
     def test_prepare_on_all_hosts(self):
         """
@@ -461,7 +461,7 @@ class PreparedStatementArgTest(unittest.TestCase):
             mock_handler = MockLoggingHandler()
             logger = logging.getLogger(dse.cluster.__name__)
             logger.addHandler(mock_handler)
-            select_statement = session.prepare("SELECT * FROM system.local")
+            select_statement = session.prepare("SELECT * FROM {0}.{0}".format(self.keyspace_name))
             session.execute(select_statement)
             session.execute(select_statement)
             session.execute(select_statement)
@@ -615,15 +615,19 @@ class BatchStatementTests(BasicSharedKeyspaceUnitTestCase):
             self.session.execute("DROP TABLE test3rf.testtext")
 
     def test_too_many_statements(self):
+        # The actual max # of statements is 0xFFFF, but this can occasionally cause a server write timeout.
+        large_batch = 0xFFF
         max_statements = 0xFFFF
         ss = SimpleStatement("INSERT INTO test3rf.test (k, v) VALUES (0, 0)")
         b = BatchStatement(batch_type=BatchType.UNLOGGED, consistency_level=ConsistencyLevel.ONE)
 
-        # max works
-        b.add_all([ss] * max_statements, [None] * max_statements)
-        self.session.execute(b)
+        # large number works works
+        b.add_all([ss] * large_batch, [None] * large_batch)
+        self.session.execute(b, timeout=30.0)
 
+        b = BatchStatement(batch_type=BatchType.UNLOGGED, consistency_level=ConsistencyLevel.ONE)
         # max + 1 raises
+        b.add_all([ss] * max_statements, [None] * max_statements)
         self.assertRaises(ValueError, b.add, ss)
 
         # also would have bombed trying to encode

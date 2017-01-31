@@ -29,7 +29,7 @@ from dse.policies import (RoundRobinPolicy, ExponentialReconnectionPolicy,
 from dse.query import SimpleStatement, TraceUnavailable, tuple_factory
 
 
-from tests.integration import use_singledc, PROTOCOL_VERSION, get_server_versions, CASSANDRA_VERSION, execute_until_pass, execute_with_long_wait_retry, get_node,\
+from tests.integration import use_singledc, PROTOCOL_VERSION, get_server_versions, CASSANDRA_VERSION, DSE_VERSION, execute_until_pass, execute_with_long_wait_retry, get_node,\
     MockLoggingHandler, get_unsupported_lower_protocol, get_unsupported_upper_protocol, protocolv5
 from tests.integration.util import assert_quiescent_pool_state
 
@@ -190,7 +190,7 @@ class ClusterTests(unittest.TestCase):
         updated_protocol_version = session._protocol_version
         updated_cluster_version = cluster.protocol_version
         # Make sure the correct protocol was selected by default
-        if dse.ProtocolVersion >= "5.1":
+        if  DSE_VERSION >= "5.1":
             self.assertEqual(updated_protocol_version, dse.ProtocolVersion.DSE_V1)
             self.assertEqual(updated_cluster_version, dse.ProtocolVersion.DSE_V1)
         elif CASSANDRA_VERSION >= '2.2':
@@ -878,8 +878,18 @@ class ClusterTests(unittest.TestCase):
             self.assertEqual(set(h.address for h in pools), set(('127.0.0.1',)))
 
             node2 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2']))
-            self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=sys.float_info.min)
 
+            max_retry_count = 10
+            for _ in range(max_retry_count):
+                start = time.time()
+                try:
+                    self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=sys.float_info.min)
+                except:
+                    end = time.time()
+                    self.assertAlmostEqual(start, end, 1)
+                    break
+            else:
+                raise Exception("cluster.add_execution_profile didn't time out in {0} tries".format(max_retry_count))
 
 class LocalHostAdressTranslator(AddressTranslator):
 

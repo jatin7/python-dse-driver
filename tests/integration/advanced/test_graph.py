@@ -28,7 +28,7 @@ from dse.util import SortedSet
 
 from tests.integration.advanced import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT,\
     validate_classic_vertex, validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type, fetchCustomGeoType
-from tests.integration import PROTOCOL_VERSION, dseonly, greaterthanorequaldse51
+from tests.integration import PROTOCOL_VERSION, dseonly, greaterthanorequaldse51, DSE_VERSION
 
 
 def setup_module():
@@ -454,9 +454,13 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         self.assertEqual(json.loads(rs[0]), {'result': 123})
 
     def _validate_type(self, vertex):
+        out_vertex = "out_vertex"
+        if DSE_VERSION >= "5.1":
+            out_vertex = "~out_vertex"
+
         for properties in vertex.properties.values():
             prop = properties[0]
-            type_indicator = prop['id']['~type']
+            type_indicator = prop['id'][out_vertex]['~label']
             if any(type_indicator.startswith(t) for t in ('int', 'short', 'long')):
                 typ = int
             elif any(type_indicator.startswith(t) for t in ('float', 'double')):
