@@ -197,11 +197,15 @@ class ProtocolVersion(object):
 
     @classmethod
     def uses_prepare_flags(cls, version):
-        return version >= cls.V5
+        return version >= cls.V5 and version != cls.DSE_V1
 
     @classmethod
     def uses_error_code_map(cls, version):
         return version >= cls.V5
+
+    @classmethod
+    def has_continuous_paging_support(cls, version):
+        return version >= cls.DSE_V1
 
 
 class SchemaChangeType(object):
