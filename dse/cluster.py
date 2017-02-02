@@ -1180,14 +1180,15 @@ class Cluster(object):
     def protocol_downgrade(self, host_addr, previous_version):
         if self._protocol_version_explicit:
             raise DriverException("ProtocolError returned from server while using explicitly set client protocol_version %d" % (previous_version,))
-        try:
-            new_version = next(v for v in sorted(ProtocolVersion.SUPPORTED_VERSIONS, reverse=True) if v < previous_version)
-            log.warning("Downgrading core protocol version from %d to %d for %s. "
-                        "To avoid this, it is best practice to explicitly set Cluster(protocol_version) to the version supported by your cluster. "
-                        "http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/cluster.html#dse.cluster.Cluster.protocol_version", self.protocol_version, new_version, host_addr)
-            self.protocol_version = new_version
-        except StopIteration:
-            raise DriverException("Cannot downgrade protocol version below minimum supported version: %d" % (ProtocolVersion.MIN_SUPPORTED,))
+        new_version = ProtocolVersion.get_lower_supported(previous_version)
+        if new_version < ProtocolVersion.MIN_SUPPORTED:
+            raise DriverException(
+                "Cannot downgrade protocol version below minimum supported version: %d" % (ProtocolVersion.MIN_SUPPORTED,))
+
+        log.warning("Downgrading core protocol version from %d to %d for %s. "
+                    "To avoid this, it is best practice to explicitly set Cluster(protocol_version) to the version supported by your cluster. "
+                    "http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/cluster.html#dse.cluster.Cluster.protocol_version", self.protocol_version, new_version, host_addr)
+        self.protocol_version = new_version
 
     def connect(self, keyspace=None, wait_for_all_pools=False):
         """

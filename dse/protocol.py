@@ -255,7 +255,7 @@ class ReadFailureMessage(RequestExecutionException):
         received_responses = read_int(f)
         required_responses = read_int(f)
 
-        if protocol_version >= 5:
+        if ProtocolVersion.uses_error_code_map(protocol_version):
             error_code_map = read_error_code_map(f)
             failures = len(error_code_map)
         else:
@@ -303,7 +303,7 @@ class WriteFailureMessage(RequestExecutionException):
         received_responses = read_int(f)
         required_responses = read_int(f)
 
-        if protocol_version >= 5:
+        if ProtocolVersion.uses_error_code_map(protocol_version):
             error_code_map = read_error_code_map(f)
             failures = len(error_code_map)
         else:
@@ -571,7 +571,7 @@ class _QueryMessage(_MessageType):
                     "Continuous paging may only be used with protocol version "
                     "ProtocolVersion.DSE_V1 or higher. Consider setting Cluster.protocol_version to ProtocolVersion.DSE_V1.")
 
-        if protocol_version >= 5:
+        if ProtocolVersion.uses_int_query_flags(protocol_version):
             write_uint(f, flags)
         else:
             write_byte(f, flags)
@@ -853,7 +853,7 @@ class PrepareMessage(_MessageType):
 
     def send_body(self, f, protocol_version):
         write_longstring(f, self.query)
-        if protocol_version >= 5:
+        if ProtocolVersion.uses_prepare_flags(protocol_version):
             # Write the flags byte; with 0 value for now, but this should change in PYTHON-678
             write_uint(f, 0)
 
@@ -893,7 +893,7 @@ class BatchMessage(_MessageType):
             if self.timestamp is not None:
                 flags |= _PROTOCOL_TIMESTAMP_FLAG
 
-            if protocol_version >= 5:
+            if ProtocolVersion.uses_int_query_flags(protocol_version):
                 write_uint(f, flags)
             else:
                 write_byte(f, flags)
@@ -1365,4 +1365,3 @@ def write_inet(f, addrtuple):
     write_byte(f, len(addrbytes))
     f.write(addrbytes)
     write_int(f, port)
-
