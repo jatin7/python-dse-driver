@@ -18,6 +18,7 @@ from mock import Mock, call, patch
 import time
 from uuid import uuid4
 import logging
+import sys
 
 import dse
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
@@ -189,7 +190,10 @@ class ClusterTests(unittest.TestCase):
         updated_protocol_version = session._protocol_version
         updated_cluster_version = cluster.protocol_version
         # Make sure the correct protocol was selected by default
-        if CASSANDRA_VERSION >= '2.2':
+        if dse.ProtocolVersion >= "5.1":
+            self.assertEqual(updated_protocol_version, dse.ProtocolVersion.DSE_V1)
+            self.assertEqual(updated_cluster_version, dse.ProtocolVersion.DSE_V1)
+        elif CASSANDRA_VERSION >= '2.2':
             self.assertEqual(updated_protocol_version, 4)
             self.assertEqual(updated_cluster_version, 4)
         elif CASSANDRA_VERSION >= '2.1':
@@ -874,7 +878,7 @@ class ClusterTests(unittest.TestCase):
             self.assertEqual(set(h.address for h in pools), set(('127.0.0.1',)))
 
             node2 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2']))
-            self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=0.0000001)
+            self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=sys.float_info.min)
 
 
 class LocalHostAdressTranslator(AddressTranslator):
@@ -1128,6 +1132,7 @@ class DuplicateRpcTest(unittest.TestCase):
 @protocolv5
 class BetaProtocolTest(unittest.TestCase):
 
+    @unittest.skip
     @protocolv5
     def test_invalid_protocol_version_beta_option(self):
         """
@@ -1145,7 +1150,7 @@ class BetaProtocolTest(unittest.TestCase):
             with self.assertRaises(NoHostAvailable):
                 cluster.connect()
         except Exception as e:
-            self.fail("Unexpected error encountered {0}".format(e.message))
+            self.fail("Unexpected error encountered {0}".format(e))
             cluster.shutdown()
 
     @protocolv5

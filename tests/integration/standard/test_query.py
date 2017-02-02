@@ -23,7 +23,8 @@ import dse.cluster
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
-from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, get_server_versions, greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3
+from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, get_server_versions, \
+    greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3, is_protocol_beta
 
 import time
 import re
@@ -420,8 +421,13 @@ class PreparedStatementMetadataTest(unittest.TestCase):
 
         base_line = None
         for proto_version in get_supported_protocol_versions():
-            cluster = Cluster(protocol_version=proto_version)
-            session = cluster.connect()
+            if is_protocol_beta(proto_version):
+                cluster = Cluster(protocol_version=proto_version, allow_beta_protocol_version=True)
+                session = cluster.connect()
+            else:
+                cluster = Cluster(protocol_version=proto_version)
+                session = cluster.connect()
+
             select_statement = session.prepare("SELECT * FROM system.local")
             if proto_version == 1:
                 self.assertEqual(select_statement.result_metadata, None)
