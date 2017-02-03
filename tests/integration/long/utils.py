@@ -16,6 +16,7 @@ from collections import defaultdict
 from tests.integration import (get_node, get_cluster, wait_for_node_socket,
                                DSE_VERSION)
 
+
 IP_FORMAT = '127.0.0.%s'
 
 log = logging.getLogger(__name__)
