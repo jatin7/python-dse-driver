@@ -14,7 +14,7 @@ except ImportError:
 from mock import patch
 
 from dse import ConsistencyLevel, DriverException, Timeout, Unavailable, RequestExecutionException, ReadTimeout, WriteTimeout, CoordinationFailure, ReadFailure, WriteFailure, FunctionFailure, AlreadyExists,\
-    InvalidRequest, Unauthorized, AuthenticationFailed, OperationTimedOut, UnsupportedOperation, RequestValidationException, ConfigurationException
+    InvalidRequest, Unauthorized, AuthenticationFailed, OperationTimedOut, UnsupportedOperation, RequestValidationException, ConfigurationException, ProtocolVersion
 from dse.cluster import _Scheduler, Session, Cluster, _NOT_SET, default_lbp_factory, \
     ExecutionProfile, _ConfigMode, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RetryPolicy, RoundRobinPolicy, DowngradingConsistencyRetryPolicy
@@ -144,6 +144,31 @@ class SessionTest(unittest.TestCase):
                 f = s.execute_async(SimpleStatement(query_string='', serial_consistency_level=cl_override))
                 self.assertEqual(default_profile.serial_consistency_level, cl)
                 self.assertEqual(f.message.serial_consistency_level, cl_override)
+
+
+class ProtocolVersionTests(unittest.TestCase):
+
+    def test_protocol_downgrade_test(self):
+
+        lower = ProtocolVersion.get_lower_supported(ProtocolVersion.DSE_V1)
+        self.assertEqual(ProtocolVersion.V4,lower)
+        lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V4)
+        self.assertEqual(ProtocolVersion.V3,lower)
+        lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V3)
+        self.assertEqual(ProtocolVersion.V2,lower)
+        lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V2)
+        self.assertEqual(ProtocolVersion.V1,lower)
+        lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V1)
+        self.assertEqual(0,lower)
+
+        self.assertTrue(ProtocolVersion.uses_error_code_map(ProtocolVersion.DSE_V1))
+        self.assertTrue(ProtocolVersion.uses_int_query_flags(ProtocolVersion.DSE_V1))
+        self.assertTrue(ProtocolVersion.has_continuous_paging_support(ProtocolVersion.DSE_V1))
+
+        self.assertFalse(ProtocolVersion.uses_error_code_map(ProtocolVersion.V4))
+        self.assertFalse(ProtocolVersion.uses_int_query_flags(ProtocolVersion.V4))
+        self.assertFalse(ProtocolVersion.has_continuous_paging_support(ProtocolVersion.V4))
+
 
 
 class ExecutionProfileTest(unittest.TestCase):
