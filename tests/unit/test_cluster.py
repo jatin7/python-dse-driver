@@ -163,11 +163,9 @@ class ProtocolVersionTests(unittest.TestCase):
 
         self.assertTrue(ProtocolVersion.uses_error_code_map(ProtocolVersion.DSE_V1))
         self.assertTrue(ProtocolVersion.uses_int_query_flags(ProtocolVersion.DSE_V1))
-        self.assertTrue(ProtocolVersion.has_continuous_paging_support(ProtocolVersion.DSE_V1))
 
         self.assertFalse(ProtocolVersion.uses_error_code_map(ProtocolVersion.V4))
         self.assertFalse(ProtocolVersion.uses_int_query_flags(ProtocolVersion.V4))
-        self.assertFalse(ProtocolVersion.has_continuous_paging_support(ProtocolVersion.V4))
 
 
 
