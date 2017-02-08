@@ -221,6 +221,7 @@ lessthancass30 = unittest.skipUnless(CASSANDRA_VERSION < '3.0', 'Cassandra versi
 
 dseonly = unittest.skipUnless(DSE_VERSION, "Test is only applicalbe to DSE clusters")
 greaterthanorequaldse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION >= '5.1', "DSE 5.1 or greater required for RLAC")
+lessthandse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION < '5.1', "DSE version less than 5.1 required")
 
 pypy = unittest.skipUnless(platform.python_implementation() == "PyPy", "Test is skipped unless it's on PyPy")
 notpy3 = unittest.skipIf(sys.version_info >= (3, 0), "Test not applicable for Python 3.x runtime")

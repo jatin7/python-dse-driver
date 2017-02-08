@@ -25,6 +25,7 @@ try:
 except ImportError:
     SASLClient = None
 
+import six
 
 # Custom payload keys related to DSE Unified Auth
 _proxy_execute_key = 'ProxyExecute'
@@ -225,14 +226,14 @@ class PlainTextAuthenticator(BaseDSEAuthenticator):
         self.password = password
 
     def get_mechanism(self):
-        return "PLAIN"
+        return six.b("PLAIN")
 
     def get_initial_challenge(self):
-        return "PLAIN-START"
+        return six.b("PLAIN-START")
 
     def evaluate_challenge(self, challenge):
-        if challenge == 'PLAIN-START':
-            return "\x00%s\x00%s" % (self.username, self.password)
+        if challenge == six.b('PLAIN-START'):
+            return six.b("\x00%s\x00%s" % (self.username, self.password))
         raise Exception('Did not receive a valid challenge response from server')
 
 
@@ -242,13 +243,13 @@ class GSSAPIAuthenticator(BaseDSEAuthenticator):
         self.sasl = SASLClient(host, service, 'GSSAPI', qops=qops, **properties)
 
     def get_mechanism(self):
-        return "GSSAPI"
+        return six.b("GSSAPI")
 
     def get_initial_challenge(self):
-        return "GSSAPI-START"
+        return six.b("GSSAPI-START")
 
     def evaluate_challenge(self, challenge):
-        if challenge == 'GSSAPI-START':
+        if challenge == six.b('GSSAPI-START'):
             return self.sasl.process()
         else:
             return self.sasl.process(challenge)

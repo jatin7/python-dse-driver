@@ -134,7 +134,7 @@ This tests are in the file ``tests/integration/advanced/test_auth.py``. These te
 	git clone https://github.com/riptano/testeng-devtools.git
 	cd testeng-devtools/EmbeddedAds
 	mvn clean install
-	cp target/embedded-ads-1.0.1-SNAPSHOT-*.jar /tmp/
+	cp target/embedded-ads-1.0.1-SNAPSHOT-*.jar embedded-ads.jar
 	export ADS_HOME=`pwd`
 
 After this we can run the tests normally from the appropriate folder:
