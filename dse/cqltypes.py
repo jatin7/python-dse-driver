@@ -1151,3 +1151,179 @@ class PolygonType(CassandraType):
             rings.append([point.unpack_from(byts, offset) for offset in range(p, end, point.size)])
             p = end
         return util.Polygon(exterior=rings[0], interiors=rings[1:]) if rings else util.Polygon()
+
+
+class BoundKind(object):
+    """
+    "Enum" representing the 6 possible DateRangeTypes
+    """
+    SINGLE_DATE = 'SINGLE_DATE'
+    CLOSED_RANGE = 'CLOSED_RANGE'
+    OPEN_RANGE_HIGH = 'OPEN_RANGE_HIGH'
+    OPEN_RANGE_LOW = 'OPEN_RANGE_LOW'
+    BOTH_OPEN_RANGE = 'BOTH_OPEN_RANGE'
+    SINGLE_DATE_OPEN = 'SINGLE_DATE_OPEN'
+
+    VALID_RANGE_BOUNDS = (SINGLE_DATE, CLOSED_RANGE, OPEN_RANGE_HIGH,
+                          OPEN_RANGE_LOW, BOTH_OPEN_RANGE,
+                          SINGLE_DATE_OPEN)
+
+    _bound_str_to_int_map = {
+        'SINGLE_DATE': 0,
+        'CLOSED_RANGE': 1,
+        'OPEN_RANGE_HIGH': 2,
+        'OPEN_RANGE_LOW': 3,
+        'BOTH_OPEN_RANGE': 4,
+        'SINGLE_DATE_OPEN': 5,
+    }
+    _bound_int_to_str_map = {i: s for i, s in
+                             six.iteritems(_bound_str_to_int_map)}
+
+    @classmethod
+    def to_int(cls, bound_str):
+        """
+        Encode a string as an int for serialization.
+        """
+        return cls._bound_str_to_int_map[bound_str.upper()]
+
+    @classmethod
+    def to_str(cls, bound_int):
+        """
+        Decode an int to a string for deserialization.
+        """
+        return cls._bound_int_to_str_map[bound_int.upper()]
+
+
+class DateRangeType(CassandraType):
+    typename = 'daterange'
+
+    _precision_str_to_int_map = {
+        'YEAR': 0,
+        'MONTH': 1,
+        'DAY': 2,
+        'HOUR': 3,
+        'MINUTE': 4,
+        'SECOND': 5,
+        'MILLISECOND': 6
+    }
+    _precision_int_to_str_map = {s: i for i, s in
+                                 six.iteritems(_precision_str_to_int_map)}
+
+    @classmethod
+    def _encode_precision(cls, precision_str):
+        normalized_str = precision_str.upper()
+        if normalized_str not in cls._precision_str_to_int_map:
+            raise ValueError(
+                '%s is not a valid DateRange precision string. Valid values: %s' %
+                (repr(precision_str), ', '.join(list(cls._precision_str_to_int_map)))
+            )
+
+        return cls._precision_str_to_int_map[normalized_str]
+
+    @classmethod
+    def _decode_precision(cls, precision_int):
+        if precision_int not in cls._precision_int_to_str_map:
+            raise ValueError(
+                '%s not a valid DateRange precision int. Valid values: %s' %
+                (precision_int, ', '.join([str(i) for i in cls._precision_int_to_str_map]))
+            )
+
+        return cls._precision_int_to_str_map[precision_int]
+
+    @classmethod
+    def deserialize(cls, byts, protocol_version):
+        # <type>[<time0><precision0>[<time1><precision1>]]
+        type_ = int8_unpack(byts[0])
+
+        if type_ in (BoundKind.to_int(BoundKind.BOTH_OPEN_RANGE),
+                     BoundKind.to_int(BoundKind.SINGLE_DATE_OPEN)):
+            time0 = precision0 = None
+        else:
+            time0 = int64_unpack(byts[1:9])
+            precision0 = int8_unpack(byts[9])
+
+        if type_ == BoundKind.to_int(BoundKind.CLOSED_RANGE):
+            time1 = int64_unpack(byts[10:18])
+            precision1 = int8_unpack(byts[18])
+        else:
+            time1 = precision1 = None
+
+        if time0:
+            date_range_bound0 = util.DateRangeBound(
+                time0,
+                cls._decode_precision(precision0)
+            )
+        if time1:
+            date_range_bound1 = util.DateRangeBound(
+                time1,
+                cls._decode_precision(precision1)
+            )
+
+        if type_ == BoundKind.to_int(BoundKind.SINGLE_DATE):
+            return util.DateRange(value=date_range_bound0)
+        if type_ == BoundKind.to_int(BoundKind.CLOSED_RANGE):
+            return util.DateRange(lower_bound=date_range_bound0,
+                                  upper_bound=date_range_bound1)
+        if type_ == BoundKind.to_int(BoundKind.OPEN_RANGE_HIGH):
+            return util.DateRange(lower_bound=date_range_bound0,
+                                  upper_bound=util.OPEN_BOUND)
+        if type_ == BoundKind.to_int(BoundKind.OPEN_RANGE_LOW):
+            return util.DateRange(lower_bound=util.OPEN_BOUND,
+                                  upper_bound=date_range_bound0)
+        if type_ == BoundKind.to_int(BoundKind.BOTH_OPEN_RANGE):
+            return util.DateRange(lower_bound=util.OPEN_BOUND,
+                                  upper_bound=util.OPEN_BOUND)
+        if type_ == BoundKind.to_int(BoundKind.SINGLE_DATE_OPEN):
+            return util.DateRange(value=util.OPEN_BOUND)
+        raise ValueError('Could not deserialize %r' % (byts,))
+
+    @classmethod
+    def serialize(cls, v, protocol_version):
+        buf = io.BytesIO()
+        bound_kind, bounds = None, ()
+
+        try:
+            value = v.value
+        except AttributeError:
+            raise ValueError(
+                '%s.serialize expects an object with a value attribute; got'
+                '%r' % (cls.__name__, v)
+            )
+
+        if value is None:
+            try:
+                lower_bound, upper_bound = v.lower_bound, v.upper_bound
+            except AttributeError:
+                raise ValueError(
+                    '%s.serialize expects an object with lower_bound and '
+                    'upper_bound attributes; got %r' % (cls.__name__, v)
+                )
+            if lower_bound == util.OPEN_BOUND and upper_bound == util.OPEN_BOUND:
+                bound_kind = BoundKind.BOTH_OPEN_RANGE
+            elif lower_bound == util.OPEN_BOUND:
+                bound_kind = BoundKind.OPEN_RANGE_LOW
+                bounds = (upper_bound,)
+            elif upper_bound == util.OPEN_BOUND:
+                bound_kind = BoundKind.OPEN_RANGE_HIGH
+                bounds = (lower_bound,)
+            else:
+                bound_kind = BoundKind.CLOSED_RANGE
+                bounds = lower_bound, upper_bound
+        else:  # value is not None
+            if value == util.OPEN_BOUND:
+                bound_kind = BoundKind.SINGLE_DATE_OPEN
+            else:
+                bound_kind = BoundKind.SINGLE_DATE
+                bounds = (value,)
+
+        if bound_kind is None:
+            raise ValueError(
+                'Cannot serialize %r; could not find bound kind' % (v,)
+            )
+
+        buf.write(int8_pack(BoundKind.to_int(bound_kind)))
+        for bound in bounds:
+            buf.write(int64_pack(bound.milliseconds))
+            buf.write(int8_pack(cls._encode_precision(bound.precision)))
+
+        return buf.getvalue()

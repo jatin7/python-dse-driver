@@ -9,6 +9,7 @@
 
 from __future__ import with_statement
 import calendar
+from collections import namedtuple
 import datetime
 from geomet import wkt
 from itertools import chain
@@ -19,6 +20,7 @@ import uuid
 import sys
 
 DATETIME_EPOC = datetime.datetime(1970, 1, 1)
+UTC_DATETIME_EPOC = datetime.datetime.utcfromtimestamp(0)
 
 _nan = float('nan')
 
@@ -35,6 +37,28 @@ def datetime_from_timestamp(timestamp):
     """
     dt = DATETIME_EPOC + datetime.timedelta(seconds=timestamp)
     return dt
+
+
+def utc_datetime_from_ms_timestamp(timestamp):
+    """
+    Creates a UTC datetime from a timestamp in milliseconds. See
+    :meth:`datetime_from_timestamp`.
+
+    Raises an `OverflowError` if the timestamp is out of range for
+    :class:`~datetime.datetime`.
+
+    :param timestamp: timestamp, in milliseconds
+    """
+    return UTC_DATETIME_EPOC + datetime.timedelta(milliseconds=timestamp)
+
+
+def ms_timestamp_from_datetime(dt):
+    """
+    Converts a datetime to a timestamp expressed in milliseconds.
+
+    :param dt: a :class:`datetime.datetime`
+    """
+    return int((dt - UTC_DATETIME_EPOC).total_seconds() * 1000)
 
 
 def unix_time_from_uuid1(uuid_arg):
@@ -1481,3 +1505,322 @@ class Duration(object):
             abs(self.days),
             abs(self.nanoseconds)
         )
+
+
+class DateRangePrecision(object):
+    """
+    An "enum" representing the valid values for :attr:`DateRange.precision`.
+    """
+    YEAR = 'YEAR'
+    """
+    """
+
+    MONTH = 'MONTH'
+    """
+    """
+
+    DAY = 'DAY'
+    """
+    """
+
+    HOUR = 'HOUR'
+    """
+    """
+
+    MINUTE = 'MINUTE'
+    """
+    """
+
+    SECOND = 'SECOND'
+    """
+    """
+
+    MILLISECOND = 'MILLISECOND'
+    """
+    """
+
+    PRECISIONS = (YEAR, MONTH, DAY, HOUR,
+                  MINUTE, SECOND, MILLISECOND)
+    """
+    """
+
+    @classmethod
+    def _to_int(cls, precision):
+        return cls.PRECISIONS.index(precision.upper())
+
+    @classmethod
+    def _round_to_precision(cls, ms, precision, default_dt):
+        try:
+            dt = utc_datetime_from_ms_timestamp(ms)
+        except OverflowError:
+            return ms
+        precision_idx = cls._to_int(precision)
+        replace_kwargs = {}
+        if precision_idx <= cls._to_int(DateRangePrecision.YEAR):
+            replace_kwargs['month'] = default_dt.month
+        if precision_idx <= cls._to_int(DateRangePrecision.MONTH):
+            replace_kwargs['day'] = default_dt.day
+        if precision_idx <= cls._to_int(DateRangePrecision.DAY):
+            replace_kwargs['hour'] = default_dt.hour
+        if precision_idx <= cls._to_int(DateRangePrecision.HOUR):
+            replace_kwargs['minute'] = default_dt.minute
+        if precision_idx <= cls._to_int(DateRangePrecision.MINUTE):
+            replace_kwargs['second'] = default_dt.second
+        if precision_idx <= cls._to_int(DateRangePrecision.SECOND):
+            # truncate to nearest 1000 so we deal in ms, not us
+            replace_kwargs['microsecond'] = (default_dt.microsecond // 1000) * 1000
+        if precision_idx == cls._to_int(DateRangePrecision.MILLISECOND):
+            replace_kwargs['microsecond'] = int(round(dt.microsecond, -3))
+        return ms_timestamp_from_datetime(dt.replace(**replace_kwargs))
+
+    @classmethod
+    def round_up_to_precision(cls, ms, precision):
+        return cls._round_to_precision(ms, precision, datetime.datetime.max)
+
+    @classmethod
+    def round_down_to_precision(cls, ms, precision):
+        return cls._round_to_precision(ms, precision, datetime.datetime.min)
+
+
+class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])):
+    """DateRangeBound(value, precision)
+    Represents a single date value and its precision for :class:`DateRange`.
+
+    .. attribute:: milliseconds
+
+        Integer representing milliseconds since the UNIX epoch. May be negative.
+
+    .. attribute:: precision
+
+        String representing the precision of a bound. Must be a valid
+        :class:`DateRangePrecision` member.
+
+    :class:`DateRangeBound` uses a millisecond offset from the UNIX epoch to
+    allow :class:`DateRange` to represent values `datetime.datetime` cannot.
+    For such values, string representions will show this offset rather than the
+    CQL representation.
+    """
+    # we document attributes manually above because setting defaults on
+    # namedtuple subclasses breaks instance behavior
+    __slots__ = ()
+
+    def __new__(cls, value, precision):
+        """
+        :param value: a value representing ms since the epoch. Accepts an
+            integer or a datetime.
+        :param precision: a string representing precision
+        """
+        if precision is not None:
+            try:
+                precision = precision.upper()
+            except AttributeError:
+                raise TypeError('precision must be a string; got %r' % precision)
+
+        if value is None:
+            milliseconds = None
+        elif isinstance(value, six.integer_types):
+            milliseconds = value
+        elif isinstance(value, datetime.datetime):
+            value = value.replace(
+                microsecond=int(round(value.microsecond, -3))
+            )
+            milliseconds = ms_timestamp_from_datetime(value)
+        else:
+            raise ValueError('%r is not a valid value for DateRangeBound')
+
+        new_drb = super(cls, DateRangeBound).__new__(
+            cls, milliseconds, precision
+        )
+        new_drb.validate()
+        return new_drb
+
+    def datetime(self):
+        """
+        Return :attr:`milliseconds` as a :class:`datetime.datetime` if possible.
+        Raises an `OverflowError` if the value is out of range.
+        """
+        return utc_datetime_from_ms_timestamp(self.milliseconds)
+
+    def validate(self):
+        attrs = self.milliseconds, self.precision
+        if attrs == (None, None):
+            return
+        if None in attrs:
+            raise TypeError(
+                ("%s.datetime and %s.precision must not be None unless both "
+                 "are None; Got: %r") % (self.__class__.__name__,
+                                         self.__class__.__name__,
+                                         self)
+            )
+        if self.precision not in DateRangePrecision.PRECISIONS:
+            raise ValueError(
+                "%s.precision: expected value in %r; got %r" % (
+                    self.__class__.__name__,
+                    DateRangePrecision.PRECISIONS,
+                    self.precision
+                )
+            )
+
+    @classmethod
+    def from_value(cls, value):
+        """
+        Construct a new :class:`DateRangeBound` from a given value. If
+        possible, use the `value['milliseconds']` and `value['precision']` keys
+        of the argument. Otherwise, use the argument as a `(milliseconds,
+        precision)` iterable.
+
+        :param value: a dictlike or iterable object
+        """
+        if isinstance(value, cls):
+            return value
+
+        # if possible, use as a mapping
+        try:
+            milliseconds, precision = value.get('milliseconds'), value.get('precision')
+        except AttributeError:
+            milliseconds = precision = None
+        if datetime is not None and precision is not None:
+            return DateRangeBound(value=milliseconds, precision=precision)
+
+        # otherwise, use as an iterable
+        return DateRangeBound(*value)
+
+    def round_up(self):
+        if self.milliseconds is None or self.precision is None:
+            return self
+        return self._replace(
+            milliseconds=DateRangePrecision.round_up_to_precision(
+                self.milliseconds, self.precision
+            )
+        )
+
+    def round_down(self):
+        if self.milliseconds is None or self.precision is None:
+            return self
+        return self._replace(
+            milliseconds=DateRangePrecision.round_down_to_precision(
+                self.milliseconds, self.precision
+            )
+        )
+
+    _formatter_map = {
+        DateRangePrecision.YEAR: '%Y',
+        DateRangePrecision.MONTH: '%Y-%m',
+        DateRangePrecision.DAY: '%Y-%m-%d',
+        DateRangePrecision.HOUR: '%Y-%m-%dT%HZ',
+        DateRangePrecision.MINUTE: '%Y-%m-%dT%H:%MZ',
+        DateRangePrecision.SECOND: '%Y-%m-%dT%H:%M:%SZ',
+        DateRangePrecision.MILLISECOND: '%Y-%m-%dT%H:%M:%S',
+    }
+
+    def __str__(self):
+        if self == OPEN_BOUND:
+            return '*'
+
+        try:
+            dt = self.datetime()
+        except OverflowError:
+            return '%sms' % (self.milliseconds,)
+
+        formatted = dt.strftime(self._formatter_map[self.precision])
+
+        if self.precision == DateRangePrecision.MILLISECOND:
+            # we'd like to just format with '%Y-%m-%dT%H:%M:%S.%fZ', but %f
+            # gives us more precision than we want, so we strftime up to %S and
+            # do the rest ourselves
+            return '%s.%03dZ' % (formatted, dt.microsecond / 1000)
+
+        return formatted
+
+
+OPEN_BOUND = DateRangeBound(value=None, precision=None)
+"""
+Represents `*`, an open value or bound for :class:`DateRange`.
+"""
+
+class DateRange(namedtuple('DateRange', ['lower_bound', 'upper_bound', 'value'])):
+    """DateRange(lower_bound=None, upper_bound=None, value=None)
+    DSE DateRange Type
+
+    .. attribute:: lower_bound
+
+        :class:`~DateRangeBound` representing the lower bound of a bounded range.
+
+    .. attribute:: upper_bound
+
+        :class:`~DateRangeBound` representing the upper bound of a bounded range.
+
+    .. attribute:: value
+
+        :class:`~DateRangeBound` representing the value of a single-value range.
+
+    As noted in its documentation, :class:`DateRangeBound` uses a millisecond
+    offset from the UNIX epoch to allow :class:`DateRange` to represent values
+    `datetime.datetime` cannot. For such values, string representions will show
+    this offset rather than the CQL representation.
+    """
+    # we document attributes manually above because setting defaults on
+    # namedtuple subclasses breaks instance behavior
+    __slots__ = ()
+
+    def __new__(cls, lower_bound=None, upper_bound=None, value=None):
+        """
+        :param lower_bound: a :class:`DateRangeBound` or object accepted by
+            :meth:`DateRangeBound.from_value` to be used as a
+            :attr:`lower_bound`. Mutually exclusive with `value`. If
+            `upper_bound` is specified and this is not, the :attr:`lower_bound`
+            will be open.
+        :param upper_bound: a :class:`DateRangeBound` or object accepted by
+            :meth:`DateRangeBound.from_value` to be used as a
+            :attr:`upper_bound`. Mutually exclusive with `value`. If
+            `lower_bound` is specified and this is not, the :attr:`upper_bound`
+            will be open.
+        :param value: a :class:`DateRangeBound` or object accepted by
+            :meth:`DateRangeBound.from_value` to be used as :attr:`value`. Mutually
+            exclusive with `lower_bound` and `lower_bound`.
+        """
+
+        # if necessary, transform non-None args to DateRangeBounds
+        lower_bound = (DateRangeBound.from_value(lower_bound).round_down()
+                       if lower_bound else lower_bound)
+        upper_bound = (DateRangeBound.from_value(upper_bound).round_up()
+                       if upper_bound else upper_bound)
+        value = (DateRangeBound.from_value(value).round_down()
+                 if value else value)
+
+        # if we're using a 2-ended range but one bound isn't specified, specify
+        # an open bound
+        if lower_bound is None and upper_bound is not None:
+            lower_bound = OPEN_BOUND
+        if upper_bound is None and lower_bound is not None:
+            upper_bound = OPEN_BOUND
+
+        new_dr = super(cls, DateRange).__new__(cls, lower_bound, upper_bound, value)
+        new_dr.validate()
+        return new_dr
+
+    def validate(self):
+        if self.value is None:
+            if self.lower_bound is None or self.upper_bound is None:
+                raise ValueError(
+                    '%s instances where value attribute is None must not set '
+                    'lower_bound or upper_bound; got %r' % (
+                        self.__class__.__name__,
+                        self
+                    )
+                )
+        else:  # self.value is not None
+            if self.lower_bound is not None or self.upper_bound is not None:
+                raise ValueError(
+                    '%s instances where value attribute is not None must not '
+                    'set lower_bound or upper_bound; got %r' % (
+                        self.__class__.__name__,
+                        self
+                    )
+                )
+
+    def __str__(self):
+        if self.value:
+            return str(self.value)
+        else:
+            return '[%s TO %s]' % (self.lower_bound, self.upper_bound)
