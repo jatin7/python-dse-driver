@@ -1997,7 +1997,7 @@ class Session(object):
         """
         custom_payload = custom_payload if custom_payload else {}
         if execute_as:
-            custom_payload[_proxy_execute_key] = execute_as
+            custom_payload[_proxy_execute_key] = six.b(execute_as)
 
         future = self._create_response_future(query, parameters, trace, custom_payload, timeout, execution_profile, paging_state)
         future._protocol_handler = self.client_protocol_handler
@@ -2040,12 +2040,12 @@ class Session(object):
             raise ValueError("Execution profile for graph queries must derive from GraphExecutionProfile, and provide graph_options")
 
         custom_payload = options.get_options_map()
+        if execute_as:
+            custom_payload[_proxy_execute_key] = six.b(execute_as)
         custom_payload[_request_timeout_key] = int64_pack(long(execution_profile.request_timeout * 1000))
+        
         future = self._create_response_future(query, parameters=None, trace=trace, custom_payload=custom_payload,
                                               timeout=_NOT_SET, execution_profile=execution_profile)
-
-        if execute_as:
-            custom_payload[_proxy_execute_key] = execute_as
 
         future.message.query_params = graph_parameters
         future._protocol_handler = self.client_protocol_handler
