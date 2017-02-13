@@ -135,11 +135,10 @@ class CustomProtocolHandlerTest(unittest.TestCase):
         continuous_paging_options = ContinuousPagingOptions(max_pages=max_pages,
                                                             max_pages_per_second=max_pages_per_second)
 
-        query = "SELECT * FROM test3rf.test"
-        message = QueryMessage(query=query, consistency_level=ConsistencyLevel.ONE,
+        future = self._send_query_message(session, timeout=cluster._default_timeout,
+                                          consistency_level=ConsistencyLevel.ONE,
                                continuous_paging_options=continuous_paging_options)
-        future = ResponseFuture(session, message, query=None, timeout=cluster._default_timeout)
-        future.send_request()
+
         # This should raise NoHostAvailable because continuous paging is not supported under ProtocolVersion.DSE_V1
         with self.assertRaises(NoHostAvailable) as context:
             future.result()
@@ -147,31 +146,6 @@ class CustomProtocolHandlerTest(unittest.TestCase):
                       str(context.exception))
 
         cluster.shutdown()
-
-    def __protocol_divergence_fail_by_flag_uses_int(self, version, uses_int_query_flag, int_flag = True, beta=False):
-        cluster = Cluster(protocol_version=version, allow_beta_protocol_version=beta)
-        session = cluster.connect()
-
-        query_one = SimpleStatement("INSERT INTO test3rf.test (k, v) VALUES (1, 1)")
-        query_two = SimpleStatement("INSERT INTO test3rf.test (k, v) VALUES (2, 2)")
-
-        execute_with_long_wait_retry(session, query_one)
-        execute_with_long_wait_retry(session, query_two)
-
-        with mock.patch('dse.protocol.ProtocolVersion.uses_int_query_flags', new=mock.Mock(return_value=int_flag)):
-            query = "SELECT * FROM test3rf.test"
-            message = QueryMessage(query=query, consistency_level=ConsistencyLevel.ONE, fetch_size=1)
-            future = ResponseFuture(session, message, query=None, timeout=cluster._default_timeout)
-            future.send_request()
-
-            response = future.result()
-
-            # This means the flag are not handled as they are meant by the server if uses_int=False
-            self.assertEqual(response.has_more_pages, uses_int_query_flag)
-
-        execute_with_long_wait_retry(session, SimpleStatement("TRUNCATE test3rf.test"))
-        cluster.shutdown()
-
 
     @greaterthanorequalcass30
     def test_protocol_divergence_v4_fail_by_flag_uses_int(self):
@@ -185,7 +159,7 @@ class CustomProtocolHandlerTest(unittest.TestCase):
 
         @test_category connection
         """
-        self.__protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V4, uses_int_query_flag=False,
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V4, uses_int_query_flag=False,
                                                         int_flag=True)
 
     @greaterthanorequaldse51
@@ -199,7 +173,7 @@ class CustomProtocolHandlerTest(unittest.TestCase):
 
         @test_category connection
         """
-        self.__protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V5, uses_int_query_flag=True, beta=True,
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V5, uses_int_query_flag=True, beta=True,
                                                         int_flag=True)
 
     @greaterthanorequaldse51
@@ -213,7 +187,7 @@ class CustomProtocolHandlerTest(unittest.TestCase):
 
         @test_category connection
         """
-        self.__protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.DSE_V1, uses_int_query_flag=True,
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.DSE_V1, uses_int_query_flag=True,
                                                         int_flag=True)
 
     @greaterthanorequaldse51
@@ -227,7 +201,7 @@ class CustomProtocolHandlerTest(unittest.TestCase):
 
         @test_category connection
         """
-        self.__protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V5, uses_int_query_flag=False, beta=True,
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V5, uses_int_query_flag=False, beta=True,
                                                         int_flag=False)
 
     @greaterthanorequaldse51
@@ -241,8 +215,37 @@ class CustomProtocolHandlerTest(unittest.TestCase):
 
         @test_category connection
         """
-        self.__protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.DSE_V1, uses_int_query_flag=False,
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.DSE_V1, uses_int_query_flag=False,
                                                         int_flag=False)
+
+    def _send_query_message(self, session, timeout, **kwargs):
+        query = "SELECT * FROM test3rf.test"
+        message = QueryMessage(query=query, **kwargs)
+        future = ResponseFuture(session, message, query=None, timeout=timeout)
+        future.send_request()
+        return future
+
+    def _protocol_divergence_fail_by_flag_uses_int(self, version, uses_int_query_flag, int_flag = True, beta=False):
+        cluster = Cluster(protocol_version=version, allow_beta_protocol_version=beta)
+        session = cluster.connect()
+
+        query_one = SimpleStatement("INSERT INTO test3rf.test (k, v) VALUES (1, 1)")
+        query_two = SimpleStatement("INSERT INTO test3rf.test (k, v) VALUES (2, 2)")
+
+        execute_with_long_wait_retry(session, query_one)
+        execute_with_long_wait_retry(session, query_two)
+
+        with mock.patch('dse.protocol.ProtocolVersion.uses_int_query_flags', new=mock.Mock(return_value=int_flag)):
+            future = self._send_query_message(session, cluster._default_timeout,
+                                              consistency_level=ConsistencyLevel.ONE, fetch_size=1)
+
+            response = future.result()
+
+            # This means the flag are not handled as they are meant by the server if uses_int=False
+            self.assertEqual(response.has_more_pages, uses_int_query_flag)
+
+        execute_with_long_wait_retry(session, SimpleStatement("TRUNCATE test3rf.test"))
+        cluster.shutdown()
 
 
 class CustomResultMessageRaw(ResultMessage):
