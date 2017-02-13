@@ -12,16 +12,22 @@ try:
 except ImportError:
     import unittest  # noqa
 
-from dse.protocol import ProtocolHandler, ResultMessage, UUIDType, read_int, EventMessage
-from dse.query import tuple_factory
-from dse.cluster import Cluster, EXEC_PROFILE_DEFAULT, ExecutionProfile
-from tests.integration import use_singledc, PROTOCOL_VERSION, drop_keyspace_shutdown_cluster
+import dse.protocol
+from dse.protocol import ProtocolHandler, ResultMessage, UUIDType, read_int, ProtocolVersion, QueryMessage, \
+    PrepareMessage
+from dse.query import tuple_factory, SimpleStatement
+from dse.cluster import Cluster, EXEC_PROFILE_DEFAULT, ExecutionProfile, ResponseFuture, ContinuousPagingOptions, \
+    NoHostAvailable
+from dse import ConsistencyLevel
+
+from tests.integration import use_singledc, PROTOCOL_VERSION, drop_keyspace_shutdown_cluster, \
+    greaterthanorequaldse51, greaterthanorequalcass31, greaterthanorequalcass30, execute_with_long_wait_retry
 from tests.integration.datatype_utils import update_datatypes, PRIMITIVE_DATATYPES
 from tests.integration.standard.utils import create_table_with_all_types, get_all_primitive_params
 from six import binary_type
 
 import uuid
-
+import mock
 
 def setup_module():
     use_singledc()
@@ -57,8 +63,9 @@ class CustomProtocolHandlerTest(unittest.TestCase):
         """
 
         # Ensure that we get normal uuid back first
-        session = Cluster(protocol_version=PROTOCOL_VERSION,
-                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)}).connect(keyspace="custserdes")
+        cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)})
+        session = cluster.connect(keyspace="custserdes")
         result = session.execute("SELECT schema_version FROM system.local")
         uuid_type = result[0][0]
         self.assertEqual(type(uuid_type), uuid.UUID)
@@ -75,7 +82,7 @@ class CustomProtocolHandlerTest(unittest.TestCase):
         result_set = session.execute("SELECT schema_version FROM system.local")
         uuid_type = result_set[0][0]
         self.assertEqual(type(uuid_type), uuid.UUID)
-        session.shutdown()
+        cluster.shutdown()
 
     def test_custom_raw_row_results_all_types(self):
         """
@@ -92,8 +99,9 @@ class CustomProtocolHandlerTest(unittest.TestCase):
         @test_category data_types:serialization
         """
         # Connect using a custom protocol handler that tracks the various types the result message is used with.
-        session = Cluster(protocol_version=PROTOCOL_VERSION,
-                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)}).connect(keyspace="custserdes")
+        cluster = Cluster(protocol_version=PROTOCOL_VERSION,
+                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)})
+        session = cluster.connect(keyspace="custserdes")
         session.client_protocol_handler = CustomProtocolHandlerResultMessageTracked
 
         colnames = create_table_with_all_types("alltypes", session, 1)
@@ -106,7 +114,138 @@ class CustomProtocolHandlerTest(unittest.TestCase):
             self.assertEqual(actual, expected)
         # Ensure we have covered the various primitive types
         self.assertEqual(len(CustomResultMessageTracked.checked_rev_row_set), len(PRIMITIVE_DATATYPES)-1)
-        session.shutdown()
+        cluster.shutdown()
+
+    @greaterthanorequalcass31
+    def test_protocol_divergence_v5_fail_by_continuous_paging(self):
+        """
+        Test to validate that V5 and DSE_V1 diverge. ContinuousPagingOptions is not supported by V5
+
+        @since DSE 2.0b3 GRAPH 1.0b1
+        @jira_ticket PYTHON-694
+        @expected_result NoHostAvailable will be risen when the continuous_paging_options parameter is set
+
+        @test_category connection
+        """
+        cluster = Cluster(protocol_version=ProtocolVersion.V5, allow_beta_protocol_version=True)
+        session = cluster.connect()
+
+        max_pages = 4
+        max_pages_per_second = 3
+        continuous_paging_options = ContinuousPagingOptions(max_pages=max_pages,
+                                                            max_pages_per_second=max_pages_per_second)
+
+        future = self._send_query_message(session, timeout=cluster._default_timeout,
+                                          consistency_level=ConsistencyLevel.ONE,
+                               continuous_paging_options=continuous_paging_options)
+
+        # This should raise NoHostAvailable because continuous paging is not supported under ProtocolVersion.DSE_V1
+        with self.assertRaises(NoHostAvailable) as context:
+            future.result()
+        self.assertIn("Continuous paging may only be used with protocol version ProtocolVersion.DSE_V1 or higher",
+                      str(context.exception))
+
+        cluster.shutdown()
+
+    @greaterthanorequalcass30
+    def test_protocol_divergence_v4_fail_by_flag_uses_int(self):
+        """
+        Test to validate that the _PAGE_SIZE_FLAG is not treated correctly in V4 if the flags are
+        written using write_uint instead of write_int
+
+        @since DSE 2.0b3 GRAPH 1.0b1
+        @jira_ticket PYTHON-694
+        @expected_result the fetch_size=1 parameter will be ignored
+
+        @test_category connection
+        """
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V4, uses_int_query_flag=False,
+                                                        int_flag=True)
+
+    @greaterthanorequaldse51
+    def test_protocol_v5_uses_flag_int(self):
+        """
+        Test to validate that the _PAGE_SIZE_FLAG is treated correctly using write_uint for V5
+
+        @since DSE 2.0b3 GRAPH 1.0b1
+        @jira_ticket PYTHON-694
+        @expected_result the fetch_size=1 parameter will be honored
+
+        @test_category connection
+        """
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V5, uses_int_query_flag=True, beta=True,
+                                                        int_flag=True)
+
+    @greaterthanorequaldse51
+    def test_protocol_dsev1_uses_flag_int(self):
+        """
+        Test to validate that the _PAGE_SIZE_FLAG is treated correctly using write_uint for DSE_V1
+
+        @since DSE 2.0b3 GRAPH 1.0b1
+        @jira_ticket PYTHON-694
+        @expected_result the fetch_size=1 parameter will be honored
+
+        @test_category connection
+        """
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.DSE_V1, uses_int_query_flag=True,
+                                                        int_flag=True)
+
+    @greaterthanorequaldse51
+    def test_protocol_divergence_v5_fail_by_flag_uses_int(self):
+        """
+        Test to validate that the _PAGE_SIZE_FLAG is treated correctly using write_uint for V5
+
+        @since DSE 2.0b3 GRAPH 1.0b1
+        @jira_ticket PYTHON-694
+        @expected_result the fetch_size=1 parameter will be honored
+
+        @test_category connection
+        """
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.V5, uses_int_query_flag=False, beta=True,
+                                                        int_flag=False)
+
+    @greaterthanorequaldse51
+    def test_protocol_divergence_dsev1_fail_by_flag_uses_int(self):
+        """
+        Test to validate that the _PAGE_SIZE_FLAG is treated correctly using write_uint for DSE_V1
+
+        @since DSE 2.0b3 GRAPH 1.0b1
+        @jira_ticket PYTHON-694
+        @expected_result the fetch_size=1 parameter will be honored
+
+        @test_category connection
+        """
+        self._protocol_divergence_fail_by_flag_uses_int(ProtocolVersion.DSE_V1, uses_int_query_flag=False,
+                                                        int_flag=False)
+
+    def _send_query_message(self, session, timeout, **kwargs):
+        query = "SELECT * FROM test3rf.test"
+        message = QueryMessage(query=query, **kwargs)
+        future = ResponseFuture(session, message, query=None, timeout=timeout)
+        future.send_request()
+        return future
+
+    def _protocol_divergence_fail_by_flag_uses_int(self, version, uses_int_query_flag, int_flag = True, beta=False):
+        cluster = Cluster(protocol_version=version, allow_beta_protocol_version=beta)
+        session = cluster.connect()
+
+        query_one = SimpleStatement("INSERT INTO test3rf.test (k, v) VALUES (1, 1)")
+        query_two = SimpleStatement("INSERT INTO test3rf.test (k, v) VALUES (2, 2)")
+
+        execute_with_long_wait_retry(session, query_one)
+        execute_with_long_wait_retry(session, query_two)
+
+        with mock.patch('dse.protocol.ProtocolVersion.uses_int_query_flags', new=mock.Mock(return_value=int_flag)):
+            future = self._send_query_message(session, cluster._default_timeout,
+                                              consistency_level=ConsistencyLevel.ONE, fetch_size=1)
+
+            response = future.result()
+
+            # This means the flag are not handled as they are meant by the server if uses_int=False
+            self.assertEqual(response.has_more_pages, uses_int_query_flag)
+
+        execute_with_long_wait_retry(session, SimpleStatement("TRUNCATE test3rf.test"))
+        cluster.shutdown()
 
 
 class CustomResultMessageRaw(ResultMessage):
@@ -169,5 +308,3 @@ class CustomProtocolHandlerResultMessageTracked(ProtocolHandler):
     my_opcodes = ProtocolHandler.message_types_by_opcode.copy()
     my_opcodes[CustomResultMessageTracked.opcode] = CustomResultMessageTracked
     message_types_by_opcode = my_opcodes
-
-

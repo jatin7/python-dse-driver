@@ -564,7 +564,7 @@ class _QueryMessage(_MessageType):
             flags |= _PROTOCOL_TIMESTAMP_FLAG
 
         if self.continuous_paging_options:
-            if protocol_version >= ProtocolVersion.DSE_V1:
+            if ProtocolVersion.has_continuous_paging_support(protocol_version):
                 flags |= _PAGING_OPTIONS_FLAG
             else:
                 raise UnsupportedOperation(
