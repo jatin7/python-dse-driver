@@ -1233,18 +1233,18 @@ class DateRangeType(CassandraType):
     @classmethod
     def deserialize(cls, byts, protocol_version):
         # <type>[<time0><precision0>[<time1><precision1>]]
-        type_ = int8_unpack(byts[0])
+        type_ = int8_unpack(byts[0:1])
 
         if type_ in (BoundKind.to_int(BoundKind.BOTH_OPEN_RANGE),
                      BoundKind.to_int(BoundKind.SINGLE_DATE_OPEN)):
             time0 = precision0 = None
         else:
             time0 = int64_unpack(byts[1:9])
-            precision0 = int8_unpack(byts[9])
+            precision0 = int8_unpack(byts[9:10])
 
         if type_ == BoundKind.to_int(BoundKind.CLOSED_RANGE):
             time1 = int64_unpack(byts[10:18])
-            precision1 = int8_unpack(byts[18])
+            precision1 = int8_unpack(byts[18:19])
         else:
             time1 = precision1 = None
 

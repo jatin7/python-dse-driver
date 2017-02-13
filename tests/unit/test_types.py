@@ -444,8 +444,8 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertRaises(ValueError, DateRangeType.serialize, no_bounds_object, 5)
 
     def test_serialized_value_round_trip(self):
-        vals = ['\x01\x00\x00\x01%\xe9a\xf9\xd1\x06\x00\x00\x01v\xbb>o\xff\x00',
-                '\x01\x00\x00\x00\xdcm\x03-\xd1\x06\x00\x00\x01v\xbb>o\xff\x00']
+        vals = [six.b('\x01\x00\x00\x01%\xe9a\xf9\xd1\x06\x00\x00\x01v\xbb>o\xff\x00'),
+                six.b('\x01\x00\x00\x00\xdcm\x03-\xd1\x06\x00\x00\x01v\xbb>o\xff\x00')]
         for serialized in vals:
             self.assertEqual(
                 serialized,

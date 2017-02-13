@@ -1050,17 +1050,13 @@ class TestDateRangeCollection(BasicSharedKeyspaceUnitTestCase):
         results = list(self.session.execute("SELECT * FROM dateRangeIntegrationTest5"))
         self.assertEqual(len(results),1)
 
-        lower_bound_1 = util.DateRangeBound(
-                        datetime(2000, 01, 01, 10, 15, 30, 1000),
-                        'MILLISECOND')
+        lower_bound_1 = util.DateRangeBound(datetime(2000, 1, 1, 10, 15, 30, 1000), 'MILLISECOND')
 
-        lower_bound_2 = util.DateRangeBound(
-                        datetime(2010, 01, 01, 10, 15, 30, 1000),
-                        'MILLISECOND')
+        lower_bound_2 = util.DateRangeBound(datetime(2010, 1, 1, 10, 15, 30, 1000), 'MILLISECOND')
 
-        upper_bound_1 = util.DateRangeBound(datetime(2020, 1, 1),'YEAR')
+        upper_bound_1 = util.DateRangeBound(datetime(2020, 1, 1), 'YEAR')
 
-        value_1 = util.DateRangeBound(datetime(2001, 1, 02),'DAY')
+        value_1 = util.DateRangeBound(datetime(2001, 1, 2), 'DAY')
 
         dt = util.DateRange(lower_bound=lower_bound_1, upper_bound=upper_bound_1)
         dt2 = util.DateRange(lower_bound=lower_bound_2, upper_bound=upper_bound_1)
@@ -1108,11 +1104,11 @@ class TestDateRangeCollection(BasicSharedKeyspaceUnitTestCase):
                          "('[2000-01-01T10:15:30.003Z TO 2020-01-01T10:15:30.001Z]', 40))")
 
         lower_bound = util.DateRangeBound(
-                        datetime(2000, 01, 01, 10, 15, 30, 3000),
+                        datetime(2000, 1, 1, 10, 15, 30, 3000),
                         'MILLISECOND')
 
         upper_bound = util.DateRangeBound(
-                        datetime(2020, 01, 01, 10, 15, 30, 1000),
+                        datetime(2020, 1, 1, 10, 15, 30, 1000),
                         'MILLISECOND')
 
         expected_dt = util.DateRange(lower_bound=lower_bound ,upper_bound=upper_bound)
