@@ -221,9 +221,26 @@ class ManagementConnectionTests(BaseCassEngTestCase):
 
         @test_category object_mapper
         """
-        session = Cluster(['127.0.0.1']).connect()
+        cluster = Cluster(['127.0.0.1'])
+        session = cluster.connect()
         connection_name = 'from_session'
         conn.register_connection(connection_name, session=session)
+        self.assertIsNotNone(conn.get_connection(connection_name).cluster.metadata.get_host("127.0.0.1"))
+        self.addCleanup(conn.unregister_connection, connection_name)
+        cluster.shutdown()
+
+    def test_connection_from_hosts(self):
+        """
+        Test to ensure that you can register a connection from a list of hosts
+        @since 3.8
+        @jira_ticket PYTHON-692
+        @expected_result queries should execute appropriately
+
+        @test_category object_mapper
+        """
+        connection_name = 'from_hosts'
+        conn.register_connection(connection_name, hosts=['127.0.0.1'])
+        self.assertIsNotNone(conn.get_connection(connection_name).cluster.metadata.get_host("127.0.0.1"))
         self.addCleanup(conn.unregister_connection, connection_name)
 
     def test_connection_param_validation(self):
