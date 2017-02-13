@@ -522,7 +522,7 @@ class LoadBalancingPolicyTests(unittest.TestCase):
         @since 3.8
         @jira_ticket PYTHON-676
         @expected_result the request are spread across the replicas,
-        when one of them is down, the requests target the avaiable one
+        when one of them is down, the requests target the available one
 
         @test_category policy
         """
@@ -550,7 +550,7 @@ class LoadBalancingPolicyTests(unittest.TestCase):
         @since 3.8
         @jira_ticket PYTHON-676
         @expected_result the request are spread across the replicas,
-        when one of them is down, the requests target the other avaiable ones
+        when one of them is down, the requests target the other available ones
 
         @test_category policy
         """
