@@ -1,3 +1,16 @@
+2.0.0b3
+=======
+February 13, 2017
+
+Features
+--------
+* Support DSE DateRange type (PYTHON-668)
+* RLAC CQL output for materialized views (PYTHON-682)
+
+Bug Fixes
+---------
+* DSE_V1 protocol should not include all of protocol v5 (PYTHON-694)
+
 1.1.0
 =====
 November 2, 2016
