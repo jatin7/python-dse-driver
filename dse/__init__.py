@@ -16,7 +16,7 @@ class NullHandler(logging.Handler):
 
 logging.getLogger('dse').addHandler(NullHandler())
 
-__version_info__ = (2, 0, '0b3')
+__version_info__ = (2, 0, '0b3', 'post0')
 __version__ = '.'.join(map(str, __version_info__))
 
 

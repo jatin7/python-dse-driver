@@ -16,6 +16,6 @@ versions:
 - name: 1.0
   ref: 1.0.0
 - name: 2.0.0b3
-  ref: 0b4f38e40b
+  ref: 6b2ce3ba4f
 redirects:
   - \A\/(.*)/\Z: /\1.html
