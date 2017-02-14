@@ -70,6 +70,9 @@ TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
             "timestamp": ["Timestamp()", datetime.datetime.now().replace(microsecond=0)]
             }
 
+if DSE_VERSION >= "5.1":
+    TYPE_MAP["datetime1"]= ["Date()", datetime.date.today()]
+
 
 def find_spark_master(session):
 
@@ -349,6 +352,7 @@ def generate_classic(session):
             josh.addEdge('created', ripple, 'weight', 1.0f);
             josh.addEdge('created', lop, 'weight', 0.4f);
             peter.addEdge('created', lop, 'weight', 0.2f);''']
+
     for run in to_run:
         succeed = False
         count = 0
@@ -391,8 +395,24 @@ def generate_multi_field_graph(session):
                      schema.vertexLabel('doublevertex2').properties('doublevalue2').ifNotExists().create();
                      Double d2 = 3.5e40d; graph.addVertex(label, "doublevertex2", "doublevalue2", d2);''']
 
+
         for run in to_run:
             session.execute_graph(run)
+
+        if DSE_VERSION >= '5.1':
+            to_run_51=['''schema.propertyKey('datevalue1').Date().ifNotExists().create();
+                     schema.vertexLabel('datevertex1').properties('datevalue1').ifNotExists().create();''',
+                       '''schema.propertyKey('negdatevalue2').Date().ifNotExists().create();
+                     schema.vertexLabel('negdatevertex2').properties('negdatevalue2').ifNotExists().create();''']
+            for run in to_run_51:
+                session.execute_graph(run)
+
+            session.execute_graph('''graph.addVertex(label, "datevertex1", "datevalue1", date1);''', { 'date1': '1999-07-29' })
+            session.execute_graph('''graph.addVertex(label, "negdatevertex2", "negdatevalue2", date2);''', { 'date2': '-1999-07-28' })
+
+
+
+
 
 
 def generate_type_graph_schema(session, prime_schema=True):
