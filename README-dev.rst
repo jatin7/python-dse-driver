@@ -12,7 +12,7 @@ Releasing
 * Commit the changelog and version changes
 * Tag the release.  For example: ``git tag -a 1.0.0 -m 'version 1.0.0'``
 * Push the commit and tag: ``git push --tags origin master``
-* Upload the package to pypi::
+* For a GA release, upload the package to pypi::
 
     python setup.py register
     python setup.py sdist upload
@@ -249,3 +249,8 @@ python setup.py clean
 * Upload the docs on the EAP download server::
 
     scp -r docs/_build/<version>/  username@jenkins2.datastax.lan:/datastax/www/eap.datastax.com/drivers/python/docs
+
+* Sync the Jenkins EAP dir to the public server with [the `Admin_Sync_Jenkins_To_Master` Jenkins job](http://jenkins2.datastax.lan:8080/view/All/job/Admin_Sync_Jenkins_To_Master/).
+* _After that job finishes_, sync the public server to the S3 nodes with [the `Admin_Sync_Master_To_Nodes` Jenkins job](http://jenkins2.datastax.lan:8080/view/All/job/Admin_Sync_Master_To_Nodes/).
+* Update links and version numbers on [the DS Academy EAP page](https://academy.datastax.com/content/dse-drivers-eap-download-and-install).
+* Mention the release in the `#release-team` and `#eap-warroom` Slack rooms.
