@@ -227,8 +227,9 @@ Releasing an EAP
 
 An EAP release is only uploaded on a private server and it is not published on pypi.
 
-* Clean the environment
-python setup.py clean
+* Clean the environment::
+
+    python setup.py clean
 
 * Package the source distribution::
 
