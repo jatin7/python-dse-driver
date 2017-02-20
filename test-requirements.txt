@@ -7,7 +7,7 @@ unittest2
 PyYAML
 pytz
 sure
-pure-sasl>=0.2.0
+pure-sasl>=0.4.0
 twisted
 gevent>=1.0
 eventlet

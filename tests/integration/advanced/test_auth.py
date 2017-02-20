@@ -237,6 +237,39 @@ class BasicDseAuthTest(unittest.TestCase):
         auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="notauser@DATASTAX.COM")
         self.assertRaises(NoHostAvailable, self.connect_and_query, auth_provider)
 
+    def test_proxy_login_with_kerberos(self):
+        """
+        Test that the proxy login works with kerberos.
+        """
+        # Set up users for proxy login test
+        os.environ['KRB5_CONFIG'] = self.krb_conf
+        self.refresh_kerberos_tickets(self.cassandra_keytab, "cassandra@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal='cassandra@DATASTAX.COM')
+        self.cluster = Cluster(auth_provider=auth_provider)
+        session = self.cluster.connect()
+
+        session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
+        session.execute("GRANT EXECUTE ON ALL AUTHENTICATION SCHEMES to 'bob@DATASTAX.COM'")
+        session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('charlie@DATASTAX.COM'))
+
+        # Create a keyspace and allow only charlie to query it.
+        session.execute(
+           "CREATE KEYSPACE testkrbproxy WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
+        session.execute("CREATE TABLE testkrbproxy.testproxy (id int PRIMARY KEY, value text)")
+        session.execute("GRANT ALL PERMISSIONS ON KEYSPACE testkrbproxy to '{0}'".format('charlie@DATASTAX.COM'))
+
+        session.execute("GRANT PROXY.LOGIN ON ROLE '{0}' to '{1}'".format('charlie@DATASTAX.COM', 'bob@DATASTAX.COM'))
+        self.cluster.shutdown()
+
+        # Try proxy login with bob
+        self.refresh_kerberos_tickets(self.bob_keytab, "bob@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal='bob@DATASTAX.COM',
+                                              authorization_id='charlie@DATASTAX.COM')
+        self.cluster = Cluster(auth_provider=auth_provider)
+        session = self.cluster.connect()
+        session.execute("select * from testkrbproxy.testproxy")
+
+
 def clear_kerberos_tickets():
         subprocess.call(['kdestroy'], shell=False)
 
@@ -333,9 +366,9 @@ class DseProxyAuthTest(BaseDseProxyAuthTest):
         sasl_options = {
             "service": 'dse',
             "username": 'server',
-            "mechanism": 'PLAIN',
+            "mechanism": mechanism,
             'password':  self.server_role,
-            'identity': self.user_role
+            'authorization_id': self.user_role
         }
         return sasl_options
 
