@@ -59,6 +59,8 @@
    .. autoattribute:: token_metadata_enabled
       :annotation: = True
 
+   .. autoattribute:: timestamp_generator
+
    .. automethod:: connect
 
    .. automethod:: shutdown
