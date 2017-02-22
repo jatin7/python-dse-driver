@@ -242,32 +242,91 @@ class BasicDseAuthTest(unittest.TestCase):
         Test that the proxy login works with kerberos.
         """
         # Set up users for proxy login test
-        os.environ['KRB5_CONFIG'] = self.krb_conf
-        self.refresh_kerberos_tickets(self.cassandra_keytab, "cassandra@DATASTAX.COM", self.krb_conf)
-        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal='cassandra@DATASTAX.COM')
-        self.cluster = Cluster(auth_provider=auth_provider)
-        session = self.cluster.connect()
+        self._setup_for_proxy()
 
-        session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
-        session.execute("GRANT EXECUTE ON ALL AUTHENTICATION SCHEMES to 'bob@DATASTAX.COM'")
-        session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('charlie@DATASTAX.COM'))
+        query = "select * from testkrbproxy.testproxy"
 
-        # Create a keyspace and allow only charlie to query it.
-        session.execute(
-           "CREATE KEYSPACE testkrbproxy WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
-        session.execute("CREATE TABLE testkrbproxy.testproxy (id int PRIMARY KEY, value text)")
-        session.execute("GRANT ALL PERMISSIONS ON KEYSPACE testkrbproxy to '{0}'".format('charlie@DATASTAX.COM'))
-
-        session.execute("GRANT PROXY.LOGIN ON ROLE '{0}' to '{1}'".format('charlie@DATASTAX.COM', 'bob@DATASTAX.COM'))
-        self.cluster.shutdown()
+        # Try normal login with Charlie
+        self.refresh_kerberos_tickets(self.charlie_keytab, "charlie@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="charlie@DATASTAX.COM")
+        self.connect_and_query(auth_provider, query=query)
 
         # Try proxy login with bob
         self.refresh_kerberos_tickets(self.bob_keytab, "bob@DATASTAX.COM", self.krb_conf)
-        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal='bob@DATASTAX.COM',
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="bob@DATASTAX.COM",
                                               authorization_id='charlie@DATASTAX.COM')
-        self.cluster = Cluster(auth_provider=auth_provider)
-        session = self.cluster.connect()
-        session.execute("select * from testkrbproxy.testproxy")
+        self.connect_and_query(auth_provider, query=query)
+
+        #Try loging with bob without mentioning charlie
+        self.refresh_kerberos_tickets(self.bob_keytab, "bob@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="bob@DATASTAX.COM")
+        self.assertRaises(Unauthorized, self.connect_and_query, auth_provider, query=query)
+
+        self._remove_proxy_setup()
+
+    def test_proxy_login_with_kerberos_forbidden(self):
+        """
+        Test that the proxy login fail when proxy role is not granted
+        """
+        # Set up users for proxy login test
+        self._setup_for_proxy(False)
+        query = "select * from testkrbproxy.testproxy"
+
+        # Try normal login with Charlie
+        self.refresh_kerberos_tickets(self.bob_keytab, "bob@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="bob@DATASTAX.COM",
+                                              authorization_id='charlie@DATASTAX.COM')
+        self.assertRaises(NoHostAvailable, self.connect_and_query, auth_provider, query=query)
+
+        self.refresh_kerberos_tickets(self.bob_keytab, "bob@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="bob@DATASTAX.COM")
+        self.assertRaises(Unauthorized, self.connect_and_query, auth_provider, query=query)
+
+        self._remove_proxy_setup()
+
+    def _remove_proxy_setup(self):
+        os.environ['KRB5_CONFIG'] = self.krb_conf
+        self.refresh_kerberos_tickets(self.cassandra_keytab, "cassandra@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal='cassandra@DATASTAX.COM')
+        cluster = Cluster(auth_provider=auth_provider)
+        session = cluster.connect()
+
+        session.execute("REVOKE PROXY.LOGIN ON ROLE '{0}' FROM '{1}'".format('charlie@DATASTAX.COM', 'bob@DATASTAX.COM'))
+
+        session.execute("DROP ROLE IF EXISTS '{0}';".format('bob@DATASTAX.COM'))
+        session.execute("DROP ROLE IF EXISTS '{0}';".format('charlie@DATASTAX.COM'))
+
+        # Create a keyspace and allow only charlie to query it.
+
+        session.execute("DROP KEYSPACE testkrbproxy")
+
+        cluster.shutdown()
+
+    def _setup_for_proxy(self, grant=True):
+        os.environ['KRB5_CONFIG'] = self.krb_conf
+        self.refresh_kerberos_tickets(self.cassandra_keytab, "cassandra@DATASTAX.COM", self.krb_conf)
+        auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal='cassandra@DATASTAX.COM')
+        cluster = Cluster(auth_provider=auth_provider)
+        session = cluster.connect()
+
+        session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
+        session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('bob@DATASTAX.COM'))
+
+        session.execute("GRANT EXECUTE ON ALL AUTHENTICATION SCHEMES to 'bob@DATASTAX.COM'")
+
+        session.execute("CREATE ROLE IF NOT EXISTS '{0}' WITH LOGIN = TRUE;".format('charlie@DATASTAX.COM'))
+        session.execute("GRANT EXECUTE ON ALL AUTHENTICATION SCHEMES to 'charlie@DATASTAX.COM'")
+
+        # Create a keyspace and allow only charlie to query it.
+        session.execute(
+            "CREATE KEYSPACE testkrbproxy WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
+        session.execute("CREATE TABLE testkrbproxy.testproxy (id int PRIMARY KEY, value text)")
+        session.execute("GRANT ALL PERMISSIONS ON KEYSPACE testkrbproxy to '{0}'".format('charlie@DATASTAX.COM'))
+
+        if grant:
+            session.execute("GRANT PROXY.LOGIN ON ROLE '{0}' to '{1}'".format('charlie@DATASTAX.COM', 'bob@DATASTAX.COM'))
+
+        cluster.shutdown()
 
 
 def clear_kerberos_tickets():
