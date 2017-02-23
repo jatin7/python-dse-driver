@@ -237,6 +237,7 @@ class BasicDseAuthTest(unittest.TestCase):
         auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="notauser@DATASTAX.COM")
         self.assertRaises(NoHostAvailable, self.connect_and_query, auth_provider)
 
+    @greaterthanorequaldse51
     def test_proxy_login_with_kerberos(self):
         """
         Test that the proxy login works with kerberos.
@@ -264,6 +265,7 @@ class BasicDseAuthTest(unittest.TestCase):
 
         self._remove_proxy_setup()
 
+    @greaterthanorequaldse51
     def test_proxy_login_with_kerberos_forbidden(self):
         """
         Test that the proxy login fail when proxy role is not granted

@@ -14,6 +14,8 @@ from copy import copy
 from itertools import chain
 import json
 import six
+import time
+import sys
 
 from dse import OperationTimedOut, ConsistencyLevel, InvalidRequest
 from dse.protocol import ServerError, SyntaxException
@@ -416,8 +418,19 @@ class BasicGraphTest(BasicGraphUnitTestCase):
 
         # tiny timeout times out as expected
         tmp_profile = copy(default_graph_profile)
-        tmp_profile.request_timeout = 0.0000
-        self.assertRaises(OperationTimedOut, s.execute_graph, query, execution_profile=tmp_profile)
+        tmp_profile.request_timeout = sys.float_info.min
+
+        max_retry_count = 10
+        for _ in range(max_retry_count):
+            start = time.time()
+            try:
+                self.assertRaises(OperationTimedOut, s.execute_graph, query, execution_profile=tmp_profile)
+            except:
+                end = time.time()
+                self.assertAlmostEqual(start, end, 1)
+                break
+        else:
+            raise Exception("session.execute_graph didn't time out in {0} tries".format(max_retry_count))
 
     def test_execute_graph_trace(self):
         s = self.session
@@ -465,7 +478,10 @@ class BasicGraphTest(BasicGraphUnitTestCase):
                 typ = int
             elif any(type_indicator.startswith(t) for t in ('float', 'double')):
                 typ = float
+            elif any(type_indicator.startswith(t) for t in ('date', 'negdate')):
+                typ = str
             else:
+                pass
                 self.fail("Received unexpected type: %s" % type_indicator)
             self.assertIsInstance(prop['value'], typ)
 
