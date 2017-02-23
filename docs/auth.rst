@@ -19,11 +19,6 @@ With DSE (>=5.1), unified Authentication allows you to:
 * Proxy Login: Authenticate using a fixed set of authentication credentials but allow authorization of resources based another user id.
 * Proxy Execute: Authenticate using a fixed set of authentication credentials but execute requests based on another user id.
 
-Limitations
-~~~~~~~~~~~
-
-* Proxy Login cannot be used with Kerberos due to a known issue. It is currently investigated and a fix will be available soon.
-
 Proxy Login
 ~~~~~~~~~~~
 
@@ -45,7 +40,7 @@ then you can do the proxy authentication....
       "mechanism":"PLAIN",
       "username": 'server',
       'password': 'server',
-      'identity': 'user1'
+      'authorization_id': 'user1'
     }
 
     auth_provider = SaslAuthProvider(**sasl_kwargs)
@@ -53,7 +48,7 @@ then you can do the proxy authentication....
     s = c.connect()
     s.execute(...)  # all requests will be executed as 'user1'
 
-If you are using kerberos, you can use directly :class:`.DSEGSSAPIAuthProvider` and pass the principal for the authorization, like this:
+If you are using kerberos, you can use directly :class:`.DSEGSSAPIAuthProvider` and pass the authorization_id, like this:
 
 .. code-block:: python
 
@@ -61,7 +56,8 @@ If you are using kerberos, you can use directly :class:`.DSEGSSAPIAuthProvider` 
     from dse.auth import DSEGSSAPIAuthProvider
 
     # Ensure the kerberos ticket of the server user is set with the kinit utility.
-    auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="user1@DATASTAX.COM")
+    auth_provider = DSEGSSAPIAuthProvider(service='dse', qops=["auth"], principal="server@DATASTAX.COM",
+                                          authorization_id='user1@DATASTAX.COM')
     c = Cluster(auth_provider=auth_provider)
     s = c.connect()
     s.execute(...)  # all requests will be executed as 'user1'
