@@ -3397,7 +3397,6 @@ class ResponseFuture(object):
             if self.timeout is not None and time.time() - self._start_time > self.timeout:
                 self._on_timeout()
                 return True
-
         if error_no_hosts:
             self._set_final_exception(NoHostAvailable(
                 "Unable to complete the operation against any hosts", self._errors))

@@ -404,6 +404,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         ep.graph_options.graph_name = "definitely_not_correct"
         self.assertRaises(InvalidRequest, s.execute_graph, statement, execution_profile=ep)
 
+
     def test_execute_graph_timeout(self):
         s = self.session
 
@@ -412,7 +413,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
 
         # default is passed down
         default_graph_profile = s.cluster.profile_manager.profiles[EXEC_PROFILE_GRAPH_DEFAULT]
-        rs = s.execute_graph(query)
+        rs = self.session.execute_graph(query)
         self.assertEqual(rs[0].value, value)
         self.assertEqual(rs.response_future.timeout, default_graph_profile.request_timeout)
 
@@ -424,13 +425,15 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         for _ in range(max_retry_count):
             start = time.time()
             try:
-                self.assertRaises(OperationTimedOut, s.execute_graph, query, execution_profile=tmp_profile)
+                with self.assertRaises(OperationTimedOut):
+                    s.execute_graph(query, execution_profile=tmp_profile)
+                break
             except:
                 end = time.time()
                 self.assertAlmostEqual(start, end, 1)
-                break
         else:
             raise Exception("session.execute_graph didn't time out in {0} tries".format(max_retry_count))
+
 
     def test_execute_graph_trace(self):
         s = self.session
@@ -479,7 +482,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
             elif any(type_indicator.startswith(t) for t in ('float', 'double')):
                 typ = float
             elif any(type_indicator.startswith(t) for t in ('date', 'negdate')):
-                typ = str
+                typ = six.text_type
             else:
                 pass
                 self.fail("Received unexpected type: %s" % type_indicator)
