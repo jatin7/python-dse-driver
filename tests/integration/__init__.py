@@ -135,7 +135,11 @@ if DSE_VERSION:
 
 
 def get_default_protocol():
-
+    
+    if Version(CASSANDRA_VERSION) >= Version('3.10') and DSE_VERSION:
+        return ProtocolVersion.DSE_V1
+    if Version(CASSANDRA_VERSION) >= Version('3.10'):
+        return 5
     if Version(CASSANDRA_VERSION) >= Version('2.2'):
         return 4
     elif Version(CASSANDRA_VERSION) >= Version('2.1'):
@@ -153,9 +157,12 @@ def get_supported_protocol_versions():
     2.1 -> 3, 2, 1
     2.2 -> 4, 3, 2, 1
     3.X -> 4, 3
-    3.10 -> 5(beta),4,3
+    3.10(C*) -> 5(beta),4,3
+    3.10(DSE) -> DSE_V1,4,3
 `   """
-    if Version(CASSANDRA_VERSION) >= Version('3.10'):
+    if Version(CASSANDRA_VERSION) >= Version('3.10') and DSE_VERSION:
+        return (3, 4, ProtocolVersion.DSE_V1)
+    elif Version(CASSANDRA_VERSION) >= Version('3.10'):
         return (3, 4, 5)
     elif Version(CASSANDRA_VERSION) >= Version('3.0'):
         return (3, 4)
