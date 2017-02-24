@@ -884,12 +884,42 @@ class ClusterTests(unittest.TestCase):
                 start = time.time()
                 try:
                     self.assertRaises(dse.OperationTimedOut, cluster.add_execution_profile, 'node2', node2, pool_wait_timeout=sys.float_info.min)
+                    break
                 except:
                     end = time.time()
                     self.assertAlmostEqual(start, end, 1)
-                    break
             else:
                 raise Exception("cluster.add_execution_profile didn't time out in {0} tries".format(max_retry_count))
+
+    def test_execute_query_timeout(self):
+        with Cluster() as cluster:
+            session = cluster.connect(wait_for_all_pools=True)
+            query = "SELECT * FROM system.local"
+
+            # default is passed down
+            default_profile = cluster.profile_manager.profiles[EXEC_PROFILE_DEFAULT]
+            rs = session.execute(query)
+            self.assertEqual(rs.response_future.timeout, default_profile.request_timeout)
+
+            # tiny timeout times out as expected
+            tmp_profile = copy(default_profile)
+            tmp_profile.request_timeout = sys.float_info.min
+
+            max_retry_count = 10
+            for _ in range(max_retry_count):
+                start = time.time()
+                try:
+                    with self.assertRaises(dse.OperationTimedOut):
+                        session.execute(query, execution_profile=tmp_profile)
+                    break
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    end = time.time()
+                    self.assertAlmostEqual(start, end, 1)
+            else:
+                raise Exception("session.execute didn't time out in {0} tries".format(max_retry_count))
+
 
 class LocalHostAdressTranslator(AddressTranslator):
 
