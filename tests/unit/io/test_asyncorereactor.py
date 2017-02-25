@@ -28,7 +28,7 @@ from dse.connection import (HEADER_DIRECTION_TO_CLIENT,
 from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import (write_stringmultimap, write_int, write_string,
                                 SupportedMessage, ReadyMessage, ServerError)
-from dse.marshal import uint8_pack, uint32_pack, int32_pack, int16_pack
+from dse.marshal import uint8_pack, uint32_pack, int32_pack, uint16_pack
 from tests import is_monkey_patched
 from tests.unit.io.utils import submit_and_wait_for_completion, TimerCallback
 
@@ -70,7 +70,7 @@ class AsyncoreConnectionTest(unittest.TestCase):
             stream_id,
             message_class.opcode  # opcode
         ])
-        header.insert(1, int16_pack(0))  # flags (compression
+        header.insert(1, uint16_pack(0))  # flags (compression)
         return six.binary_type().join(header)
 
     def make_options_body(self):
@@ -116,7 +116,7 @@ class AsyncoreConnectionTest(unittest.TestCase):
         # get a connection that's already fully started
         c = self.test_successful_connection()
 
-        header = six.b('\x00') + int16_pack(0) + six.b('\x00\x00') + int32_pack(20000)
+        header = six.b('\x00') + uint16_pack(0) + six.b('\x00\x00') + int32_pack(20000)
         responses = [
             header + (six.b('a') * (4096 - len(header))),
             six.b('a') * 4096,
