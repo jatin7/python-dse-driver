@@ -1994,7 +1994,7 @@ class Session(object):
             fetch_size = self.default_fetch_size
 
         start_time = time.time()
-        if self._protocol_version >= 3 and self.use_client_timestamp:
+        if self.use_client_timestamp:
             timestamp = self.cluster.timestamp_generator()
         else:
             timestamp = None
