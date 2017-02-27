@@ -716,6 +716,7 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
         self.assertEqual(val['v0'], 3)
         self.assertEqual(val['v1'], six.b('\xde\xad\xbe\xef'))
 
+    @greaterthanorequalcass30
     def test_alter_udt(self):
         """
         Test to ensure that altered UDT's are properly surfaced without needing to restart the underlying session.
