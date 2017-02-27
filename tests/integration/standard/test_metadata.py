@@ -37,7 +37,6 @@ from tests.integration import (get_cluster, use_singledc, PROTOCOL_VERSION, get_
                                get_supported_protocol_versions, greaterthanorequalcass30, greaterthanorequaldse51,
                                lessthandse51)
 
-from tests.integration import greaterthancass21
 
 def setup_module():
     use_singledc()
@@ -858,7 +857,7 @@ class SchemaMetadataTests(BasicSegregatedKeyspaceUnitTestCase):
         self.assertEqual(index_2.index_options["target"], "keys(b)")
         self.assertEqual(index_2.keyspace_name, "schemametadatatests")
 
-    @greaterthanorequalcass30
+    @lessthancass30
     def test_table_extensions(self):
         s = self.session
         ks = self.keyspace_name
@@ -1075,7 +1074,6 @@ CREATE TABLE export_udts.users (
 
         cluster.shutdown()
 
-    @greaterthancass21
     def test_case_sensitivity(self):
         """
         Test that names that need to be escaped in CREATE statements are
