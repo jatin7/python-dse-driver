@@ -64,8 +64,7 @@ from dse.policies import (TokenAwarePolicy, DCAwareRoundRobinPolicy, SimpleConvi
                           RetryPolicy, IdentityTranslator, NoSpeculativeExecutionPlan,
                           NoSpeculativeExecutionPolicy, DSELoadBalancingPolicy, NeverRetryPolicy)
 from dse.pool import (Host, _ReconnectionHandler, _HostReconnectionHandler,
-                      HostConnectionPool, HostConnection,
-                      NoConnectionsAvailable)
+                      HostConnection, NoConnectionsAvailable)
 from dse.query import (SimpleStatement, PreparedStatement, BoundStatement,
                        BatchStatement, bind_params, QueryTrace, HostTargetingStatement,
                        named_tuple_factory, dict_factory, tuple_factory, FETCH_SIZE_UNSET)
@@ -73,7 +72,6 @@ from dse.query import (SimpleStatement, PreparedStatement, BoundStatement,
 
 if six.PY3:
     long = int
-
 
 def _is_eventlet_monkey_patched():
     if 'eventlet.patcher' not in sys.modules:
@@ -108,17 +106,6 @@ else:
 "".encode('utf8')
 
 log = logging.getLogger(__name__)
-
-
-DEFAULT_MIN_REQUESTS = 5
-DEFAULT_MAX_REQUESTS = 100
-
-DEFAULT_MIN_CONNECTIONS_PER_LOCAL_HOST = 2
-DEFAULT_MAX_CONNECTIONS_PER_LOCAL_HOST = 8
-
-DEFAULT_MIN_CONNECTIONS_PER_REMOTE_HOST = 1
-DEFAULT_MAX_CONNECTIONS_PER_REMOTE_HOST = 2
-
 
 _NOT_SET = object()
 
@@ -906,26 +893,6 @@ class Cluster(object):
 
         self._user_types = defaultdict(dict)
 
-        self._min_requests_per_connection = {
-            HostDistance.LOCAL: DEFAULT_MIN_REQUESTS,
-            HostDistance.REMOTE: DEFAULT_MIN_REQUESTS
-        }
-
-        self._max_requests_per_connection = {
-            HostDistance.LOCAL: DEFAULT_MAX_REQUESTS,
-            HostDistance.REMOTE: DEFAULT_MAX_REQUESTS
-        }
-
-        self._core_connections_per_host = {
-            HostDistance.LOCAL: DEFAULT_MIN_CONNECTIONS_PER_LOCAL_HOST,
-            HostDistance.REMOTE: DEFAULT_MIN_CONNECTIONS_PER_REMOTE_HOST
-        }
-
-        self._max_connections_per_host = {
-            HostDistance.LOCAL: DEFAULT_MAX_CONNECTIONS_PER_LOCAL_HOST,
-            HostDistance.REMOTE: DEFAULT_MAX_CONNECTIONS_PER_REMOTE_HOST
-        }
-
         self.executor = ThreadPoolExecutor(max_workers=executor_threads)
         self.scheduler = _Scheduler(self.executor)
 
@@ -1024,30 +991,6 @@ class Cluster(object):
         _, not_done = wait_futures(futures, pool_wait_timeout)
         if not_done:
             raise OperationTimedOut("Failed to create all new connection pools in the %ss timeout.")
-
-    def get_min_requests_per_connection(self, host_distance):
-        return self._min_requests_per_connection[host_distance]
-
-    def get_max_requests_per_connection(self, host_distance):
-        return self._max_requests_per_connection[host_distance]
-
-    def get_core_connections_per_host(self, host_distance):
-        """
-        Gets the minimum number of connections per Session that will be opened
-        for each host with :class:`~.HostDistance` equal to `host_distance`.
-        The default is 2 for :attr:`~HostDistance.LOCAL` and 1 for
-        :attr:`~HostDistance.REMOTE`.
-        """
-        return self._core_connections_per_host[host_distance]
-
-    def get_max_connections_per_host(self, host_distance):
-        """
-        Gets the maximum number of connections per Session that will be opened
-        for each host with :class:`~.HostDistance` equal to `host_distance`.
-        The default is 8 for :attr:`~HostDistance.LOCAL` and 2 for
-        :attr:`~HostDistance.REMOTE`.
-       """
-        return self._max_connections_per_host[host_distance]
 
     def connection_factory(self, address, *args, **kwargs):
         """
