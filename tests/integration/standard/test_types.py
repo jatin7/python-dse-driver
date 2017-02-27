@@ -27,8 +27,8 @@ from dse.query import dict_factory, ordered_dict_factory
 from dse.util import sortedset
 from tests.unit.cython.utils import cythontest
 
-from tests.integration import use_singledc, PROTOCOL_VERSION, execute_until_pass, notprotocolv1, \
-    BasicSharedKeyspaceUnitTestCase, greaterthancass21, lessthancass30, greaterthanorequaldse51, DSE_VERSION
+from tests.integration import use_singledc, PROTOCOL_VERSION, execute_until_pass, \
+    BasicSharedKeyspaceUnitTestCase, greaterthancass21, greaterthanorequaldse51, DSE_VERSION
 from tests.integration.datatype_utils import update_datatypes, PRIMITIVE_DATATYPES, COLLECTION_TYPES, PRIMITIVE_DATATYPES_KEYS, \
     get_sample, get_collection_sample
 
@@ -727,7 +727,6 @@ class TypeTests(BasicSharedKeyspaceUnitTestCase):
         self.assertEqual(0, result.a)
         self.assertEqual(('abc',), result.b)
 
-    @notprotocolv1
     def test_special_float_cql_encoding(self):
         """
         Test to insure that Infinity -Infinity and NaN are supported by the python driver.
