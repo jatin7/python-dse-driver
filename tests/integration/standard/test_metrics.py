@@ -23,12 +23,12 @@ from dse.protocol import SyntaxException
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from tests.integration import get_cluster, get_node, use_singledc, PROTOCOL_VERSION, execute_until_pass
 from greplin import scales
-from tests.integration import BasicSharedKeyspaceUnitTestCaseWTable, BasicExistingKeyspaceUnitTestCase
+from tests.integration import BasicSharedKeyspaceUnitTestCaseWTable, BasicExistingKeyspaceUnitTestCase, DSE_IP, local
 
 def setup_module():
     use_singledc()
 
-
+@local
 class MetricsTests(unittest.TestCase):
 
     def setUp(self):
@@ -173,7 +173,7 @@ class MetricsTests(unittest.TestCase):
 
 
 class MetricsNamespaceTest(BasicSharedKeyspaceUnitTestCaseWTable):
-
+    @local
     def test_metrics_per_cluster(self):
         """
         Test to validate that metrics can be scopped to invdividual clusters
@@ -265,6 +265,9 @@ class MetricsNamespaceTest(BasicSharedKeyspaceUnitTestCaseWTable):
         # Check scales to ensure they are appropriately named
         self.assertTrue("appcluster" in scales._Stats.stats.keys())
         self.assertTrue("devops" in scales._Stats.stats.keys())
+
+        cluster2.shutdown()
+        cluster3.shutdown()
 
 
 class RequestAnalyzer(object):

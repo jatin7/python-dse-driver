@@ -26,7 +26,7 @@ from dse.protocol import QueryMessage
 from dse.policies import WhiteListRoundRobinPolicy, HostStateListener
 
 from tests import is_monkey_patched
-from tests.integration import use_singledc, PROTOCOL_VERSION, get_node
+from tests.integration import use_singledc, PROTOCOL_VERSION, get_node, DSE_IP, local
 
 try:
     from dse.io.libevreactor import LibevConnection
@@ -42,7 +42,9 @@ class ConnectionTimeoutTest(unittest.TestCase):
 
     def setUp(self):
         self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
-                               execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))})
+                               execution_profiles=
+                               {EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=
+                                                                       WhiteListRoundRobinPolicy([DSE_IP]))})
         self.session = self.cluster.connect()
 
     def tearDown(self):
@@ -97,6 +99,7 @@ class HeartbeatTest(unittest.TestCase):
     def tearDown(self):
         self.cluster.shutdown()
 
+    @local
     def test_heart_beat_timeout(self):
         # Setup a host listener to ensure the nodes don't go down
         test_listener = TestHostListener()
@@ -179,7 +182,8 @@ class ConnectionTests(object):
         e = None
         for i in range(5):
             try:
-                conn = self.klass.factory(host='127.0.0.1', timeout=timeout, protocol_version=PROTOCOL_VERSION)
+                contact_point = DSE_IP
+                conn = self.klass.factory(host=contact_point, timeout=timeout, protocol_version=PROTOCOL_VERSION)
                 break
             except (OperationTimedOut, NoHostAvailable) as e:
                 continue
@@ -353,7 +357,8 @@ class ConnectionTests(object):
         for i in range(max_retry_count):
             start = time.time()
             try:
-                self.get_connection(timeout=sys.float_info.min)
+                conn = self.get_connection(timeout=sys.float_info.min)
+                conn.close()
             except Exception as e:
                 end = time.time()
                 self.assertAlmostEqual(start, end, 1)

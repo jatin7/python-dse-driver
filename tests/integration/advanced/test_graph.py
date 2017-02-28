@@ -30,7 +30,7 @@ from dse.util import SortedSet
 
 from tests.integration.advanced import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT,\
     validate_classic_vertex, validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type, fetchCustomGeoType
-from tests.integration import PROTOCOL_VERSION, greaterthanorequaldse51, DSE_VERSION
+from tests.integration import PROTOCOL_VERSION, greaterthanorequaldse51, DSE_VERSION, local
 
 
 def setup_module():
@@ -478,7 +478,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
             prop = properties[0]
             type_indicator = prop['id'][out_vertex]['~label']
             if any(type_indicator.startswith(t) for t in ('int', 'short', 'long')):
-                typ = int
+                typ = six.integer_types
             elif any(type_indicator.startswith(t) for t in ('float', 'double')):
                 typ = float
             elif any(type_indicator.startswith(t) for t in ('date', 'negdate')):
@@ -569,7 +569,6 @@ class GraphTimeoutTests(BasicGraphUnitTestCase):
 
 
 class GraphProfileTests(BasicGraphUnitTestCase):
-
         def test_graph_profile(self):
             """
             Test verifying various aspects of graph config properties.
@@ -579,15 +578,19 @@ class GraphProfileTests(BasicGraphUnitTestCase):
 
             @test_category dse graph
             """
+            hosts = self.cluster.metadata.all_hosts()
+            first_host = hosts[0].address
+            second_hosts = "1.2.3.4"
+
             generate_classic(self.session)
             # Create variou execution policies
             exec_dif_factory = GraphExecutionProfile(row_factory=single_object_row_factory)
             exec_dif_factory.graph_options.graph_name = self.graph_name
-            exec_dif_lbp = GraphExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))
+            exec_dif_lbp = GraphExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy([first_host]))
             exec_dif_lbp.graph_options.graph_name = self.graph_name
-            exec_bad_lbp = GraphExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2']))
+            exec_bad_lbp = GraphExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy([second_hosts]))
             exec_dif_lbp.graph_options.graph_name = self.graph_name
-            exec_short_timeout = GraphExecutionProfile(request_timeout=1, load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))
+            exec_short_timeout = GraphExecutionProfile(request_timeout=1, load_balancing_policy=WhiteListRoundRobinPolicy([first_host]))
             exec_short_timeout.graph_options.graph_name = self.graph_name
 
             # Add a single exection policy on cluster creation

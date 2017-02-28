@@ -19,7 +19,7 @@ from dse.cqlengine import connection
 from dse.cqlengine.management import create_keyspace_simple, CQLENG_ALLOW_SCHEMA_MANAGEMENT
 import dse
 
-from tests.integration import get_server_versions, use_single_node, PROTOCOL_VERSION
+from tests.integration import get_server_versions, use_single_node, PROTOCOL_VERSION, DSE_IP, set_default_dse_ip
 DEFAULT_KEYSPACE = 'cqlengine_test'
 
 
@@ -30,10 +30,15 @@ def setup_package():
     warnings.simplefilter('always')  # for testing warnings, make sure all are let through
     os.environ[CQLENG_ALLOW_SCHEMA_MANAGEMENT] = '1'
 
+    set_default_dse_ip()
     use_single_node()
 
     setup_connection(DEFAULT_KEYSPACE)
     create_keyspace_simple(DEFAULT_KEYSPACE, 1)
+
+
+def teardown_package():
+    connection.unregister_connection("default")
 
 
 def is_prepend_reversed():
@@ -43,7 +48,7 @@ def is_prepend_reversed():
 
 
 def setup_connection(keyspace_name):
-    connection.setup(['127.0.0.1'],
+    connection.setup([DSE_IP],
                      consistency=ConsistencyLevel.ONE,
                      protocol_version=PROTOCOL_VERSION,
                      default_keyspace=keyspace_name)

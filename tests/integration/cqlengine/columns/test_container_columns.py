@@ -15,11 +15,13 @@ import sys
 import traceback
 from uuid import uuid4
 
-from dse import WriteTimeout
+from dse import WriteTimeout, OperationTimedOut
 import dse.cqlengine.columns as columns
 from dse.cqlengine.functions import get_total_seconds
 from dse.cqlengine.models import Model, ValidationError
 from dse.cqlengine.management import sync_table, drop_table
+
+from tests.integration import DSE_IP
 from tests.integration.cqlengine import is_prepend_reversed
 from tests.integration.cqlengine.base import BaseCassEngTestCase
 from tests.integration import CASSANDRA_VERSION
@@ -129,8 +131,11 @@ class TestSetColumn(BaseCassEngTestCase):
                 break
             except WriteTimeout:
                 ex_type, ex, tb = sys.exc_info()
-                log.warn("{0}: {1} Backtrace: {2}".format(ex_type.__name__, ex, traceback.extract_tb(tb)))
+                log.warning("{0}: {1} Backtrace: {2}".format(ex_type.__name__, ex, traceback.extract_tb(tb)))
                 del tb
+            except OperationTimedOut:
+                #This will happen if the host is remote
+                self.assertFalse(DSE_IP.startswith("127.0.0."))
         self.assertRaises(ValidationError, TestSetModel.create, **{'text_set': set(str(uuid4()) for i in range(65536))})
 
     def test_partial_updates(self):

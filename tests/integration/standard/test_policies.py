@@ -17,7 +17,8 @@ from dse import OperationTimedOut
 from dse.cluster import ExecutionProfile
 from dse.query import SimpleStatement
 from dse.policies import ConstantSpeculativeExecutionPolicy, RoundRobinPolicy
-from tests.integration import BasicSharedKeyspaceUnitTestCase, greaterthancass21
+from tests.integration import BasicSharedKeyspaceUnitTestCase, greaterthancass21, local
+from tests import notwindows
 
 
 def setup_module():
@@ -47,6 +48,8 @@ class SpecExecTest(BasicSharedKeyspaceUnitTestCase):
         self.cluster.add_execution_profile("spec_ep_rr", spec_ep_rr)
         self.cluster.add_execution_profile("spec_ep_rr_lim", spec_ep_rr_lim)
 
+    #This doesn't work well with Windows clock granularity
+    @notwindows
     @greaterthancass21
     def test_speculative_execution(self):
         """

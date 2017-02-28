@@ -13,7 +13,8 @@ import time
 from dse.cluster import Cluster, NoHostAvailable
 from dse.auth import PlainTextAuthProvider, SASLClient, SaslAuthProvider
 
-from tests.integration import use_singledc, get_cluster, remove_cluster, PROTOCOL_VERSION, start_cluster_wait_for_up
+from tests.integration import use_singledc, get_cluster, remove_cluster, PROTOCOL_VERSION, start_cluster_wait_for_up, \
+    DSE_IP, local, set_default_dse_ip
 from tests.integration.util import assert_quiescent_pool_state
 
 try:
@@ -24,15 +25,23 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
+#This can be tested for remote hosts, but the cluster has to be configured accordingly
+#@local
+
+
 def setup_module():
-    use_singledc(start=False)
-    ccm_cluster = get_cluster()
-    ccm_cluster.stop()
-    config_options = {'authenticator': 'PasswordAuthenticator',
-                      'authorizer': 'CassandraAuthorizer'}
-    ccm_cluster.set_configuration_options(config_options)
-    log.debug("Starting ccm test cluster with %s", config_options)
-    start_cluster_wait_for_up(ccm_cluster)
+
+    if DSE_IP.startswith("127.0.0."):
+        use_singledc(start=False)
+        ccm_cluster = get_cluster()
+        ccm_cluster.stop()
+        config_options = {'authenticator': 'PasswordAuthenticator',
+                          'authorizer': 'CassandraAuthorizer'}
+        ccm_cluster.set_configuration_options(config_options)
+        log.debug("Starting ccm test cluster with %s", config_options)
+        start_cluster_wait_for_up(ccm_cluster)
+    else:
+        set_default_dse_ip()
 
 
 def teardown_module():

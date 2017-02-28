@@ -43,7 +43,11 @@ class PreparedStatementTests(unittest.TestCase):
         """
         Test basic PreparedStatement usage
         """
-
+        self.session.execute(
+            """
+            DROP KEYSPACE IF EXISTS preparedtests
+            """
+        )
         self.session.execute(
             """
             CREATE KEYSPACE preparedtests

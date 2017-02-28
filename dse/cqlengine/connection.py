@@ -173,13 +173,9 @@ def register_connection(name, hosts=None, consistency=None, lazy_connect=False,
     if name in _connections:
         log.warning("Registering connection '{0}' when it already exists.".format(name))
 
-    hosts_xor_session_passed = (hosts is None) ^ (session is None)
-    if not hosts_xor_session_passed:
-        raise CQLEngineException(
-            "Must pass exactly one of 'hosts' or 'session' arguments"
-        )
-    elif session is not None:
-        invalid_config_args = (consistency is not None or
+    if session is not None:
+        invalid_config_args = (hosts is not None or
+                               consistency is not None or
                                lazy_connect is not False or
                                retry_connect is not False or
                                cluster_options is not None)
@@ -189,7 +185,7 @@ def register_connection(name, hosts=None, consistency=None, lazy_connect=False,
             )
         conn = Connection.from_session(name, session=session)
         conn.setup_session()
-    elif hosts is not None:
+    else:
         if consistency is None:
             consistency = ConsistencyLevel.LOCAL_ONE
         conn = Connection(

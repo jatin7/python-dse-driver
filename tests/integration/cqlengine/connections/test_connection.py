@@ -19,7 +19,7 @@ from dse.cqlengine.management import sync_table
 from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.query import dict_factory
 
-from tests.integration import PROTOCOL_VERSION, execute_with_long_wait_retry
+from tests.integration import PROTOCOL_VERSION, execute_with_long_wait_retry, local
 from tests.integration.cqlengine.base import BaseCassEngTestCase
 from tests.integration.cqlengine import DEFAULT_KEYSPACE, setup_connection
 from dse.cqlengine import models
@@ -35,7 +35,7 @@ class ConnectionTest(BaseCassEngTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.original_cluster = connection.get_cluster()
+        connection.unregister_connection('default')
         cls.keyspace1 = 'ctest1'
         cls.keyspace2 = 'ctest2'
         super(ConnectionTest, cls).setUpClass()
@@ -51,7 +51,6 @@ class ConnectionTest(BaseCassEngTestCase):
         execute_with_long_wait_retry(cls.setup_session, "DROP KEYSPACE {0}".format(cls.keyspace1))
         execute_with_long_wait_retry(cls.setup_session, "DROP KEYSPACE {0}".format(cls.keyspace2))
         models.DEFAULT_KEYSPACE = DEFAULT_KEYSPACE
-        cls.original_cluster.shutdown()
         cls.setup_cluster.shutdown()
         setup_connection(DEFAULT_KEYSPACE)
         models.DEFAULT_KEYSPACE
@@ -89,3 +88,13 @@ class ConnectionTest(BaseCassEngTestCase):
         connection.set_session(self.session2)
         self.assertEqual(1, TestConnectModel.objects.count())
         self.assertEqual(TestConnectModel.objects.first(), TCM2)
+
+    @local
+    def test_connection_setup_with_setup(self):
+        connection.setup(hosts=None, default_keyspace=None)
+        self.assertIsNotNone(connection.get_connection("default").cluster.metadata.get_host("127.0.0.1"))
+
+    @local
+    def test_connection_setup_with_default(self):
+        connection.default()
+        self.assertIsNotNone(connection.get_connection("default").cluster.metadata.get_host("127.0.0.1"))
