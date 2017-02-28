@@ -885,6 +885,7 @@ if six.PY3:
     long = int
 
 
+@total_ordering
 class Time(object):
     '''
     Idealized time, independent of day.
@@ -1009,6 +1010,7 @@ class Time(object):
                                         self.second, self.nanosecond)
 
 
+@total_ordering
 class Date(object):
     '''
     Idealized date: year, month, day

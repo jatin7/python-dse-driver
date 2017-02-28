@@ -10,6 +10,7 @@
 from binascii import unhexlify
 from bisect import bisect_right
 from collections import defaultdict, Mapping
+from functools import total_ordering
 from hashlib import md5
 from itertools import islice, cycle
 import json
@@ -1487,6 +1488,7 @@ class TokenMap(object):
         return []
 
 
+@total_ordering
 class Token(object):
     """
     Abstract class representing a token.
@@ -1506,14 +1508,6 @@ class Token(object):
     @classmethod
     def from_string(cls, token_string):
         raise NotImplementedError()
-
-    def __cmp__(self, other):
-        if self.value < other.value:
-            return -1
-        elif self.value == other.value:
-            return 0
-        else:
-            return 1
 
     def __eq__(self, other):
         return self.value == other.value

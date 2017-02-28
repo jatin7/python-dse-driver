@@ -11,6 +11,7 @@
 Connection pooling and host management.
 """
 
+from functools import total_ordering
 import logging
 import socket
 import time
@@ -36,6 +37,7 @@ class NoConnectionsAvailable(Exception):
     pass
 
 
+@total_ordering
 class Host(object):
     """
     Represents a single Cassandra node.
