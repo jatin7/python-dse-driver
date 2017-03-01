@@ -1952,7 +1952,7 @@ class Session(object):
 
         start_time = time.time()
         if self.use_client_timestamp:
-            timestamp = self.cluster.timestamp_generator()
+            timestamp = int(start_time * 1e6)
         else:
             timestamp = None
 
