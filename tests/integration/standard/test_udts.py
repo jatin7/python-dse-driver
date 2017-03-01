@@ -22,7 +22,7 @@ from dse.query import dict_factory
 from dse.util import OrderedMap
 
 from tests.integration import use_singledc, PROTOCOL_VERSION, execute_until_pass, \
-    BasicSegregatedKeyspaceUnitTestCase, greaterthanorequalcass36, lessthandse51
+    BasicSegregatedKeyspaceUnitTestCase, lessthancass30, greaterthanorequalcass36, lessthandse51
 from tests.integration.datatype_utils import update_datatypes, PRIMITIVE_DATATYPES, PRIMITIVE_DATATYPES_KEYS, COLLECTION_TYPES, \
     get_sample, get_collection_sample
 

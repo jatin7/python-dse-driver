@@ -28,7 +28,7 @@ from dse.util import sortedset
 from tests.unit.cython.utils import cythontest
 
 from tests.integration import use_singledc, PROTOCOL_VERSION, execute_until_pass, \
-    BasicSharedKeyspaceUnitTestCase, greaterthancass21, greaterthanorequaldse51, DSE_VERSION
+    BasicSharedKeyspaceUnitTestCase, greaterthancass21, lessthancass30, greaterthanorequaldse51, DSE_VERSION
 from tests.integration.datatype_utils import update_datatypes, PRIMITIVE_DATATYPES, COLLECTION_TYPES, PRIMITIVE_DATATYPES_KEYS, \
     get_sample, get_collection_sample
 
