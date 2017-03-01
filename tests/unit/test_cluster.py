@@ -141,10 +141,6 @@ class ProtocolVersionTests(unittest.TestCase):
         lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V4)
         self.assertEqual(ProtocolVersion.V3,lower)
         lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V3)
-        self.assertEqual(ProtocolVersion.V2,lower)
-        lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V2)
-        self.assertEqual(ProtocolVersion.V1,lower)
-        lower = ProtocolVersion.get_lower_supported(ProtocolVersion.V1)
         self.assertEqual(0,lower)
 
         self.assertTrue(ProtocolVersion.uses_error_code_map(ProtocolVersion.DSE_V1))
