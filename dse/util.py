@@ -9,8 +9,8 @@
 
 from __future__ import with_statement
 import calendar
-from collections import namedtuple
 import datetime
+from functools import total_ordering
 from geomet import wkt
 from itertools import chain
 import random
@@ -1582,7 +1582,8 @@ class DateRangePrecision(object):
         return cls._round_to_precision(ms, precision, datetime.datetime.min)
 
 
-class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])):
+@total_ordering
+class DateRangeBound():
     """DateRangeBound(value, precision)
     Represents a single date value and its precision for :class:`DateRange`.
 
@@ -1600,11 +1601,10 @@ class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])
     For such values, string representions will show this offset rather than the
     CQL representation.
     """
-    # we document attributes manually above because setting defaults on
-    # namedtuple subclasses breaks instance behavior
-    __slots__ = ()
+    milliseconds = None
+    precision = None
 
-    def __new__(cls, value, precision):
+    def __init__(self, value, precision):
         """
         :param value: a value representing ms since the epoch. Accepts an
             integer or a datetime.
@@ -1612,7 +1612,7 @@ class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])
         """
         if precision is not None:
             try:
-                precision = precision.upper()
+                self.precision = precision.upper()
             except AttributeError:
                 raise TypeError('precision must be a string; got %r' % precision)
 
@@ -1628,11 +1628,17 @@ class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])
         else:
             raise ValueError('%r is not a valid value for DateRangeBound')
 
-        new_drb = super(cls, DateRangeBound).__new__(
-            cls, milliseconds, precision
-        )
-        new_drb.validate()
-        return new_drb
+        self.milliseconds = milliseconds
+        self.validate()
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return (self.milliseconds == other.milliseconds and
+                self.precision == other.precision)
+
+    def __lt__(self, other):
+        return (self.milliseconds, self.precision) < (other.milliseconds, other.precision)
 
     def datetime(self):
         """
@@ -1679,7 +1685,7 @@ class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])
             milliseconds, precision = value.get('milliseconds'), value.get('precision')
         except AttributeError:
             milliseconds = precision = None
-        if datetime is not None and precision is not None:
+        if milliseconds is not None and precision is not None:
             return DateRangeBound(value=milliseconds, precision=precision)
 
         # otherwise, use as an iterable
@@ -1688,20 +1694,18 @@ class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])
     def round_up(self):
         if self.milliseconds is None or self.precision is None:
             return self
-        return self._replace(
-            milliseconds=DateRangePrecision.round_up_to_precision(
-                self.milliseconds, self.precision
-            )
+        self.milliseconds = DateRangePrecision.round_up_to_precision(
+            self.milliseconds, self.precision
         )
+        return self
 
     def round_down(self):
         if self.milliseconds is None or self.precision is None:
             return self
-        return self._replace(
-            milliseconds=DateRangePrecision.round_down_to_precision(
-                self.milliseconds, self.precision
-            )
+        self.milliseconds = DateRangePrecision.round_down_to_precision(
+            self.milliseconds, self.precision
         )
+        return self
 
     _formatter_map = {
         DateRangePrecision.YEAR: '%Y',
@@ -1732,13 +1736,19 @@ class DateRangeBound(namedtuple('DateRangeBound', ['milliseconds', 'precision'])
 
         return formatted
 
+    def __repr__(self):
+        return '%s(milliseconds=%r, precision=%r)' % (
+            self.__class__.__name__, self.milliseconds, self.precision
+        )
+
 
 OPEN_BOUND = DateRangeBound(value=None, precision=None)
 """
 Represents `*`, an open value or bound for :class:`DateRange`.
 """
 
-class DateRange(namedtuple('DateRange', ['lower_bound', 'upper_bound', 'value'])):
+@total_ordering
+class DateRange():
     """DateRange(lower_bound=None, upper_bound=None, value=None)
     DSE DateRange Type
 
@@ -1759,11 +1769,11 @@ class DateRange(namedtuple('DateRange', ['lower_bound', 'upper_bound', 'value'])
     `datetime.datetime` cannot. For such values, string representions will show
     this offset rather than the CQL representation.
     """
-    # we document attributes manually above because setting defaults on
-    # namedtuple subclasses breaks instance behavior
-    __slots__ = ()
+    lower_bound = None
+    upper_bound = None
+    value = None
 
-    def __new__(cls, lower_bound=None, upper_bound=None, value=None):
+    def __init__(self, lower_bound=None, upper_bound=None, value=None):
         """
         :param lower_bound: a :class:`DateRangeBound` or object accepted by
             :meth:`DateRangeBound.from_value` to be used as a
@@ -1795,9 +1805,10 @@ class DateRange(namedtuple('DateRange', ['lower_bound', 'upper_bound', 'value'])
         if upper_bound is None and lower_bound is not None:
             upper_bound = OPEN_BOUND
 
-        new_dr = super(cls, DateRange).__new__(cls, lower_bound, upper_bound, value)
-        new_dr.validate()
-        return new_dr
+        self.lower_bound, self.upper_bound, self.value = (
+            lower_bound, upper_bound, value
+        )
+        self.validate()
 
     def validate(self):
         if self.value is None:
@@ -1819,8 +1830,25 @@ class DateRange(namedtuple('DateRange', ['lower_bound', 'upper_bound', 'value'])
                     )
                 )
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return (self.lower_bound == other.lower_bound and
+                self.upper_bound == other.upper_bound and
+                self.value == other.value)
+
+    def __lt__(self, other):
+        return ((self.lower_bound, self.upper_bound, self.value) <
+                (other.lower_bound, other.upper_bound, other.value))
+
     def __str__(self):
         if self.value:
             return str(self.value)
         else:
             return '[%s TO %s]' % (self.lower_bound, self.upper_bound)
+
+    def __repr__(self):
+        return '%s(lower_bound=%r, upper_bound=%r, value=%r)' % (
+            self.__class__.__name__,
+            self.lower_bound, self.upper_bound, self.value
+        )

@@ -1072,8 +1072,8 @@ class TestDateRangeCollection(BasicSharedKeyspaceUnitTestCase):
 
         set_result = results[0].s
         self.assertEqual(len(set_result), 2)
-        self.assertTrue(dt in set_result)
-        self.assertTrue(dt2 in set_result)
+        self.assertIn(dt, set_result)
+        self.assertIn(dt2, set_result)
 
         d2i = results[0].dr2i
         self.assertEqual(len(d2i), 2)

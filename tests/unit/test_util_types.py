@@ -200,13 +200,9 @@ class DurationTests(unittest.TestCase):
         self.assertEqual(str(Duration(1, 1, 1000000000000000)), "1mo1d1000000000000000ns")
         self.assertEqual(str(Duration(52, 23, 564564)), "52mo23d564564ns")
 
-
-def _namedtuple_to_dict(nt):
-    """
-    Helper func to get OrderedDict from namedtuple and unwrap it as a normal
-    dict
-    """
-    return dict(nt._asdict())
+def _daterangebound_to_dict(drb):
+    return {'milliseconds': drb.milliseconds,
+            'precision': drb.precision}
 
 class DateRangeTypeTests(unittest.TestCase):
     dt = datetime.datetime(1990, 2, 3, 13, 58, 45, 777777)
@@ -225,7 +221,7 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertRaises(ValueError, DateRange, upper_bound=(None, None), value=(None, None))
 
     def test_bound_rounding_milli(self):
-        actual = _namedtuple_to_dict(
+        actual = _daterangebound_to_dict(
             DateRangeBound(self.dt,
                            precision=DateRangePrecision.MILLISECOND).round_down()
         )
@@ -234,7 +230,7 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_bound_rounding_second(self):
-        actual = _namedtuple_to_dict(
+        actual = _daterangebound_to_dict(
             DateRangeBound(self.dt,
                            precision=DateRangePrecision.SECOND).round_down()
         )
@@ -243,7 +239,7 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_bound_rounding_minute(self):
-        actual = _namedtuple_to_dict(
+        actual = _daterangebound_to_dict(
             DateRangeBound(self.dt,
                            precision=DateRangePrecision.MINUTE).round_down()
         )
@@ -252,7 +248,7 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_bound_rounding_hour(self):
-        actual = _namedtuple_to_dict(
+        actual = _daterangebound_to_dict(
             DateRangeBound(self.dt,
                            precision=DateRangePrecision.HOUR).round_down()
         )
@@ -261,7 +257,7 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_bound_rounding_day(self):
-        actual = _namedtuple_to_dict(
+        actual = _daterangebound_to_dict(
             DateRangeBound(self.dt,
                            precision=DateRangePrecision.DAY).round_down()
         )
@@ -270,7 +266,7 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_bound_rounding_month(self):
-        actual = _namedtuple_to_dict(
+        actual = _daterangebound_to_dict(
             DateRangeBound(self.dt,
                            precision=DateRangePrecision.MONTH).round_down()
         )
@@ -279,7 +275,7 @@ class DateRangeTypeTests(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_bound_rounding_year(self):
-        actual = _namedtuple_to_dict(
+        actual = _daterangebound_to_dict(
             DateRangeBound(self.dt,
                            precision=DateRangePrecision.YEAR).round_down()
         )
