@@ -25,7 +25,7 @@ from dse import (Unavailable, WriteTimeout, ReadTimeout,
                  UserAggregateDescriptor, SchemaTargetType)
 from dse.marshal import (int32_pack, int32_unpack, uint16_pack, uint16_unpack,
                          uint8_pack, int8_unpack, uint64_pack,
-                         v3_header_pack, uint32_pack)
+                         header_pack, uint32_pack)
 from dse.cqltypes import (AsciiType, BytesType, BooleanType,
                           CounterColumnType, DateType, DecimalType,
                           DoubleType, FloatType, Int32Type,
@@ -992,8 +992,7 @@ class _ProtocolHandler(object):
         """
         Write a CQL protocol frame header.
         """
-        pack = v3_header_pack
-        f.write(pack(version, flags, stream_id, opcode))
+        f.write(header_pack(version, flags, stream_id, opcode))
         write_int(f, length)
 
     @classmethod
