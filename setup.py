@@ -297,7 +297,7 @@ On OSX, via homebrew:
             try:
                 from Cython.Build import cythonize
                 cython_candidates = ['cluster', 'concurrent', 'connection', 'cqltypes', 'metadata',
-                                     'pool', 'protocol', 'query', 'util']
+                                     'hosts', 'protocol', 'query', 'util']
                 compile_args = [] if is_windows else ['-Wno-unused-function']
                 self.extensions.extend(cythonize(
                     [Extension('dse.%s' % m, ['dse/%s.py' % m],

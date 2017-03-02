@@ -27,7 +27,7 @@ from dse.metadata import (Metadata, KeyspaceMetadata, IndexMetadata,
                           Token, MD5Token, TokenMap, murmur3, Function, Aggregate, protect_name, protect_names,
                           get_schema_parser, RegisteredTableExtension, _RegisteredExtensionType)
 from dse.policies import SimpleConvictionPolicy
-from dse.pool import Host
+from dse.hosts import Host
 from dse.util import SortedSet
 
 from tests.integration import (get_cluster, use_singledc, PROTOCOL_VERSION, get_server_versions, execute_until_pass,

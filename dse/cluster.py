@@ -63,8 +63,8 @@ from dse.policies import (TokenAwarePolicy, DCAwareRoundRobinPolicy, SimpleConvi
                           ExponentialReconnectionPolicy, HostDistance,
                           RetryPolicy, IdentityTranslator, NoSpeculativeExecutionPlan,
                           NoSpeculativeExecutionPolicy, DSELoadBalancingPolicy, NeverRetryPolicy)
-from dse.pool import (Host, _ReconnectionHandler, _HostReconnectionHandler,
-                      HostConnection, NoConnectionsAvailable)
+from dse.hosts import (Host, _ReconnectionHandler, _HostReconnectionHandler,
+                       HostConnection, NoConnectionsAvailable)
 from dse.query import (SimpleStatement, PreparedStatement, BoundStatement,
                        BatchStatement, bind_params, QueryTrace, HostTargetingStatement,
                        named_tuple_factory, dict_factory, tuple_factory, FETCH_SIZE_UNSET)
