@@ -24,7 +24,7 @@ from dse import (Unavailable, WriteTimeout, ReadTimeout,
                  UnsupportedOperation, UserFunctionDescriptor,
                  UserAggregateDescriptor, SchemaTargetType)
 from dse.marshal import (int32_pack, int32_unpack, uint16_pack, uint16_unpack,
-                         uint8_pack, int8_unpack, uint64_pack, header_pack,
+                         uint8_pack, int8_unpack, uint64_pack,
                          v3_header_pack, uint32_pack)
 from dse.cqltypes import (AsciiType, BytesType, BooleanType,
                           CounterColumnType, DateType, DecimalType,
