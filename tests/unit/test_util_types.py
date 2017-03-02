@@ -300,94 +300,264 @@ class DateRangeTypeTests(unittest.TestCase):
                                        'precision': 'DAY'})
         )
 
-    def test_date_range_bound_to_str(self):
+    def test_date_range_bound_str_repr(self):
+        daterange = DateRangeBound.from_value((None, None))
         self.assertEqual(
-            str(DateRangeBound.from_value((None, None))),
+            str(daterange),
             '*'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRangeBound(self.dt, 'YEAR')
         self.assertEqual(
-            str(DateRangeBound(self.dt, 'YEAR')),
+            str(daterange),
             '1990'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRangeBound(self.dt, 'MONTH')
         self.assertEqual(
-            str(DateRangeBound(self.dt, 'MONTH')),
+            str(daterange),
             '1990-02'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRangeBound(self.dt, 'DAY')
         self.assertEqual(
-            str(DateRangeBound(self.dt, 'DAY')),
+            str(daterange),
             '1990-02-03'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRangeBound(self.dt, 'HOUR')
         self.assertEqual(
-            str(DateRangeBound(self.dt, 'HOUR')),
+            str(daterange),
             '1990-02-03T13Z'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRangeBound(self.dt, 'MINUTE')
         self.assertEqual(
-            str(DateRangeBound(self.dt, 'MINUTE')),
+            str(daterange),
             '1990-02-03T13:58Z'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRangeBound(self.dt, 'SECOND')
         self.assertEqual(
-            str(DateRangeBound(self.dt, 'SECOND')),
+            str(daterange),
             '1990-02-03T13:58:45Z'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRangeBound(self.dt, 'MILLISECOND')
         self.assertEqual(
-            str(DateRangeBound(self.dt, 'MILLISECOND')),
+            str(daterange),
             '1990-02-03T13:58:45.778Z'
         )
+        self._check_rpr(daterange)
 
-    def test_date_range_to_str(self):
+    def test_date_range_str_repr(self):
+        daterange = DateRange(
+                        value=DateRangeBound(self.dt, 'SECOND')
+                    )
         self.assertEqual(
-            str(DateRange(
-                value=DateRangeBound(self.dt, 'SECOND')
-            )),
+            str(daterange),
             '1990-02-03T13:58:45Z'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRange(
+                        lower_bound=DateRangeBound(self.dt, 'SECOND'),
+                        upper_bound=OPEN_BOUND
+                    )
         self.assertEqual(
-            str(DateRange(
-                lower_bound=DateRangeBound(self.dt, 'SECOND'),
-                upper_bound=OPEN_BOUND
-            )),
+            str(daterange),
             '[1990-02-03T13:58:45Z TO *]'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRange(
+                        lower_bound=OPEN_BOUND,
+                        upper_bound=DateRangeBound(self.dt, 'SECOND')
+                    )
         self.assertEqual(
-            str(DateRange(
-                lower_bound=OPEN_BOUND,
-                upper_bound=DateRangeBound(self.dt, 'SECOND')
-            )),
+            str(daterange),
             '[* TO 1990-02-03T13:58:45Z]'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRange(
+                        lower_bound=OPEN_BOUND,
+                        upper_bound=OPEN_BOUND
+                    )
         self.assertEqual(
-            str(DateRange(
-                lower_bound=OPEN_BOUND,
-                upper_bound=OPEN_BOUND
-            )),
+            str(daterange),
             '[* TO *]'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRange(
+                        lower_bound=DateRangeBound(self.dt, 'SECOND'),
+                        upper_bound=DateRangeBound(self.dt, 'YEAR')
+                    )
         self.assertEqual(
-            str(DateRange(
-                lower_bound=DateRangeBound(self.dt, 'SECOND'),
-                upper_bound=DateRangeBound(self.dt, 'YEAR')
-            )),
+            str(daterange),
             '[1990-02-03T13:58:45Z TO 1990]'
         )
+        self._check_rpr(daterange)
+
+        daterange = DateRange(value=OPEN_BOUND)
         self.assertEqual(
-            str(DateRange(value=OPEN_BOUND)),
+            str(daterange),
             '*'
         )
+        self._check_rpr(daterange)
 
-    def test_negative_daterangebound_to_str(self):
+    def test_negative_daterangebound_str_repr(self):
+        daterange = DateRangeBound(self.smallest_datetime_timestamp - 1, 'MILLISECOND')
         self.assertEqual(
-            str(DateRangeBound(self.smallest_datetime_timestamp - 1, 'MILLISECOND')),
+            str(daterange),
             '-62135596800001ms'
         )
+        self._check_rpr(daterange)
 
-    def test_daterange_with_negative_bound_to_str(self):
+    def test_daterange_with_negative_bound_str_repr(self):
+        daterange = DateRange(
+                        lower_bound=DateRangeBound(
+                            self.smallest_datetime_timestamp - 1,
+                            'MILLISECOND'
+                        ),
+                        upper_bound=DateRangeBound(self.dt, 'SECOND')
+                    )
         self.assertEqual(
-            str(DateRange(
-                lower_bound=DateRangeBound(
-                    self.smallest_datetime_timestamp - 1,
-                    'MILLISECOND'
-                ),
-                upper_bound=DateRangeBound(self.dt, 'SECOND')
-            )),
+            str(daterange),
             '[-62135596800001ms TO 1990-02-03T13:58:45Z]'
         )
+        self._check_rpr(daterange)
+
+    def test_comparison_operators(self):
+        l = [
+            DateRange(
+                lower_bound=OPEN_BOUND,
+                upper_bound=OPEN_BOUND
+               ),
+            DateRange(
+                lower_bound=OPEN_BOUND,
+                upper_bound=OPEN_BOUND
+               )
+        ]
+        self._check_sequence_consistency(l, equal=True)
+
+        l = [
+            DateRange(
+                value=DateRangeBound(
+                    datetime.datetime(2014, 10, 1, 0),
+                    DateRangePrecision.YEAR
+                )
+            ),
+            DateRange(
+                value=DateRangeBound(
+                    datetime.datetime(2014, 10, 2, 0),
+                    DateRangePrecision.YEAR
+                )
+            ),
+            DateRange(
+                value=DateRangeBound(
+                    datetime.datetime(2014, 10, 3, 0),
+                    DateRangePrecision.YEAR
+                )
+            )
+        ]
+        self._check_sequence_consistency(l, equal=True)
+
+        l = [
+            DateRange(
+                value=DateRangeBound(
+                    datetime.datetime(2014, 10, 1, 0),
+                    DateRangePrecision.DAY
+                )
+            ),
+            DateRange(
+                value=DateRangeBound(
+                    datetime.datetime(2014, 10, 2, 0),
+                    DateRangePrecision.DAY
+                )
+            ),
+            DateRange(
+                value=DateRangeBound(
+                    datetime.datetime(2014, 10, 3, 0),
+                    DateRangePrecision.DAY
+                )
+            )
+        ]
+        self._check_sequence_consistency(l)
+
+        l = [
+            DateRange(
+                lower_bound=OPEN_BOUND,
+                upper_bound=DateRangeBound(
+                    datetime.datetime(2016, 1, 1, 10, 15, 15, 999000),
+                    DateRangePrecision.MILLISECOND
+                ),
+            ),
+            DateRange(
+                lower_bound=DateRangeBound(
+                    datetime.datetime(2015, 3, 1, 10, 15, 15, 10000),
+                    DateRangePrecision.MILLISECOND
+                ),
+                upper_bound=DateRangeBound(
+                    datetime.datetime(2016, 1, 1, 10, 15, 30, 999000),
+                    DateRangePrecision.MILLISECOND
+                )
+            ),
+            DateRange(
+                lower_bound=DateRangeBound(
+                    datetime.datetime(2015, 3, 1, 10, 15, 16, 10000),
+                    DateRangePrecision.MILLISECOND
+                ),
+                upper_bound=DateRangeBound(
+                    datetime.datetime(2016, 1, 1, 10, 15, 30, 999000),
+                    DateRangePrecision.MILLISECOND
+                )
+            ),
+            DateRange(
+                lower_bound=DateRangeBound(
+                    datetime.datetime(2015, 3, 1, 10, 15, 16, 10000),
+                    DateRangePrecision.MILLISECOND
+                ),
+                upper_bound=DateRangeBound(
+                    datetime.datetime(2016, 1, 1, 10, 15, 31, 999000),
+                    DateRangePrecision.MILLISECOND
+                )
+            ),
+            DateRange(
+                lower_bound=DateRangeBound(
+                    datetime.datetime(2015, 3, 1, 10, 15, 16, 10000),
+                    DateRangePrecision.MILLISECOND
+                ),
+                upper_bound=OPEN_BOUND
+            )
+        ]
+        self._check_sequence_consistency(l)
+
+    def _check_sequence_consistency(self, ordered_sequence, equal=False):
+        for i, el in enumerate(ordered_sequence):
+            for previous in ordered_sequence[:i]:
+                self._check_order_consistency(previous, el, equal)
+            for posterior in ordered_sequence[i + 1:]:
+                self._check_order_consistency(el, posterior, equal)
+
+    def _check_order_consistency(self, smaller, bigger, equal=False):
+        self.assertLessEqual(smaller, bigger)
+        self.assertGreaterEqual(bigger, smaller)
+        if equal:
+            self.assertEqual(smaller, bigger)
+        else:
+            self.assertNotEqual(smaller, bigger)
+            self.assertLess(smaller, bigger)
+            self.assertGreater(bigger, smaller)
+
+    def _check_rpr(self, daterange):
+        self.assertEqual(daterange,
+                         eval(repr(daterange).replace("milliseconds", "value")))
