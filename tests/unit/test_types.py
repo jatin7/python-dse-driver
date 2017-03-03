@@ -307,7 +307,6 @@ class DateRangeTypeTests(unittest.TestCase):
                       int64_pack(self.timestamp) +
                       int8_pack(3))
         deserialized = DateRangeType.deserialize(serialized, 5)
-        print(repr(deserialized))
         self.assertEqual(
             deserialized,
             util.DateRange(
@@ -324,7 +323,6 @@ class DateRangeTypeTests(unittest.TestCase):
                       int64_pack(self.timestamp) +
                       int8_pack(4))
         deserialized = DateRangeType.deserialize(serialized, 5)
-        print(repr(deserialized))
         self.assertEqual(
             deserialized,
             util.DateRange(
@@ -347,7 +345,6 @@ class DateRangeTypeTests(unittest.TestCase):
                       int64_pack(self.timestamp) +
                       int8_pack(5))
         deserialized = DateRangeType.deserialize(serialized, 5)
-        print(repr(deserialized))
         self.assertEqual(
             deserialized,
             util.DateRange(
@@ -365,7 +362,6 @@ class DateRangeTypeTests(unittest.TestCase):
                       int64_pack(self.timestamp) +
                       int8_pack(0))
         deserialized = DateRangeType.deserialize(serialized, 5)
-        print(repr(deserialized))
         self.assertEqual(
             deserialized,
             util.DateRange(
@@ -385,7 +381,6 @@ class DateRangeTypeTests(unittest.TestCase):
                       int64_pack(self.timestamp) +
                       int8_pack(2))
         deserialized = DateRangeType.deserialize(serialized, 5)
-        print(repr(deserialized))
         self.assertEqual(
             deserialized,
             util.DateRange(
@@ -402,7 +397,6 @@ class DateRangeTypeTests(unittest.TestCase):
                       int64_pack(self.timestamp) +
                       int8_pack(3))
         deserialized = DateRangeType.deserialize(serialized, 5)
-        print(repr(deserialized))
         self.assertEqual(
             deserialized,
             util.DateRange(
@@ -417,7 +411,6 @@ class DateRangeTypeTests(unittest.TestCase):
     def test_deserialize_both_open(self):
         serialized = (int8_pack(4))
         deserialized = DateRangeType.deserialize(serialized, 5)
-        print(repr(deserialized))
         self.assertEqual(
             deserialized,
             util.DateRange(
