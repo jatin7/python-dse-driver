@@ -1635,7 +1635,8 @@ class DateRangeBound():
                 self.precision == other.precision)
 
     def __lt__(self, other):
-        return (self.milliseconds, self.precision) < (other.milliseconds, other.precision)
+        return ((str(self.milliseconds), str(self.precision)) <
+                (str(other.milliseconds), str(other.precision)))
 
     def datetime(self):
         """
@@ -1835,8 +1836,8 @@ class DateRange():
                 self.value == other.value)
 
     def __lt__(self, other):
-        return ((self.lower_bound, self.upper_bound, self.value) <
-                (other.lower_bound, other.upper_bound, other.value))
+        return ((str(self.lower_bound), str(self.upper_bound), str(self.value)) <
+                (str(other.lower_bound), str(other.upper_bound), str(other.value)))
 
     def __str__(self):
         if self.value:
