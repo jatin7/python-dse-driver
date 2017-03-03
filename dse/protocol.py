@@ -24,8 +24,8 @@ from dse import (Unavailable, WriteTimeout, ReadTimeout,
                  UnsupportedOperation, UserFunctionDescriptor,
                  UserAggregateDescriptor, SchemaTargetType)
 from dse.marshal import (int32_pack, int32_unpack, uint16_pack, uint16_unpack,
-                         uint8_pack, int8_unpack, uint64_pack, header_pack,
-                         v3_header_pack, uint32_pack)
+                         uint8_pack, int8_unpack, uint64_pack,
+                         header_pack, uint32_pack)
 from dse.cqltypes import (AsciiType, BytesType, BooleanType,
                           CounterColumnType, DateType, DecimalType,
                           DoubleType, FloatType, Int32Type,
@@ -422,25 +422,6 @@ class AuthenticateMessage(_MessageType):
         return cls(authenticator=authname)
 
 
-class CredentialsMessage(_MessageType):
-    opcode = 0x04
-    name = 'CREDENTIALS'
-
-    def __init__(self, creds):
-        self.creds = creds
-
-    def send_body(self, f, protocol_version):
-        if protocol_version > 1:
-            raise UnsupportedOperation(
-                "Credentials-based authentication is not supported with "
-                "protocol version 2 or higher.  Use the SASL authentication "
-                "mechanism instead.")
-        write_short(f, len(self.creds))
-        for credkey, credval in self.creds.items():
-            write_string(f, credkey)
-            write_string(f, credval)
-
-
 class AuthChallengeMessage(_MessageType):
     opcode = 0x0E
     name = 'AUTH_CHALLENGE'
@@ -534,31 +515,15 @@ class _QueryMessage(_MessageType):
             flags |= _VALUES_FLAG
 
         if self.serial_consistency_level:
-            if protocol_version >= 2:
-                flags |= _WITH_SERIAL_CONSISTENCY_FLAG
-            else:
-                raise UnsupportedOperation(
-                    "Serial consistency levels require the use of protocol version "
-                    "2 or higher. Consider setting Cluster.protocol_version to 2 "
-                    "to support serial consistency levels.")
+            flags |= _WITH_SERIAL_CONSISTENCY_FLAG
 
         if self.fetch_size:
-            if protocol_version >= 2:
-                flags |= _PAGE_SIZE_FLAG
-                if self.continuous_paging_options and self.continuous_paging_options.page_unit_bytes():
-                    flags |= _PAGE_SIZE_BYTES_FLAG
-            else:
-                raise UnsupportedOperation(
-                    "Automatic query paging may only be used with protocol version "
-                    "2 or higher. Consider setting Cluster.protocol_version to 2.")
+            flags |= _PAGE_SIZE_FLAG
+            if self.continuous_paging_options and self.continuous_paging_options.page_unit_bytes():
+                flags |= _PAGE_SIZE_BYTES_FLAG
 
         if self.paging_state:
-            if protocol_version >= 2:
-                flags |= _WITH_PAGING_STATE_FLAG
-            else:
-                raise UnsupportedOperation(
-                    "Automatic query paging may only be used with protocol version "
-                    "2 or higher. Consider setting Cluster.protocol_version to 2.")
+            flags |= _WITH_PAGING_STATE_FLAG
 
         if self.timestamp is not None:
             flags |= _PROTOCOL_TIMESTAMP_FLAG
@@ -626,25 +591,6 @@ class ExecuteMessage(_QueryMessage):
     def send_body(self, f, protocol_version):
         write_string(f, self.query_id)
         self._write_query_params(f, protocol_version)
-
-    def _write_query_params(self, f, protocol_version):
-        # TODO: remove specialization when we drop protocol v1
-        if protocol_version == 1:
-            if self.serial_consistency_level:
-                raise UnsupportedOperation(
-                    "Serial consistency levels require the use of protocol version "
-                    "2 or higher. Consider setting Cluster.protocol_version to 2 "
-                    "to support serial consistency levels.")
-            if self.fetch_size or self.paging_state:
-                raise UnsupportedOperation(
-                    "Automatic query paging may only be used with protocol version "
-                    "2 or higher. Consider setting Cluster.protocol_version to 2.")
-            write_short(f, len(self.query_params))
-            for param in self.query_params:
-                write_value(f, param)
-            write_consistency_level(f, self.consistency_level)
-        else:
-            super(ExecuteMessage, self)._write_query_params(f, protocol_version)
 
 
 CUSTOM_TYPE = object()
@@ -799,8 +745,7 @@ class ResultMessage(_MessageType):
         self.bind_metadata = bind_metadata
         self.pk_indexes = pk_indexes
 
-        if protocol_version >= 2:
-            self.recv_results_metadata(f, user_type_map)
+        self.recv_results_metadata(f, user_type_map)
 
     def recv_results_schema_change(self, f, protocol_version):
         self.schema_change_event = EventMessage.recv_schema_change(f, protocol_version)
@@ -886,22 +831,22 @@ class BatchMessage(_MessageType):
                 write_value(f, param)
 
         write_consistency_level(f, self.consistency_level)
-        if protocol_version >= 3:
-            flags = 0
-            if self.serial_consistency_level:
-                flags |= _WITH_SERIAL_CONSISTENCY_FLAG
-            if self.timestamp is not None:
-                flags |= _PROTOCOL_TIMESTAMP_FLAG
 
-            if ProtocolVersion.uses_int_query_flags(protocol_version):
-                write_uint(f, flags)
-            else:
-                write_byte(f, flags)
+        flags = 0
+        if self.serial_consistency_level:
+            flags |= _WITH_SERIAL_CONSISTENCY_FLAG
+        if self.timestamp is not None:
+            flags |= _PROTOCOL_TIMESTAMP_FLAG
 
-            if self.serial_consistency_level:
-                write_consistency_level(f, self.serial_consistency_level)
-            if self.timestamp is not None:
-                write_long(f, self.timestamp)
+        if ProtocolVersion.uses_int_query_flags(protocol_version):
+            write_uint(f, flags)
+        else:
+            write_byte(f, flags)
+
+        if self.serial_consistency_level:
+            write_consistency_level(f, self.serial_consistency_level)
+        if self.timestamp is not None:
+            write_long(f, self.timestamp)
 
 
 known_event_types = frozenset((
@@ -956,25 +901,18 @@ class EventMessage(_MessageType):
     def recv_schema_change(cls, f, protocol_version):
         # "CREATED", "DROPPED", or "UPDATED"
         change_type = read_string(f)
-        if protocol_version >= 3:
-            target = read_string(f)
-            keyspace = read_string(f)
-            event = {'target_type': target, 'change_type': change_type, 'keyspace': keyspace}
-            if target != SchemaTargetType.KEYSPACE:
-                target_name = read_string(f)
-                if target == SchemaTargetType.FUNCTION:
-                    event['function'] = UserFunctionDescriptor(target_name, [read_string(f) for _ in range(read_short(f))])
-                elif target == SchemaTargetType.AGGREGATE:
-                    event['aggregate'] = UserAggregateDescriptor(target_name, [read_string(f) for _ in range(read_short(f))])
-                else:
-                    event[target.lower()] = target_name
-        else:
-            keyspace = read_string(f)
-            table = read_string(f)
-            if table:
-                event = {'target_type': SchemaTargetType.TABLE, 'change_type': change_type, 'keyspace': keyspace, 'table': table}
+        target = read_string(f)
+        keyspace = read_string(f)
+        event = {'target_type': target, 'change_type': change_type, 'keyspace': keyspace}
+        if target != SchemaTargetType.KEYSPACE:
+            target_name = read_string(f)
+            if target == SchemaTargetType.FUNCTION:
+                event['function'] = UserFunctionDescriptor(target_name, [read_string(f) for _ in range(read_short(f))])
+            elif target == SchemaTargetType.AGGREGATE:
+                event['aggregate'] = UserAggregateDescriptor(target_name, [read_string(f) for _ in range(read_short(f))])
             else:
-                event = {'target_type': SchemaTargetType.KEYSPACE, 'change_type': change_type, 'keyspace': keyspace}
+                event[target.lower()] = target_name
+
         return event
 
 
@@ -1054,8 +992,7 @@ class _ProtocolHandler(object):
         """
         Write a CQL protocol frame header.
         """
-        pack = v3_header_pack if version >= 3 else header_pack
-        f.write(pack(version, flags, stream_id, opcode))
+        f.write(header_pack(version, flags, stream_id, opcode))
         write_int(f, length)
 
     @classmethod

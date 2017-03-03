@@ -13,7 +13,7 @@ except ImportError:
 
 from mock import Mock
 
-from dse.pool import Host
+from dse.hosts import Host
 from dse.policies import RoundRobinPolicy
 
 from dse.policies import DSELoadBalancingPolicy

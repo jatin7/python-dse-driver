@@ -24,7 +24,8 @@ from subprocess import call
 from itertools import groupby
 from dse import OperationTimedOut, ReadTimeout, ReadFailure, WriteTimeout, WriteFailure, AlreadyExists
 from dse.cluster import Cluster
-from dse.protocol import ConfigurationException, ProtocolVersion
+from dse.protocol import ConfigurationException
+
 
 try:
     from ccmlib.cluster import Cluster as CCMCluster
@@ -95,7 +96,7 @@ default_cassandra_version = '2.2.0'
 
 def _get_cass_version_from_dse(dse_version):
     if dse_version.startswith('4.6') or dse_version.startswith('4.5'):
-        cass_ver = "2.0"
+        raise Exception("Cassandra Version 2.0 not supported anymore")
     elif dse_version.startswith('4.7') or dse_version.startswith('4.8'):
         cass_ver = "2.1"
     elif dse_version.startswith('5.0'):
@@ -135,7 +136,7 @@ if DSE_VERSION:
 
 
 def get_default_protocol():
-    
+
     if Version(CASSANDRA_VERSION) >= Version('3.10') and DSE_VERSION:
         return ProtocolVersion.DSE_V1
     if Version(CASSANDRA_VERSION) >= Version('3.10'):
@@ -145,9 +146,9 @@ def get_default_protocol():
     elif Version(CASSANDRA_VERSION) >= Version('2.1'):
         return 3
     elif Version(CASSANDRA_VERSION) >= Version('2.0'):
-        return 2
+        raise Exception("Cassandra Version 2.0 not supported anymore")
     else:
-        return 1
+        raise Exception("Running tests with an unsupported Cassandra version: {0}".format(CASSANDRA_VERSION))
 
 
 def get_supported_protocol_versions():
@@ -167,13 +168,13 @@ def get_supported_protocol_versions():
     elif Version(CASSANDRA_VERSION) >= Version('3.0'):
         return (3, 4)
     elif Version(CASSANDRA_VERSION) >= Version('2.2'):
-        return (1, 2, 3, 4)
+        return (3, 4)
     elif Version(CASSANDRA_VERSION) >= Version('2.1'):
-        return (1, 2, 3)
+        return (3, )
     elif Version(CASSANDRA_VERSION) >= Version('2.0'):
-        return (1, 2)
+        raise Exception("Cassandra Version 2.0 not supported anymore")
     else:
-        return (1)
+        raise Exception("Cassandra Version not supported anymore")
 
 
 def is_protocol_beta(protocol):
@@ -188,12 +189,8 @@ def get_unsupported_lower_protocol():
     This is used to determine the lowest protocol version that is NOT
     supported by the version of C* running
     """
-
-    if Version(CASSANDRA_VERSION) >= Version('3.0'):
-        return 2
-    else:
-        return None
-
+    #Right now all the Cassandra versions support protocol v3 which is the lowest version
+    return None
 
 def get_unsupported_upper_protocol():
     """
@@ -206,7 +203,7 @@ def get_unsupported_upper_protocol():
     if Version(CASSANDRA_VERSION) >= Version('2.1'):
         return 4
     elif Version(CASSANDRA_VERSION) >= Version('2.0'):
-        return 3
+        raise Exception("Cassandra Version 2.0 not supported anymore")
     else:
         return None
 
@@ -215,19 +212,16 @@ default_protocol_version = get_default_protocol()
 
 PROTOCOL_VERSION = int(os.getenv('PROTOCOL_VERSION', default_protocol_version))
 
-notprotocolv1 = unittest.skipUnless(PROTOCOL_VERSION > 1, 'Protocol v1 not supported')
 lessthenprotocolv4 = unittest.skipUnless(PROTOCOL_VERSION < 4, 'Protocol versions 4 or greater not supported')
 greaterthanprotocolv3 = unittest.skipUnless(PROTOCOL_VERSION >= 4, 'Protocol versions less than 4 are not supported')
 protocolv5 = unittest.skipUnless(5 in get_supported_protocol_versions(), 'Protocol versions less than 5 are not supported')
 
-greaterthancass20 = unittest.skipUnless(CASSANDRA_VERSION >= '2.1', 'Cassandra version 2.1 or greater required')
 greaterthancass21 = unittest.skipUnless(CASSANDRA_VERSION >= '2.2', 'Cassandra version 2.2 or greater required')
 greaterthanorequalcass30 = unittest.skipUnless(CASSANDRA_VERSION >= '3.0', 'Cassandra version 3.0 or greater required')
 greaterthanorequalcass31 = unittest.skipUnless(CASSANDRA_VERSION >= '3.1', 'Cassandra version 3.1 or greater required')
 greaterthanorequalcass36 = unittest.skipUnless(CASSANDRA_VERSION >= '3.6', 'Cassandra version 3.6 or greater required')
 lessthancass30 = unittest.skipUnless(CASSANDRA_VERSION < '3.0', 'Cassandra version less then 3.0 required')
 
-dseonly = unittest.skipUnless(DSE_VERSION, "Test is only applicalbe to DSE clusters")
 greaterthanorequaldse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION >= '5.1', "DSE 5.1 or greater required for this test")
 lessthandse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION < '5.1', "DSE version less than 5.1 required")
 
