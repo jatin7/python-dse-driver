@@ -1811,7 +1811,7 @@ class DateRange():
         if self.value is None:
             if self.lower_bound is None or self.upper_bound is None:
                 raise ValueError(
-                    '%s instances where value attribute is None must not set '
+                    '%s instances where value attribute is None must set '
                     'lower_bound or upper_bound; got %r' % (
                         self.__class__.__name__,
                         self
