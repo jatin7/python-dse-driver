@@ -14,7 +14,7 @@ Core Driver
    dse/metadata
    dse/metrics
    dse/query
-   dse/pool
+   dse/hosts
    dse/protocol
    dse/encoder
    dse/decoder

@@ -20,7 +20,7 @@ from dse.cqlengine.management import _get_table_metadata, sync_table, drop_table
 from dse.cqlengine.models import Model
 from dse.cqlengine import columns
 
-from tests.integration import PROTOCOL_VERSION, greaterthancass20, MockLoggingHandler, CASSANDRA_VERSION
+from tests.integration import PROTOCOL_VERSION, MockLoggingHandler, CASSANDRA_VERSION
 from tests.integration.cqlengine.base import BaseCassEngTestCase
 from tests.integration.cqlengine.query.test_queryset import TestModel
 from dse.cqlengine.usertype import UserType
@@ -415,7 +415,6 @@ class IndexTests(BaseCassEngTestCase):
         table_meta = management._get_table_metadata(IndexCaseSensitiveModel)
         self.assertIsNotNone(management._get_index_name_by_column(table_meta, 'second_key'))
 
-    @greaterthancass20
     def test_sync_indexed_set(self):
         """
         Tests that models that have container types with indices can be synced.
@@ -445,8 +444,6 @@ class NonModelFailureTest(BaseCassEngTestCase):
 
 class StaticColumnTests(BaseCassEngTestCase):
     def test_static_columns(self):
-        if PROTOCOL_VERSION < 2:
-            raise unittest.SkipTest("Native protocol 2+ required, currently using: {0}".format(PROTOCOL_VERSION))
 
         class StaticModel(Model):
             id = columns.Integer(primary_key=True)

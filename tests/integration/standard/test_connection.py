@@ -24,7 +24,6 @@ from dse.cluster import NoHostAvailable, Cluster, ExecutionProfile, EXEC_PROFILE
 from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import QueryMessage
 from dse.policies import WhiteListRoundRobinPolicy, HostStateListener
-from dse.pool import HostConnectionPool
 
 from tests import is_monkey_patched
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_node
@@ -136,12 +135,8 @@ class HeartbeatTest(unittest.TestCase):
         holders = cluster.get_connection_holders()
         for conn in holders:
             if host == str(getattr(conn, 'host', '')):
-                if isinstance(conn, HostConnectionPool):
-                    if conn._connections is not None and len(conn._connections) > 0:
-                        connections.append(conn._connections)
-                else:
-                    if conn._connection is not None:
-                        connections.append(conn._connection)
+                if conn._connection is not None:
+                    connections.append(conn._connection)
         return connections
 
     def wait_for_connections(self, host, cluster):

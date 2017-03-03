@@ -772,11 +772,6 @@ class OrderedMap(Mapping):
 
     This class derives from the (immutable) Mapping API. Objects in these maps
     are not intended be modified.
-
-    \* Note: Because of the way Cassandra encodes nested types, when using the
-    driver with nested collections, :attr:`~.Cluster.protocol_version` must be 3
-    or higher.
-
     '''
 
     def __init__(self, *args, **kwargs):
@@ -885,6 +880,7 @@ if six.PY3:
     long = int
 
 
+@total_ordering
 class Time(object):
     '''
     Idealized time, independent of day.
@@ -1009,6 +1005,7 @@ class Time(object):
                                         self.second, self.nanosecond)
 
 
+@total_ordering
 class Date(object):
     '''
     Idealized date: year, month, day

@@ -30,7 +30,7 @@ from dse.policies import (RoundRobinPolicy, WhiteListRoundRobinPolicy, DCAwareRo
                                 DowngradingConsistencyRetryPolicy, ConstantReconnectionPolicy,
                                 LoadBalancingPolicy, ConvictionPolicy, ReconnectionPolicy, FallthroughRetryPolicy,
                                 IdentityTranslator, EC2MultiRegionTranslator)
-from dse.pool import Host
+from dse.hosts import Host
 from dse.query import Statement
 
 from six.moves import xrange

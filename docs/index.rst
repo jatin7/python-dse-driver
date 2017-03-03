@@ -2,6 +2,8 @@ DataStax Enterprise Python Driver
 =================================
 This is the documentation for the DataStax Enterprise Python Driver for DSE.
 
+The driver supports DSE 5.0+ and Python, 2.7, 3.3, and 3.4.
+
 Contents
 --------
 :doc:`installation`

@@ -73,7 +73,6 @@ class BaseIfExistsWithCounterTest(BaseCassEngTestCase):
 
 class IfExistsUpdateTests(BaseIfExistsTest):
 
-    @unittest.skipUnless(PROTOCOL_VERSION >= 2, "only runs against the cql3 protocol v2.0")
     def test_update_if_exists(self):
         """
         Tests that update with if_exists work as expected
@@ -115,7 +114,6 @@ class IfExistsUpdateTests(BaseIfExistsTest):
             '[applied]': False,
         })
 
-    @unittest.skipUnless(PROTOCOL_VERSION >= 2, "only runs against the cql3 protocol v2.0")
     def test_batch_update_if_exists_success(self):
         """
         Tests that batch update with if_exists work as expected
@@ -151,7 +149,6 @@ class IfExistsUpdateTests(BaseIfExistsTest):
         self.assertEqual(tm.count, 8)
         self.assertEqual(tm.text, '111111111')
 
-    @unittest.skipUnless(PROTOCOL_VERSION >= 2, "only runs against the cql3 protocol v2.0")
     def test_batch_mixed_update_if_exists_success(self):
         """
         Tests that batch update with with one bad query will still fail with LWTException
@@ -173,7 +170,6 @@ class IfExistsUpdateTests(BaseIfExistsTest):
 
         self.assertEqual(assertion.exception.existing.get('[applied]'), False)
 
-    @unittest.skipUnless(PROTOCOL_VERSION >= 2, "only runs against the cql3 protocol v2.0")
     def test_delete_if_exists(self):
         """
         Tests that delete with if_exists work, and throw proper LWT exception when they are are not applied
@@ -208,7 +204,6 @@ class IfExistsUpdateTests(BaseIfExistsTest):
             '[applied]': False,
         })
 
-    @unittest.skipUnless(PROTOCOL_VERSION >= 2, "only runs against the cql3 protocol v2.0")
     def test_batch_delete_if_exists_success(self):
         """
         Tests that batch deletes with if_exists work, and throw proper LWTException when they are are not applied
@@ -239,7 +234,6 @@ class IfExistsUpdateTests(BaseIfExistsTest):
             '[applied]': False,
         })
 
-    @unittest.skipUnless(PROTOCOL_VERSION >= 2, "only runs against the cql3 protocol v2.0")
     def test_batch_delete_mixed(self):
         """
         Tests that batch deletes  with multiple queries and throw proper LWTException when they are are not all applicable
