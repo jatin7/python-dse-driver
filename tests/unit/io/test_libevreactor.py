@@ -26,7 +26,7 @@ from dse.connection import (HEADER_DIRECTION_TO_CLIENT,
 
 from dse.protocol import (write_stringmultimap, write_int, write_string,
                                 SupportedMessage, ReadyMessage, ServerError)
-from dse.marshal import uint8_pack, uint32_pack, int32_pack
+from dse.marshal import uint8_pack, uint32_pack, int32_pack, uint16_pack
 from tests.unit.io.utils import TimerCallback
 from tests.unit.io.utils import submit_and_wait_for_completion
 from tests import is_monkey_patched
@@ -58,13 +58,14 @@ class LibevConnectionTest(unittest.TestCase):
         c._socket.send.side_effect = lambda x: len(x)
         return c
 
-    def make_header_prefix(self, message_class, version=2, stream_id=0):
-        return six.binary_type().join(map(uint8_pack, [
+    def make_header_prefix(self, message_class, version=3, stream_id=0):
+        header = list(map(uint8_pack, [
             0xff & (HEADER_DIRECTION_TO_CLIENT | version),
-            0,  # flags (compression)
             stream_id,
             message_class.opcode  # opcode
         ]))
+        header.insert(1, uint16_pack(0))  # flags (compression)
+        return six.binary_type().join(header)
 
     def make_options_body(self):
         options_buf = BytesIO()
@@ -109,7 +110,8 @@ class LibevConnectionTest(unittest.TestCase):
         # get a connection that's already fully started
         c = self.test_successful_connection()
 
-        header = six.b('\x02\x00\x00\x00') + int32_pack(20000)  # assumes protocol version < v3
+        # Testing with v3, minimum supported version
+        header = six.b('\x03') + uint16_pack(0) + six.b('\x00\x00') + int32_pack(20000)
         responses = [
             header + (six.b('a') * (4096 - len(header))),
             six.b('a') * 4096,

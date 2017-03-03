@@ -30,7 +30,7 @@ from dse.metadata import (Murmur3Token, MD5Token,
                                 IndexMetadata, Function, Aggregate,
                                 Metadata)
 from dse.policies import SimpleConvictionPolicy
-from dse.pool import Host
+from dse.hosts import Host
 
 
 class StrategiesTest(unittest.TestCase):

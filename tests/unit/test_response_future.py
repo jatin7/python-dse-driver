@@ -24,7 +24,7 @@ from dse.protocol import (ReadTimeoutErrorMessage, WriteTimeoutErrorMessage,
                                 RESULT_KIND_ROWS, RESULT_KIND_SET_KEYSPACE,
                                 RESULT_KIND_SCHEMA_CHANGE, ProtocolHandler)
 from dse.policies import RetryPolicy
-from dse.pool import NoConnectionsAvailable
+from dse.hosts import NoConnectionsAvailable
 from dse.query import SimpleStatement
 
 

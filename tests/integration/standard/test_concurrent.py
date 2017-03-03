@@ -38,8 +38,6 @@ class ClusterTests(unittest.TestCase):
     def setUpClass(cls):
         cls.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
                               execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)})
-        if PROTOCOL_VERSION < 3:
-            cls.cluster.set_core_connections_per_host(HostDistance.LOCAL, 1)
         cls.session = cls.cluster.connect()
 
     @classmethod
@@ -164,10 +162,6 @@ class ClusterTests(unittest.TestCase):
             self.assertRaises(StopIteration, next, results)
 
     def test_execute_concurrent_paged_result(self):
-        if PROTOCOL_VERSION < 2:
-            raise unittest.SkipTest(
-                "Protocol 2+ is required for Paging, currently testing against %r"
-                % (PROTOCOL_VERSION,))
 
         num_statements = 201
         statement = SimpleStatement(
@@ -207,11 +201,6 @@ class ClusterTests(unittest.TestCase):
 
         @test_category paging
         """
-        if PROTOCOL_VERSION < 2:
-            raise unittest.SkipTest(
-                "Protocol 2+ is required for Paging, currently testing against %r"
-                % (PROTOCOL_VERSION,))
-
         num_statements = 201
         statement = SimpleStatement(
             "INSERT INTO test3rf.test (k, v) VALUES (%s, %s)",

@@ -1,7 +1,7 @@
-``dse.pool`` - Hosts and Connection Pools
+``dse.hosts`` - Hosts and Connection Pools
 ===============================================
 
-.. automodule:: dse.pool
+.. automodule:: dse.hosts
 
 .. autoclass:: Host ()
     :members:
