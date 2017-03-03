@@ -516,6 +516,14 @@ class DateRangeTypeTests(unittest.TestCase):
                     datetime.datetime(2015, 3, 1, 10, 15, 16, 10000),
                     DateRangePrecision.MILLISECOND
                 ),
+                upper_bound=OPEN_BOUND
+            )
+            ,
+            DateRange(
+                lower_bound=DateRangeBound(
+                    datetime.datetime(2015, 3, 1, 10, 15, 16, 10000),
+                    DateRangePrecision.MILLISECOND
+                ),
                 upper_bound=DateRangeBound(
                     datetime.datetime(2016, 1, 1, 10, 15, 30, 999000),
                     DateRangePrecision.MILLISECOND
@@ -530,15 +538,9 @@ class DateRangeTypeTests(unittest.TestCase):
                     datetime.datetime(2016, 1, 1, 10, 15, 31, 999000),
                     DateRangePrecision.MILLISECOND
                 )
-            ),
-            DateRange(
-                lower_bound=DateRangeBound(
-                    datetime.datetime(2015, 3, 1, 10, 15, 16, 10000),
-                    DateRangePrecision.MILLISECOND
-                ),
-                upper_bound=OPEN_BOUND
             )
         ]
+
         self._check_sequence_consistency(l)
 
     def _check_sequence_consistency(self, ordered_sequence, equal=False):
