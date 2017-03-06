@@ -760,7 +760,7 @@ class TokenAwarePolicyTest(unittest.TestCase):
         """
         self._assert_shuffle(keyspace='keyspace', routing_key=None)
  
-    @patch('cassandra.policies.shuffle')
+    @patch('dse.policies.shuffle')
     def _assert_shuffle(self, patched_shuffle, keyspace, routing_key):
         hosts = [Host(str(i), SimpleConvictionPolicy) for i in range(4)]
         for host in hosts:
