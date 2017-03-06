@@ -24,8 +24,9 @@ from ccmlib import common
 import datetime
 from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT, EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT
 
-from tests.integration import PROTOCOL_VERSION, DSE_VERSION, get_server_versions, BasicKeyspaceUnitTestCase, drop_keyspace_shutdown_cluster, get_cluster, get_node, teardown_package as base_teardown
-from tests.integration import use_singledc, use_single_node, wait_for_node_socket
+from tests.integration import PROTOCOL_VERSION, DSE_VERSION, get_server_versions, BasicKeyspaceUnitTestCase, \
+    drop_keyspace_shutdown_cluster, get_node, USE_CASS_EXTERNAL, set_default_dse_ip
+from tests.integration import use_singledc, use_single_node, wait_for_node_socket, DSE_IP
 from dse.protocol import ServerError
 from dse.util import Point, LineString, Polygon
 from dse.graph import Edge, Vertex, Path
@@ -93,7 +94,7 @@ def wait_for_spark_workers(num_of_expected_workers, timeout):
     start_time = time.time()
     match = False
     while True:
-        r = requests.get("http://localhost:7080")
+        r = requests.get("http://{0}:7080".format(DSE_IP))
         match = re.search('Alive Workers:.*(\d+)</li>', r.text)
         num_workers = int(match.group(1))
         if num_workers == num_of_expected_workers:
@@ -131,6 +132,9 @@ def use_cluster_with_graph(num_nodes):
     This is a  work around to account for the fact that spark nodes will conflict over master assignment
     when started all at once.
     """
+    if USE_CASS_EXTERNAL:
+        set_default_dse_ip()
+        return
 
     # Create the cluster but don't start it.
     use_singledc(start=False, workloads=['graph', 'spark'])

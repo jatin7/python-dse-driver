@@ -15,7 +15,8 @@ from dse import (ConsistencyLevel, OperationTimedOut, ReadTimeout, WriteTimeout,
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.concurrent import execute_concurrent_with_args
 from dse.query import SimpleStatement
-from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, setup_keyspace, remove_cluster, get_node, start_cluster_wait_for_up
+from tests.integration import use_singledc, PROTOCOL_VERSION, get_cluster, setup_keyspace, remove_cluster, \
+    get_node, start_cluster_wait_for_up
 from mock import Mock
 
 try:

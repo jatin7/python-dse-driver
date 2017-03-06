@@ -18,11 +18,14 @@ import six
 from dse.query import (SimpleStatement, BatchStatement, BatchType)
 from dse.cluster import Cluster
 
-from tests.integration import use_singledc, PROTOCOL_VERSION
+from tests.integration import use_singledc, PROTOCOL_VERSION, local
 
 def setup_module():
     use_singledc()
 
+#These test rely on the custom payload being returned but by default C*
+#ignores all the payloads.
+@local
 class CustomPayloadTests(unittest.TestCase):
 
     def setUp(self):

@@ -66,6 +66,7 @@ class CustomProtocolHandlerTest(unittest.TestCase):
         cluster = Cluster(protocol_version=PROTOCOL_VERSION,
                           execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(row_factory=tuple_factory)})
         session = cluster.connect(keyspace="custserdes")
+
         result = session.execute("SELECT schema_version FROM system.local")
         uuid_type = result[0][0]
         self.assertEqual(type(uuid_type), uuid.UUID)
