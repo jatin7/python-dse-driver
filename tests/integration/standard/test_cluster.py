@@ -853,6 +853,8 @@ class ClusterTests(unittest.TestCase):
                     end = time.time()
                     self.assertAlmostEqual(start, end, 1)
                     break
+            else:
+                raise Exception("add_execution_profile didn't timeout after {0} retries".format(max_retry_count))
 
     def test_execute_query_timeout(self):
         with Cluster() as cluster:
