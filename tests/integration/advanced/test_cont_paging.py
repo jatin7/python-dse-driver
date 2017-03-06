@@ -62,6 +62,7 @@ class ContPagingTests(BasicSharedKeyspaceUnitTestCaseWTable):
             return
         super(ContPagingTests, cls).tearDownClass()
 
+
     def test_continous_paging(self):
         """
         Test to ensure that various continuous paging schemes return the full set of results.
