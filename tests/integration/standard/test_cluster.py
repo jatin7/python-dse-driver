@@ -1114,12 +1114,9 @@ class DuplicateRpcTest(unittest.TestCase):
         mock_handler = MockLoggingHandler()
         logger = logging.getLogger(dse.cluster.__name__)
         logger.addHandler(mock_handler)
-<<<<<<< HEAD
         test_cluster = self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
                                               execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=self.load_balancing_policy)})
-=======
-        test_cluster = Cluster(protocol_version=PROTOCOL_VERSION, load_balancing_policy=self.load_balancing_policy)
->>>>>>> Fixed the profile timeout
+
         test_cluster.connect()
         warnings = mock_handler.messages.get("warning")
         self.assertEqual(len(warnings), 1)
