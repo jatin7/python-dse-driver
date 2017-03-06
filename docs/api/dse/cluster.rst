@@ -59,6 +59,8 @@
    .. autoattribute:: token_metadata_enabled
       :annotation: = True
 
+   .. autoattribute:: timestamp_generator
+
    .. automethod:: connect
 
    .. automethod:: shutdown
@@ -131,6 +133,8 @@
    .. autoattribute:: default_fetch_size
 
    .. autoattribute:: use_client_timestamp
+
+   .. autoattribute:: timestamp_generator
 
    .. autoattribute:: encoder
 

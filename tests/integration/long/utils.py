@@ -13,7 +13,9 @@ import time
 
 from collections import defaultdict
 
-from tests.integration import get_node, get_cluster, DSE_VERSION
+from tests.integration import (get_node, get_cluster, wait_for_node_socket,
+                               DSE_VERSION)
+
 
 IP_FORMAT = '127.0.0.%s'
 
@@ -123,6 +125,7 @@ def wait_for_up(cluster, node):
     while tries < 100:
         host = cluster.metadata.get_host(addr)
         if host and host.is_up:
+            wait_for_node_socket(get_node(node), 60)
             log.debug("Done waiting for node %s to be up", node)
             return
         else:
