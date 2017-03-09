@@ -13,6 +13,7 @@ for more detail on working with profiles.
 The DSE driver executes graph queries over the Cassandra native protocol::
 
     from dse.cluster import Cluster, GraphExecutionProfile, EXEC_PROFILE_GRAPH_DEFAULT, EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT
+    from dse.graph import GraphOptions
 
     # create the default execution profile pointing at a specific graph
     graph_name = 'test'

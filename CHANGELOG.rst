@@ -1,3 +1,18 @@
+1.1.0
+=====
+November 2, 2016
+
+Features
+--------
+* Add Geom Types wkt deserializer
+
+1.0.4
+=====
+September 13, 2016
+
+Release upgrading to cassandra-driver 3.7.0
+
+
 1.0.3
 =====
 August 5, 2016

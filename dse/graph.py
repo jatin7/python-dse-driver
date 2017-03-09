@@ -281,10 +281,10 @@ class Vertex(Element):
     @staticmethod
     def _extract_properties(properties):
         # vertex properties are always encoded as a list, regardless of Cardinality
-        return dict((k, [VertexProperty(p['value'], p.get('properties')) for p in v]) for k, v in properties.items())
+        return dict((k, [VertexProperty(k, p['value'], p.get('properties')) for p in v]) for k, v in properties.items())
 
     def __repr__(self):
-        properties = dict((name, [{'value': prop.value, 'properties': prop.properties} for prop in prop_list])
+        properties = dict((name, [{'label': prop.label, 'value': prop.value, 'properties': prop.properties} for prop in prop_list])
                           for name, prop_list in self.properties.items())
         return "%s(%r, %r, %r, %r)" % (self.__class__.__name__,
                                        self.id, self.label,
@@ -294,6 +294,11 @@ class Vertex(Element):
 class VertexProperty(object):
     """
     Vertex properties have a top-level value and an optional ``dict`` of properties.
+    """
+
+    label = None
+    """
+    label of the property
     """
 
     value = None
@@ -306,15 +311,16 @@ class VertexProperty(object):
     dict of properties attached to the property
     """
 
-    def __init__(self, value, properties=None):
+    def __init__(self, label, value, properties=None):
+        self.label = label
         self.value = value
         self.properties = properties or {}
 
     def __eq__(self, other):
-        return isinstance(other, VertexProperty) and self.value == other.value and self.properties == other.properties
+        return isinstance(other, VertexProperty) and self.label == other.label and self.value == other.value and self.properties == other.properties
 
     def __repr__(self):
-        return "%s(%r, %r)" % (self.__class__.__name__, self.value, self.properties)
+        return "%s(%r, %r, %r)" % (self.__class__.__name__, self.label, self.value, self.properties)
 
 
 class Edge(Element):

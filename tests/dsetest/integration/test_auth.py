@@ -14,7 +14,7 @@ from cassandra.query import SimpleStatement
 from dse.auth import DSEGSSAPIAuthProvider
 import os, time, logging
 import subprocess
-from tests.integration import ADS_HOME, use_single_node_with_graph, generate_classic, reset_graph
+from tests.dsetest.integration import ADS_HOME, use_single_node_with_graph, generate_classic, reset_graph
 
 from integration import get_cluster, remove_cluster
 from ccmlib.dse_cluster import DseCluster
@@ -47,7 +47,7 @@ class BasicDseAuthTest(unittest.TestCase):
 
         clear_kerberos_tickets()
 
-         # Setup variables for various keytab and other files
+        # Setup variables for various keytab and other files
         self.conf_file_dir = ADS_HOME+"conf/"
         self.krb_conf = self.conf_file_dir+"krb5.conf"
         self.dse_keytab = self.conf_file_dir+"dse.keytab"
@@ -62,7 +62,7 @@ class BasicDseAuthTest(unittest.TestCase):
         # Start the ADS, this will create the keytab con configuration files listed above
         self.proc = subprocess.Popen(['java', '-jar', actual_jar, '-k', '--confdir', self.conf_file_dir], shell=False)
         time.sleep(10)
-        #TODO poll for server to come up
+        # TODO poll for server to come up
 
         log.warning("Starting adserver started")
         ccm_cluster = get_cluster()
@@ -162,7 +162,7 @@ class BasicDseAuthTest(unittest.TestCase):
         rs = self.connect_and_query(auth_provider)
         self.assertIsNotNone(rs)
         connections = [c for holders in self.cluster.get_connection_holders() for c in holders.get_connections()]
-        #Check to make sure our server_authenticator class is being set appropriate
+        # Check to make sure our server_authenticator class is being set appropriate
         for connection in connections:
             self.assertTrue('DseAuthenticator' in connection.authenticator.server_authenticator_class)
 

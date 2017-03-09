@@ -7,9 +7,21 @@
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
+import re
 from itertools import chain
+from geomet import wkt
 
 _nan = float('nan')
+_distance_wkt_pattern = re.compile("distance *\\( *\\( *([\\d\\.-]+) *([\\d+\\.-]+) *\\) *([\\d+\\.-]+) *\\) *$", re.IGNORECASE)
+
+def list_contents_to_tuple(to_convert):
+    if isinstance(to_convert, list):
+        for n, i in enumerate(to_convert):
+            if isinstance(to_convert[n], list):
+                to_convert[n] = tuple(to_convert[n])
+        return tuple(to_convert)
+    else:
+        return to_convert
 
 
 class Point(object):
@@ -46,6 +58,28 @@ class Point(object):
     def __repr__(self):
         return "%s(%r, %r)" % (self.__class__.__name__, self.x, self.y)
 
+    @staticmethod
+    def from_wkt(s):
+        """
+        Parse a Point geometry from a wkt string and return a new Point object.
+        """
+        try:
+            geom = wkt.loads(s)
+        except ValueError:
+            raise ValueError("Invalid WKT geometry: '{0}'".format(s))
+
+        if geom['type'] != 'Point':
+            raise ValueError("Invalid WKT geometry type. Expected 'Point', got '{0}': '{1}'".format(geom['type'], s))
+
+        coords = geom['coordinates']
+        if len(coords) < 2:
+            x = y = _nan
+        else:
+            x = coords[0]
+            y = coords[1]
+
+        return Point(x=x, y=y)
+
 
 class LineString(object):
     """
@@ -79,12 +113,29 @@ class LineString(object):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.coords)
 
+    @staticmethod
+    def from_wkt(s):
+        """
+        Parse a LineString geometry from a wkt string and return a new LineString object.
+        """
+        try:
+            geom = wkt.loads(s)
+        except ValueError:
+            raise ValueError("Invalid WKT geometry: '{0}'".format(s))
+
+        if geom['type'] != 'LineString':
+            raise ValueError("Invalid WKT geometry type. Expected 'LineString', got '{0}': '{1}'".format(geom['type'], s))
+
+        geom['coordinates'] = list_contents_to_tuple(geom['coordinates'])
+
+        return LineString(coords=geom['coordinates'])
+
 
 class _LinearRing(object):
     # no validation, no implicit closing; just used for poly composition, to
     # mimic that of shapely.geometry.Polygon
     def __init__(self, coords=tuple()):
-        self.coords = tuple(coords)
+        self.coords = list_contents_to_tuple(coords)
 
     def __eq__(self, other):
         return isinstance(other, _LinearRing) and self.coords == other.coords
@@ -142,3 +193,77 @@ class Polygon(object):
 
     def __repr__(self):
         return "%s(%r, %r)" % (self.__class__.__name__, self.exterior.coords, [ring.coords for ring in self.interiors])
+
+    @staticmethod
+    def from_wkt(s):
+        """
+        Parse a Polygon geometry from a wkt string and return a new Polygon object.
+        """
+        try:
+            geom = wkt.loads(s)
+        except ValueError:
+            raise ValueError("Invalid WKT geometry: '{0}'".format(s))
+
+        if geom['type'] != 'Polygon':
+            raise ValueError("Invalid WKT geometry type. Expected 'Polygon', got '{0}': '{1}'".format(geom['type'], s))
+
+        coords = geom['coordinates']
+        exterior = coords[0] if len(coords) > 0 else tuple()
+        interiors = coords[1:] if len(coords) > 1 else None
+
+        return Polygon(exterior=exterior, interiors=interiors)
+
+
+class Distance(object):
+    """
+    Represents a Distance geometry for DSE
+    """
+
+    x = None
+    """
+    x coordinate of the center point
+    """
+
+    y = None
+    """
+    y coordinate of the center point
+    """
+
+    radius = None
+    """
+    radius to represent the distance from the center point
+    """
+
+    def __init__(self, x=_nan, y=_nan, radius=_nan):
+        self.x = x
+        self.y = y
+        self.radius = radius
+
+    def __eq__(self, other):
+        return isinstance(other, Distance) and self.x == other.x and self.y == other.y and self.radius == other.radius
+
+    def __hash__(self):
+        return hash((self.x, self.y, self.radius))
+
+    def __str__(self):
+        """
+        Well-known text representation of the point
+        """
+        return "DISTANCE ((%r %r) %r)" % (self.x, self.y, self.radius)
+
+    def __repr__(self):
+        return "%s(%r, %r, %r)" % (self.__class__.__name__, self.x, self.y, self.radius)
+
+    @staticmethod
+    def from_wkt(s):
+        """
+        Parse a Distance geometry from a wkt string and return a new Distance object.
+        """
+
+        distance_match = _distance_wkt_pattern.match(s)
+
+        if distance_match is None:
+            raise ValueError("Invalid WKT geometry: '{0}'".format(s))
+
+        x, y, radius = distance_match.groups()
+        return Distance(x, y, radius)
