@@ -202,7 +202,7 @@ class GraphTypeTests(unittest.TestCase):
         kwargs = {'id': 'id_val', 'label': 'label_val', 'type': 'vertex', 'properties': {prop_name: [{'value': prop_val}]}}
         vertex = Vertex(**kwargs)
         transformed = kwargs.copy()
-        transformed['properties'] = {prop_name: [VertexProperty(prop_val)]}
+        transformed['properties'] = {prop_name: [VertexProperty(prop_name, prop_val)]}
         self.assertEqual(eval(str(vertex)), transformed)
         self.assertEqual(eval(repr(vertex)), vertex)
 
