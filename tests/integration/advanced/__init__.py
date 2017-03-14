@@ -74,8 +74,8 @@ TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
 if DSE_VERSION >= "5.1":
     TYPE_MAP["datetime1"]= ["Date()", datetime.date.today()]
     TYPE_MAP["time1"] = ["Time()", datetime.time(12, 6, 12, 444)]
-    TYPE_MAP["time1"] = ["Time()", datetime.time(12, 6, 12)]
-    TYPE_MAP["time1"] = ["Time()", datetime.time(12, 6)]
+    TYPE_MAP["time2"] = ["Time()", datetime.time(12, 6, 12)]
+    TYPE_MAP["time3"] = ["Time()", datetime.time(12, 6)]
 
 
 def find_spark_master(session):
