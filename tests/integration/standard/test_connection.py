@@ -20,7 +20,7 @@ from threading import Thread, Event
 import time
 
 from dse import ConsistencyLevel, OperationTimedOut
-from dse.cluster import NoHostAvailable, Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
+from dse.cluster import NoHostAvailable, ConnectionShutdown, Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import QueryMessage
 from dse.policies import WhiteListRoundRobinPolicy, HostStateListener
@@ -185,7 +185,7 @@ class ConnectionTests(object):
                 contact_point = DSE_IP
                 conn = self.klass.factory(host=contact_point, timeout=timeout, protocol_version=PROTOCOL_VERSION)
                 break
-            except (OperationTimedOut, NoHostAvailable) as e:
+            except (OperationTimedOut, NoHostAvailable, ConnectionShutdown) as e:
                 continue
 
         if conn:
