@@ -1,3 +1,13 @@
+2.0.0rc1
+========
+
+Release merged in changes from cassandra-driver 3.8.1 (PYTHON-712)
+
+Bug Fixes
+--------
+* Migrate DateRange and DateRangeBound off namedtuple implementations (PYTHON-701)
+* Fix Comparisons for DateRange util types (PYTHON-718)
+
 2.0.0b3
 =======
 February 13, 2017
