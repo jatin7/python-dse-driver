@@ -73,22 +73,6 @@
 
    .. automethod:: add_execution_profile
 
-   .. automethod:: set_max_requests_per_connection
-
-   .. automethod:: get_max_requests_per_connection
-
-   .. automethod:: set_min_requests_per_connection
-
-   .. automethod:: get_min_requests_per_connection
-
-   .. automethod:: get_core_connections_per_host
-
-   .. automethod:: set_core_connections_per_host
-
-   .. automethod:: get_max_connections_per_host
-
-   .. automethod:: set_max_connections_per_host
-
    .. automethod:: get_control_connection_host
 
    .. automethod:: refresh_schema_metadata

@@ -1,7 +1,7 @@
 ``dse.timestamps`` - Timestamp Generation
 =============================================
 
-.. module:: cassandra.timestamps
+.. module:: dse.timestamps
 
 .. autoclass:: MonotonicTimestampGenerator (warn_on_drift=True, warning_threshold=0, warning_interval=0)
 
