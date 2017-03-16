@@ -73,6 +73,9 @@ TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
 
 if DSE_VERSION >= "5.1":
     TYPE_MAP["datetime1"]= ["Date()", datetime.date.today()]
+    TYPE_MAP["time1"] = ["Time()", datetime.time(12, 6, 12, 444)]
+    TYPE_MAP["time2"] = ["Time()", datetime.time(12, 6, 12)]
+    TYPE_MAP["time3"] = ["Time()", datetime.time(12, 6)]
 
 
 def find_spark_master(session):
@@ -198,7 +201,9 @@ class BasicGraphUnitTestCase(BasicKeyspaceUnitTestCase):
         self.session_setup()
         self.reset_graph()
         profiles = self.cluster.profile_manager.profiles
+        profiles[EXEC_PROFILE_GRAPH_DEFAULT].request_timeout = 60
         profiles[EXEC_PROFILE_GRAPH_DEFAULT].graph_options.graph_name = self.graph_name
+        profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].request_timeout = 60
         profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].graph_options.graph_name = self.graph_name
         self.clear_schema()
 
@@ -408,11 +413,24 @@ def generate_multi_field_graph(session):
                      schema.vertexLabel('datevertex1').properties('datevalue1').ifNotExists().create();''',
                        '''schema.propertyKey('negdatevalue2').Date().ifNotExists().create();
                      schema.vertexLabel('negdatevertex2').properties('negdatevalue2').ifNotExists().create();''']
+            for i in range(1,4):
+                to_run_51.append('''schema.propertyKey('timevalue{0}').Time().ifNotExists().create();
+                     schema.vertexLabel('timevertex{0}').properties('timevalue{0}').ifNotExists().create();'''.format(i))
+
             for run in to_run_51:
                 session.execute_graph(run)
 
-            session.execute_graph('''graph.addVertex(label, "datevertex1", "datevalue1", date1);''', { 'date1': '1999-07-29' })
-            session.execute_graph('''graph.addVertex(label, "negdatevertex2", "negdatevalue2", date2);''', { 'date2': '-1999-07-28' })
+            session.execute_graph('''graph.addVertex(label, "datevertex1", "datevalue1", date1);''',
+                                  {'date1': '1999-07-29' })
+            session.execute_graph('''graph.addVertex(label, "negdatevertex2", "negdatevalue2", date2);''',
+                                  {'date2': '-1999-07-28' })
+
+            session.execute_graph('''graph.addVertex(label, "timevertex1", "timevalue1", time1);''',
+                                  {'time1': '14:02'})
+            session.execute_graph('''graph.addVertex(label, "timevertex2", "timevalue2", time2);''',
+                                  {'time2': '14:02:20'})
+            session.execute_graph('''graph.addVertex(label, "timevertex3", "timevalue3", time3);''',
+                                  {'time3': '14:02:20.222'})
 
 
 

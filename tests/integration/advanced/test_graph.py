@@ -481,7 +481,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
                 typ = six.integer_types
             elif any(type_indicator.startswith(t) for t in ('float', 'double')):
                 typ = float
-            elif any(type_indicator.startswith(t) for t in ('date', 'negdate')):
+            elif any(type_indicator.startswith(t) for t in ('date', 'negdate', 'time')):
                 typ = six.text_type
             else:
                 pass
