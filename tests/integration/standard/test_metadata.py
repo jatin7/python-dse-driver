@@ -33,7 +33,7 @@ from dse.util import SortedSet
 from tests.integration import (get_cluster, use_singledc, PROTOCOL_VERSION, get_server_versions, execute_until_pass,
                                BasicSegregatedKeyspaceUnitTestCase, BasicSharedKeyspaceUnitTestCase,
                                BasicExistingKeyspaceUnitTestCase, drop_keyspace_shutdown_cluster, CASSANDRA_VERSION,
-                               greaterthanorequalcass30, greaterthanorequaldse51, lessthandse51, local)
+                               greaterthanorequalcass30, greaterthanorequaldse51, lessthancass30, local)
 
 
 def setup_module():
@@ -2429,7 +2429,7 @@ class MaterializedViewMetadataTestComplex(BasicSegregatedKeyspaceUnitTestCase):
         mv_alltime_fouls_comumn = self.cluster.metadata.keyspaces[self.keyspace_name].views["alltimehigh"].columns['fouls']
         self.assertEqual(mv_alltime_fouls_comumn.cql_type, 'int')
 
-    @lessthandse51
+    @lessthancass30
     def test_base_table_type_alter_mv(self):
         """
         test to ensure that materialized view metadata is properly updated when a type in the base table
