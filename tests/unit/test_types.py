@@ -454,7 +454,6 @@ class TestOrdering(unittest.TestCase):
     def _shuffle_lists(self, *args):
         return [item for sublist in zip(*args) for item in sublist]
 
-
     def test_host_order(self):
         """
         Test Host class is ordered consistently
