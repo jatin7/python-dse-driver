@@ -450,6 +450,43 @@ class DateRangeTypeTests(unittest.TestCase):
                 DateRangeType.serialize(DateRangeType.deserialize(serialized, 0), 0)
             )
 
+    def test_serialize_zero_datetime(self):
+        """
+        Test serialization where timestamp = 0
+
+        Companion test for test_deserialize_zero_datetime
+
+        @since 2.0.0
+        @jira_ticket PYTHON-729
+        @expected_result serialization doesn't raise an error
+
+        @test_category data_types
+        """
+        DateRangeType.serialize(util.DateRange(
+            lower_bound=(datetime.datetime(1970, 1, 1), 'YEAR'),
+            upper_bound=(datetime.datetime(1970, 1, 1), 'YEAR')
+        ), 5)
+
+    def test_deserialize_zero_datetime(self):
+        """
+        Test deserialization where timestamp = 0
+
+        Reproduces PYTHON-729
+
+        @since 2.0.0
+        @jira_ticket PYTHON-729
+        @expected_result deserialization doesn't raise an error
+
+        @test_category data_types
+        """
+        DateRangeType.deserialize(
+            (int8_pack(1) +
+             int64_pack(0) + int8_pack(0) +
+             int64_pack(0) + int8_pack(0)),
+            5
+        )
+
+
 class TestOrdering(unittest.TestCase):
     def _shuffle_lists(self, *args):
         return [item for sublist in zip(*args) for item in sublist]
