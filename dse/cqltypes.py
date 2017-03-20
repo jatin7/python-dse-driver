@@ -1236,12 +1236,12 @@ class DateRangeType(CassandraType):
         else:
             time1 = precision1 = None
 
-        if time0:
+        if time0 is not None:
             date_range_bound0 = util.DateRangeBound(
                 time0,
                 cls._decode_precision(precision0)
             )
-        if time1:
+        if time1 is not None:
             date_range_bound1 = util.DateRangeBound(
                 time1,
                 cls._decode_precision(precision1)
