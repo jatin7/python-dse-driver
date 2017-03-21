@@ -268,7 +268,10 @@ class ExecutionProfile(object):
 
     continuous_paging_options = None
     """
-    When set, requests will use Apollo's continuous paging, which streams multiple pages without
+    *Note:* This feature is implemented to facilitate server integration testing. It is not intended for general use in the Python driver.
+    See :attr:`.Statement.fetch_size` or :attr:`Session.default_fetch_size` for configuring normal paging.
+
+    When set, requests will use DSE's continuous paging, which streams multiple pages without
     intermediate requests.
 
     This has the potential to materialize all results in memory at once if the consumer cannot keep up. Use options
