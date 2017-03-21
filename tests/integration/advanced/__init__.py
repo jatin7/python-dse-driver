@@ -26,13 +26,12 @@ from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT, EXEC_PROFILE_GRAPH_
 
 from tests.integration import PROTOCOL_VERSION, DSE_VERSION, get_server_versions, BasicKeyspaceUnitTestCase, \
     drop_keyspace_shutdown_cluster, get_node, USE_CASS_EXTERNAL, set_default_dse_ip
-from tests.integration import use_singledc, use_single_node, wait_for_node_socket, DSE_IP
+from tests.integration import use_singledc, use_single_node, wait_for_node_socket, DSE_IP, greaterthanorequaldse50
 from dse.protocol import ServerError
 from dse.util import Point, LineString, Polygon
 from dse.graph import Edge, Vertex, Path
 home = expanduser('~')
 
-greaterthanorequaldse51 = unittest.skipUnless(DSE_VERSION >= '5.1', 'DSE version 5.1 or greater required')
 
 # Home directory of the Embedded Apache Directory Server to use
 ADS_HOME = os.getenv('ADS_HOME', home)
@@ -49,7 +48,6 @@ if sys.version_info < (3, 0):
     MAX_LONG = long(MAX_LONG)
     MIN_LONG = long(MIN_LONG)
     ZERO_LONG = long(ZERO_LONG)
-
 
 TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
             "point2": ["Point()", Point(-5, .0)],
