@@ -472,7 +472,7 @@ class CounterValueManager(BaseValueManager):
 
 class Counter(Integer):
     """
-    Stores a counter that can be inremented and decremented
+    Stores a counter that can be incremented and decremented
     """
     db_type = 'counter'
 
