@@ -6,7 +6,12 @@ Release merged in changes from cassandra-driver 3.8.1 (PYTHON-712)
 Bug Fixes
 --------
 * Migrate DateRange and DateRangeBound off namedtuple implementations (PYTHON-701)
+* Add missing rich comparisons for some custom types (PYTHON-714)
 * Fix Comparisons for DateRange util types (PYTHON-718)
+
+Other
+-----
+* Remove support for Cassandra 2.0 and below (PYTHON-681)
 
 2.0.0b3
 =======
