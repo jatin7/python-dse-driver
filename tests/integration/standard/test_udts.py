@@ -22,7 +22,7 @@ from dse.query import dict_factory
 from dse.util import OrderedMap
 
 from tests.integration import use_singledc, PROTOCOL_VERSION, execute_until_pass, \
-    BasicSegregatedKeyspaceUnitTestCase, lessthancass30, greaterthanorequalcass36, lessthandse51
+    BasicSegregatedKeyspaceUnitTestCase, lessthancass30, greaterthanorequalcass36
 from tests.integration.datatype_utils import update_datatypes, PRIMITIVE_DATATYPES, PRIMITIVE_DATATYPES_KEYS, COLLECTION_TYPES, \
     get_sample, get_collection_sample
 
@@ -680,7 +680,7 @@ class UDTTests(BasicSegregatedKeyspaceUnitTestCase):
         self.assertEqual(k[0], 'alphanum')
         self.assertEqual(k.field_0_, 'alphanum')  # named tuple with positional field name
 
-    @lessthandse51
+    @lessthancass30
     def test_type_alteration(self):
         """
         Support for ALTER TYPE was removed in CASSANDRA-12443

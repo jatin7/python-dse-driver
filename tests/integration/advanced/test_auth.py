@@ -30,7 +30,6 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
-
 def setup_module():
     use_single_node_with_graph()
 

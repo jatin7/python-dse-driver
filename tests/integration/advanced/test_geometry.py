@@ -20,7 +20,6 @@ from uuid import uuid1
 from dse.util import Point, LineString, Polygon
 from dse.cqltypes import LineStringType, PointType, PolygonType
 
-
 def setup_module():
     use_single_node_with_graph()
 

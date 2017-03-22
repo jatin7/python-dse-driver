@@ -30,7 +30,7 @@ from dse.util import SortedSet
 
 from tests.integration.advanced import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT,\
     validate_classic_vertex, validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type, fetchCustomGeoType
-from tests.integration import PROTOCOL_VERSION, greaterthanorequaldse51, DSE_VERSION, local
+from tests.integration import PROTOCOL_VERSION, greaterthanorequaldse51, DSE_VERSION
 
 
 def setup_module():
@@ -618,6 +618,7 @@ class GraphProfileTests(BasicGraphUnitTestCase):
             with self.assertRaises(Exception) as e:
                 self.assertTrue(isinstance(e, InvalidRequest) or isinstance(e, OperationTimedOut))
                 local_session.execute_graph('java.util.concurrent.TimeUnit.MILLISECONDS.sleep(2000L);', execution_profile='exec_short_timeout')
+
 
 class GraphMetadataTest(BasicGraphUnitTestCase):
 

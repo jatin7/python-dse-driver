@@ -2581,9 +2581,6 @@ class ControlConnection(object):
             self._refresh_node_list_and_token_map(connection, preloaded_results=shared_results)
             self._refresh_schema(connection, preloaded_results=shared_results, schema_agreement_wait=-1)
         except Exception:
-            import traceback
-
-            traceback.print_exc()
             connection.close()
             raise
 

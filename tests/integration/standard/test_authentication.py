@@ -76,7 +76,7 @@ class AuthenticationTests(unittest.TestCase):
 
         try:
             cluster = self.cluster_as(user, passwd)
-            session = cluster.connect()
+            session = cluster.connect(wait_for_all_pools=True)
             try:
                 self.assertTrue(session.execute('SELECT release_version FROM system.local'))
                 assert_quiescent_pool_state(self, cluster)
