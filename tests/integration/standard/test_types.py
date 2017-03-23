@@ -847,6 +847,15 @@ class AbstractDateRangeTest():
         )
         self._daterange_round_trip(insert)
 
+    def test_epoch_value_round_trip(self):
+        insert = util.DateRange(
+            value=util.DateRangeBound(
+                datetime(1970, 1, 1),
+                util.DateRangePrecision.YEAR
+            )
+        )
+        self._daterange_round_trip(insert)
+
     def test_double_bounded_daterange_round_trip_from_string(self):
         self._daterange_round_trip(
             '[2015-03-01T10:15:30.010Z TO 2016-01-01T10:15:30.999Z]',
@@ -925,6 +934,18 @@ class AbstractDateRangeTest():
                 )
             )
         )
+
+    def test_epoch_value_round_trip_from_string(self):
+        self._daterange_round_trip(
+            '1970',
+            util.DateRange(
+                value=util.DateRangeBound(
+                    datetime(1970, 1, 1),
+                    util.DateRangePrecision.YEAR
+                )
+            )
+        )
+
 
 
 @greaterthanorequaldse51
