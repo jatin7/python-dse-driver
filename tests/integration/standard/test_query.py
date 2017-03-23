@@ -464,7 +464,7 @@ class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
             mock_handler = MockLoggingHandler()
             logger = logging.getLogger(dse.cluster.__name__)
             logger.addHandler(mock_handler)
-            self.assertGreaterEqual(len(clus.metadata.all_hosts()), 3)
+            self.assertGreaterEqual(len(cluster.metadata.all_hosts()), 3)
             select_statement = session.prepare("SELECT * FROM system.local")
             reponse_first = session.execute(select_statement)
             reponse_second = session.execute(select_statement)
