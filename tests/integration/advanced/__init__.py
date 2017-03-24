@@ -197,12 +197,14 @@ class BasicGraphUnitTestCase(BasicKeyspaceUnitTestCase):
 
     def setUp(self):
         self.session_setup()
-        self.reset_graph()
+
         profiles = self.cluster.profile_manager.profiles
         profiles[EXEC_PROFILE_GRAPH_DEFAULT].request_timeout = 60
         profiles[EXEC_PROFILE_GRAPH_DEFAULT].graph_options.graph_name = self.graph_name
         profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].request_timeout = 60
         profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].graph_options.graph_name = self.graph_name
+
+        self.reset_graph()
         self.clear_schema()
 
     def tearDown(self):
@@ -237,7 +239,9 @@ class BasicSharedGraphUnitTestCase(BasicKeyspaceUnitTestCase):
         cls.session_setup()
         cls.reset_graph()
         profiles = cls.cluster.profile_manager.profiles
+        profiles[EXEC_PROFILE_GRAPH_DEFAULT].request_timeout = 60
         profiles[EXEC_PROFILE_GRAPH_DEFAULT].graph_options.graph_name = cls.graph_name
+        profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].request_timeout = 60
         profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].graph_options.graph_name = cls.graph_name
         cls.clear_schema()
 
@@ -271,6 +275,12 @@ def getPointType():
         return "Point()"
 
     return "Point().withGeoBounds()"
+
+def getPointTypeWithBounds(lowerX, lowerY, upperX, upperY):
+    if DSE_VERSION.startswith("5.0"):
+        return "Point()"
+
+    return "Point().withBounds({0}, {1}, {2}, {3})".format(lowerX, lowerY, upperX, upperY)
 
 def getLineType():
     if DSE_VERSION.startswith("5.0"):
@@ -457,20 +467,29 @@ def generate_type_graph_schema(session, prime_schema=True):
 
 
 def generate_address_book_graph(session, size):
-    to_run = [ALLOW_SCANS,
+    to_run_first_address_book = [ALLOW_SCANS,
               "schema.propertyKey('name').Text().create()\n" +
-              "schema.propertyKey('coordinates')."+getPointType()+".create()\n" +
+              "schema.propertyKey('pointPropWithBoundsWithSearchIndex')." + getPointTypeWithBounds(-100, -100, 100, 100) + ".create()\n" +
+              "schema.propertyKey('pointPropWithBounds')." + getPointTypeWithBounds(-100, -100, 100, 100) + ".create()\n" +
+              "schema.propertyKey('pointPropWithGeoBoundsWithSearchIndex')." + getPointType() + ".create()\n" +
+              "schema.propertyKey('pointPropWithGeoBounds')." + getPointType() + ".create()\n" +
               "schema.propertyKey('city').Text().create()\n" +
               "schema.propertyKey('state').Text().create()\n" +
               "schema.propertyKey('description').Text().create()\n" +
-              "schema.vertexLabel('person').properties('name', 'coordinates', 'city', 'state', 'description').create()\n" +
-              "schema.vertexLabel('person').index('search').search().by('name').asString().by('coordinates').by('description').asText().add()",
-              "g.addV('person').property('name', 'Paul Thomas Joe').property('city', 'Rochester').property('state', 'MN').property('coordinates', Geo.point(-92.46295, 44.0234)).property('description', 'Lives by the hospital')",
-              "g.addV('person').property('name', 'George Bill Steve').property('city', 'Minneapolis').property('state', 'MN').property('coordinates', Geo.point(-93.266667, 44.093333)).property('description', 'A cold dude')",
-              "g.addV('person').property('name', 'James Paul Smith').property('city', 'Chicago').property('state', 'IL').property('coordinates', Geo.point(-87.684722, 41.836944)).property('description', 'Likes to hang out')",
-              "g.addV('person').property('name', 'Jill Alice').property('city', 'Atlanta').property('state', 'GA').property('coordinates', Geo.point(-84.39, 33.755)).property('description', 'Enjoys a nice cold coca cola')"]
+              "schema.vertexLabel('person').properties('name', 'city', 'state', 'description', 'pointPropWithBoundsWithSearchIndex', 'pointPropWithBounds', 'pointPropWithGeoBoundsWithSearchIndex', 'pointPropWithGeoBounds').create()",
 
-    for run in to_run:
+              "schema.vertexLabel('person').index('search').search().by('pointPropWithBoundsWithSearchIndex').withError(0.00001, 0.0).by('pointPropWithGeoBoundsWithSearchIndex').withError(0.00001, 0.0).add()",
+              "schema.vertexLabel('person').index('searchPointWithBounds').secondary().by('pointPropWithBounds').add()",
+              "schema.vertexLabel('person').index('searchPointWithGeoBounds').secondary().by('pointPropWithGeoBounds').add()",
+
+              "g.addV('person').property('name', 'Paul Thomas Joe').property('city', 'Rochester').property('state', 'MN').property('pointPropWithBoundsWithSearchIndex', Geo.point(-92.46295, 44.0234)).property('pointPropWithBounds', Geo.point(-92.46295, 44.0234)).property('pointPropWithGeoBoundsWithSearchIndex', Geo.point(-92.46295, 44.0234)).property('pointPropWithGeoBounds', Geo.point(-92.46295, 44.0234)).property('description', 'Lives by the hospital')",
+              "g.addV('person').property('name', 'George Bill Steve').property('city', 'Minneapolis').property('state', 'MN').property('pointPropWithBoundsWithSearchIndex', Geo.point(-93.266667, 44.093333)).property('pointPropWithBounds', Geo.point(-93.266667, 44.093333)).property('pointPropWithGeoBoundsWithSearchIndex', Geo.point(-93.266667, 44.093333)).property('pointPropWithGeoBounds', Geo.point(-93.266667, 44.093333)).property('description', 'A cold dude')",
+              "g.addV('person').property('name', 'James Paul Smith').property('city', 'Chicago').property('state', 'IL').property('pointPropWithBoundsWithSearchIndex', Geo.point(-87.684722, 41.836944)).property('description', 'Likes to hang out')",
+              "g.addV('person').property('name', 'Jill Alice').property('city', 'Atlanta').property('state', 'GA').property('pointPropWithBoundsWithSearchIndex', Geo.point(-84.39, 33.755)).property('description', 'Enjoys a nice cold coca cola')",
+              ]
+
+
+    for run in to_run_first_address_book:
         session.execute_graph(run)
 
 
