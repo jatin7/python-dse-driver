@@ -180,7 +180,7 @@ def wait_for_graph_inserted(session, graph_name):
         return exists
 
 
-class BasicGraphUnitTestCase(BasicKeyspaceUnitTestCase):
+class exi(BasicKeyspaceUnitTestCase):
     """
     This is basic graph unit test case that provides various utility methods that can be leveraged for testcase setup and tear
     down
@@ -467,7 +467,7 @@ def generate_type_graph_schema(session, prime_schema=True):
 
 
 def generate_address_book_graph(session, size):
-    to_run_first_address_book = [ALLOW_SCANS,
+    to_run = [ALLOW_SCANS,
               "schema.propertyKey('name').Text().create()\n" +
               "schema.propertyKey('pointPropWithBoundsWithSearchIndex')." + getPointTypeWithBounds(-100, -100, 100, 100) + ".create()\n" +
               "schema.propertyKey('pointPropWithBounds')." + getPointTypeWithBounds(-100, -100, 100, 100) + ".create()\n" +
@@ -477,8 +477,6 @@ def generate_address_book_graph(session, size):
               "schema.propertyKey('state').Text().create()\n" +
               "schema.propertyKey('description').Text().create()\n" +
               "schema.vertexLabel('person').properties('name', 'city', 'state', 'description', 'pointPropWithBoundsWithSearchIndex', 'pointPropWithBounds', 'pointPropWithGeoBoundsWithSearchIndex', 'pointPropWithGeoBounds').create()",
-
-              "schema.vertexLabel('person').index('search').search().by('pointPropWithBoundsWithSearchIndex').withError(0.00001, 0.0).by('pointPropWithGeoBoundsWithSearchIndex').withError(0.00001, 0.0).add()",
               "schema.vertexLabel('person').index('searchPointWithBounds').secondary().by('pointPropWithBounds').add()",
               "schema.vertexLabel('person').index('searchPointWithGeoBounds').secondary().by('pointPropWithGeoBounds').add()",
 
@@ -488,8 +486,10 @@ def generate_address_book_graph(session, size):
               "g.addV('person').property('name', 'Jill Alice').property('city', 'Atlanta').property('state', 'GA').property('pointPropWithBoundsWithSearchIndex', Geo.point(-84.39, 33.755)).property('description', 'Enjoys a nice cold coca cola')",
               ]
 
+    if not DSE_VERSION.startswith("5.0"):
+        to_run.append("schema.vertexLabel('person').index('search').search().by('pointPropWithBoundsWithSearchIndex').withError(0.00001, 0.0).by('pointPropWithGeoBoundsWithSearchIndex').withError(0.00001, 0.0).add()")
 
-    for run in to_run_first_address_book:
+    for run in to_run:
         session.execute_graph(run)
 
 
