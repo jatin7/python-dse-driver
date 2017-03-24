@@ -197,6 +197,7 @@ class BasicGraphUnitTestCase(BasicKeyspaceUnitTestCase):
 
     def setUp(self):
         self.session_setup()
+        self.reset_graph()
 
         profiles = self.cluster.profile_manager.profiles
         profiles[EXEC_PROFILE_GRAPH_DEFAULT].request_timeout = 60
@@ -204,7 +205,6 @@ class BasicGraphUnitTestCase(BasicKeyspaceUnitTestCase):
         profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].request_timeout = 60
         profiles[EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT].graph_options.graph_name = self.graph_name
 
-        self.reset_graph()
         self.clear_schema()
 
     def tearDown(self):
