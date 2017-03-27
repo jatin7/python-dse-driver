@@ -180,7 +180,7 @@ def wait_for_graph_inserted(session, graph_name):
         return exists
 
 
-class exi(BasicKeyspaceUnitTestCase):
+class BasicGraphUnitTestCase(BasicKeyspaceUnitTestCase):
     """
     This is basic graph unit test case that provides various utility methods that can be leveraged for testcase setup and tear
     down
