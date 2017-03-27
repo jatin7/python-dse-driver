@@ -16,7 +16,7 @@ from mock import patch
 from dse import ConsistencyLevel, DriverException, Timeout, Unavailable, RequestExecutionException, ReadTimeout, WriteTimeout, CoordinationFailure, ReadFailure, WriteFailure, FunctionFailure, AlreadyExists,\
     InvalidRequest, Unauthorized, AuthenticationFailed, OperationTimedOut, UnsupportedOperation, RequestValidationException, ConfigurationException, ProtocolVersion
 from dse.cluster import _Scheduler, Session, Cluster, _NOT_SET, default_lbp_factory, \
-    ExecutionProfile, _ConfigMode, EXEC_PROFILE_DEFAULT
+    ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.hosts import Host
 from dse.policies import HostDistance, RetryPolicy, RoundRobinPolicy, DowngradingConsistencyRetryPolicy, SimpleConvictionPolicy
 from dse.query import SimpleStatement, named_tuple_factory, tuple_factory
@@ -166,7 +166,6 @@ class ExecutionProfileTest(unittest.TestCase):
     @mock_session_pools
     def test_default_exec_parameters(self):
         cluster = Cluster()
-        self.assertEqual(cluster._config_mode, _ConfigMode.UNCOMMITTED)
         self.assertEqual(cluster.load_balancing_policy.__class__, default_lbp_factory().__class__)
         self.assertEqual(cluster.default_retry_policy.__class__, RetryPolicy)
         session = Session(cluster, hosts=[Host("127.0.0.1", SimpleConvictionPolicy)])
@@ -215,7 +214,6 @@ class ExecutionProfileTest(unittest.TestCase):
         internalized_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'by-name': internalized_profile})
         session = Session(cluster, hosts=[Host("127.0.0.1", SimpleConvictionPolicy)])
-        self.assertEqual(cluster._config_mode, _ConfigMode.PROFILES)
 
         rf = session.execute_async("query", execution_profile='by-name')
         self._verify_response_future_profile(rf, internalized_profile)
