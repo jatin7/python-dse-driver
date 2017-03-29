@@ -166,15 +166,13 @@ class ExecutionProfileTest(unittest.TestCase):
     @mock_session_pools
     def test_default_exec_parameters(self):
         cluster = Cluster()
-        self.assertEqual(cluster.load_balancing_policy.__class__, default_lbp_factory().__class__)
-        self.assertEqual(cluster.default_retry_policy.__class__, RetryPolicy)
-        session = Session(cluster, hosts=[Host("127.0.0.1", SimpleConvictionPolicy)])
-        self.assertEqual(session.default_timeout, 10.0)
-        self.assertEqual(session.default_consistency_level, ConsistencyLevel.LOCAL_ONE)
-        self.assertEqual(session.default_serial_consistency_level, None)
-        self.assertEqual(session.row_factory, named_tuple_factory)
+        self.assertEqual(cluster.profile_manager.default.load_balancing_policy.__class__, default_lbp_factory().__class__)
+        self.assertEqual(cluster.profile_manager.default.retry_policy.__class__, RetryPolicy)
+        self.assertEqual(cluster.profile_manager.default.request_timeout, 10.0)
+        self.assertEqual(cluster.profile_manager.default.consistency_level, ConsistencyLevel.LOCAL_ONE)
+        self.assertEqual(cluster.profile_manager.default.serial_consistency_level, None)
+        self.assertEqual(cluster.profile_manager.default.row_factory, named_tuple_factory)
 
-    @mock_session_pools
     def test_default_profile(self):
         non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'non-default': non_default_profile})
