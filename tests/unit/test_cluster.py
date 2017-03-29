@@ -207,6 +207,7 @@ class ExecutionProfileTest(unittest.TestCase):
                                             ss.consistency_level, ss._serial_consistency_level, my_timeout, non_default_profile.row_factory)
         self._verify_response_future_profile(rf, expected_profile)
 
+    @mock_session_pools
     def test_profile_name_value(self):
 
         internalized_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
