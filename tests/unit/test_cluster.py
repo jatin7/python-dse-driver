@@ -22,6 +22,14 @@ from dse.policies import HostDistance, RetryPolicy, RoundRobinPolicy, Downgradin
 from dse.query import SimpleStatement, named_tuple_factory, tuple_factory
 from tests.unit.utils import mock_session_pools
 
+try:
+    from dse.io.libevreactor import LibevConnection
+except ImportError:
+    LibevConnection = None  # noqa
+
+def setUp():
+    LibevConnection.initialize_reactor()
+
 
 class ExceptionTypeTest(unittest.TestCase):
 
