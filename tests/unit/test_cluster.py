@@ -16,9 +16,19 @@ from mock import patch
 from dse import ConsistencyLevel, DriverException, Timeout, Unavailable, RequestExecutionException, ReadTimeout, WriteTimeout, CoordinationFailure, ReadFailure, WriteFailure, FunctionFailure, AlreadyExists,\
     InvalidRequest, Unauthorized, AuthenticationFailed, OperationTimedOut, UnsupportedOperation, RequestValidationException, ConfigurationException, ProtocolVersion
 from dse.cluster import _Scheduler, Session, Cluster, _NOT_SET, default_lbp_factory, \
-    ExecutionProfile, _ConfigMode, EXEC_PROFILE_DEFAULT
-from dse.policies import HostDistance, RetryPolicy, RoundRobinPolicy, DowngradingConsistencyRetryPolicy
+    ExecutionProfile, EXEC_PROFILE_DEFAULT
+from dse.hosts import Host
+from dse.policies import HostDistance, RetryPolicy, RoundRobinPolicy, DowngradingConsistencyRetryPolicy, SimpleConvictionPolicy
 from dse.query import SimpleStatement, named_tuple_factory, tuple_factory
+from tests.unit.utils import mock_session_pools
+
+try:
+    from dse.io.libevreactor import LibevConnection
+except ImportError:
+    LibevConnection = None  # noqa
+
+def setUp():
+    LibevConnection.initialize_reactor()
 
 
 class ExceptionTypeTest(unittest.TestCase):
@@ -102,7 +112,7 @@ class SchedulerTest(unittest.TestCase):
 
 class SessionTest(unittest.TestCase):
     # TODO: this suite could be expanded; for now just adding a test covering a PR
-
+    @mock_session_pools
     def test_default_serial_consistency_level(self, *_):
         """
         Make sure default_serial_consistency_level passes through to a query message.
@@ -111,7 +121,7 @@ class SessionTest(unittest.TestCase):
         PR #510
         """
         c = Cluster(protocol_version=4)
-        s = Session(c, [])
+        s = Session(c, [Host("127.0.0.1", SimpleConvictionPolicy)])
 
         # default is None
         default_profile = c.profile_manager.default
@@ -161,6 +171,7 @@ class ExecutionProfileTest(unittest.TestCase):
         self.assertEqual(rf.timeout, prof.request_timeout)
         self.assertEqual(rf.row_factory, prof.row_factory)
 
+    @mock_session_pools
     def test_default_exec_parameters(self):
         cluster = Cluster()
         self.assertEqual(cluster.profile_manager.default.load_balancing_policy.__class__, default_lbp_factory().__class__)
@@ -170,10 +181,11 @@ class ExecutionProfileTest(unittest.TestCase):
         self.assertEqual(cluster.profile_manager.default.serial_consistency_level, None)
         self.assertEqual(cluster.profile_manager.default.row_factory, named_tuple_factory)
 
+    @mock_session_pools
     def test_default_profile(self):
         non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'non-default': non_default_profile})
-        session = Session(cluster, hosts=[])
+        session = Session(cluster, hosts=[Host("127.0.0.1", SimpleConvictionPolicy)])
 
         default_profile = cluster.profile_manager.profiles[EXEC_PROFILE_DEFAULT]
         rf = session.execute_async("query")
@@ -182,10 +194,11 @@ class ExecutionProfileTest(unittest.TestCase):
         rf = session.execute_async("query", execution_profile='non-default')
         self._verify_response_future_profile(rf, non_default_profile)
 
+    @mock_session_pools
     def test_statement_params_override_profile(self):
         non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'non-default': non_default_profile})
-        session = Session(cluster, hosts=[])
+        session = Session(cluster, hosts=[Host("127.0.0.1", SimpleConvictionPolicy)])
 
         rf = session.execute_async("query", execution_profile='non-default')
 
@@ -203,11 +216,12 @@ class ExecutionProfileTest(unittest.TestCase):
                                             ss.consistency_level, ss._serial_consistency_level, my_timeout, non_default_profile.row_factory)
         self._verify_response_future_profile(rf, expected_profile)
 
+    @mock_session_pools
     def test_profile_name_value(self):
 
         internalized_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'by-name': internalized_profile})
-        session = Session(cluster, hosts=[])
+        session = Session(cluster, hosts=[Host("127.0.0.1", SimpleConvictionPolicy)])
 
         rf = session.execute_async("query", execution_profile='by-name')
         self._verify_response_future_profile(rf, internalized_profile)
@@ -216,10 +230,11 @@ class ExecutionProfileTest(unittest.TestCase):
         rf = session.execute_async("query", execution_profile=by_value)
         self._verify_response_future_profile(rf, by_value)
 
+    @mock_session_pools
     def test_exec_profile_clone(self):
 
         cluster = Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(), 'one': ExecutionProfile()})
-        session = Session(cluster, hosts=[])
+        session = Session(cluster, hosts=[Host("127.0.0.1", SimpleConvictionPolicy)])
 
         profile_attrs = {'request_timeout': 1,
                          'consistency_level': ConsistencyLevel.ANY,

@@ -15,24 +15,31 @@ try:
 except ImportError:
     import unittest  # noqa
 import logging
-from dse import ConsistencyLevel, Unavailable, InvalidRequest
+from dse import ConsistencyLevel, Unavailable, InvalidRequest, ProtocolVersion
 from dse.query import (PreparedStatement, BoundStatement, SimpleStatement,
-                             BatchStatement, BatchType, dict_factory, TraceUnavailable)
+                       BatchStatement, BatchType, dict_factory, TraceUnavailable)
 
 import dse.cluster
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
 from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, BasicSharedKeyspaceUnitTestCaseWTable, get_server_versions, \
-    greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3, is_protocol_beta, local
+    greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3, local, get_cluster, setup_keyspace
 from tests import notwindows
 
 import time
 import re
 
-
 def setup_module():
-    use_singledc()
+    use_singledc(start=False)
+    ccm_cluster = get_cluster()
+    ccm_cluster.clear()
+    # This is necessary because test_too_many_statements may
+    # timeout otherwise
+    config_options = {'write_request_timeout_in_ms': '20000'}
+    ccm_cluster.set_configuration_options(config_options)
+    ccm_cluster.start(wait_for_binary_proto=True, wait_other_notice=True)
+    setup_keyspace()
     global CASS_SERVER_VERSION
     CASS_SERVER_VERSION = get_server_versions()[0]
 
@@ -423,13 +430,10 @@ class PreparedStatementMetadataTest(unittest.TestCase):
 
         base_line = None
         for proto_version in get_supported_protocol_versions():
-            if is_protocol_beta(proto_version):
-                cluster = Cluster(protocol_version=proto_version, allow_beta_protocol_version=True)
-                session = cluster.connect()
-            else:
-                cluster = Cluster(protocol_version=proto_version)
-                session = cluster.connect()
+            beta_flag = True if proto_version in ProtocolVersion.BETA_VERSIONS else False
+            cluster = Cluster(protocol_version=proto_version, allow_beta_protocol_version=beta_flag)
 
+            session = cluster.connect()
             select_statement = session.prepare("SELECT * FROM system.local")
             self.assertNotEqual(select_statement.result_metadata, None)
             future = session.execute_async(select_statement)
@@ -460,10 +464,16 @@ class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
             mock_handler = MockLoggingHandler()
             logger = logging.getLogger(dse.cluster.__name__)
             logger.addHandler(mock_handler)
-            select_statement = session.prepare("SELECT * FROM {0}.{0}".format(self.keyspace_name))
-            session.execute(select_statement)
-            session.execute(select_statement)
-            session.execute(select_statement)
+            self.assertGreaterEqual(len(cluster.metadata.all_hosts()), 3)
+            select_statement = session.prepare("SELECT * FROM system.local")
+            reponse_first = session.execute(select_statement)
+            reponse_second = session.execute(select_statement)
+            reponse_third = session.execute(select_statement)
+
+            self.assertEqual(len({reponse_first.response_future.attempted_hosts[0],
+                                  reponse_second.response_future.attempted_hosts[0],
+                                  reponse_third.response_future.attempted_hosts[0]}), 3)
+
             self.assertEqual(2, mock_handler.get_message_count('debug', "Re-preparing"))
 
 
