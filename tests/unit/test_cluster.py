@@ -181,6 +181,7 @@ class ExecutionProfileTest(unittest.TestCase):
         self.assertEqual(cluster.profile_manager.default.serial_consistency_level, None)
         self.assertEqual(cluster.profile_manager.default.row_factory, named_tuple_factory)
 
+    @mock_session_pools
     def test_default_profile(self):
         non_default_profile = ExecutionProfile(RoundRobinPolicy(), *[object() for _ in range(3)])
         cluster = Cluster(execution_profiles={'non-default': non_default_profile})
