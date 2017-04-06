@@ -23,7 +23,8 @@ from threading import Event
 from subprocess import call
 from itertools import groupby
 
-from dse import OperationTimedOut, ReadTimeout, ReadFailure, WriteTimeout, WriteFailure, AlreadyExists
+from dse import OperationTimedOut, ReadTimeout, ReadFailure, WriteTimeout, WriteFailure, AlreadyExists,\
+    InvalidRequest
 from dse.cluster import Cluster
 from dse.protocol import ConfigurationException
 from dse import ProtocolVersion
@@ -436,7 +437,7 @@ def execute_until_pass(session, query):
     while tries < 100:
         try:
             return session.execute(query)
-        except (ConfigurationException, AlreadyExists):
+        except (ConfigurationException, AlreadyExists, InvalidRequest):
             log.warn("Received already exists from query {0}   not exiting".format(query))
             # keyspace/table was already created/dropped
             return

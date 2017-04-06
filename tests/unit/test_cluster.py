@@ -27,9 +27,6 @@ try:
 except ImportError:
     LibevConnection = None  # noqa
 
-def setUp():
-    LibevConnection.initialize_reactor()
-
 
 class ExceptionTypeTest(unittest.TestCase):
 
@@ -111,6 +108,11 @@ class SchedulerTest(unittest.TestCase):
 
 
 class SessionTest(unittest.TestCase):
+    def setUp(self):
+        if LibevConnection is None:
+            raise unittest.SkipTest('libev does not appear to be installed correctly')
+        LibevConnection.initialize_reactor()
+
     # TODO: this suite could be expanded; for now just adding a test covering a PR
     @mock_session_pools
     def test_default_serial_consistency_level(self, *_):
@@ -162,6 +164,10 @@ class ProtocolVersionTests(unittest.TestCase):
 
 
 class ExecutionProfileTest(unittest.TestCase):
+    def setUp(self):
+        if LibevConnection is None:
+            raise unittest.SkipTest('libev does not appear to be installed correctly')
+        LibevConnection.initialize_reactor()
 
     def _verify_response_future_profile(self, rf, prof):
         self.assertEqual(rf._load_balancer, prof.load_balancing_policy)
