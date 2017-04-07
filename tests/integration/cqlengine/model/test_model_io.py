@@ -518,7 +518,7 @@ class TestUpdating(BaseCassEngTestCase):
         # All explicitely set columns, and those with default values are
         # flagged has changed.
         self.assertTrue(set(instance.get_changed_columns()) == set([
-            'id', 'int1', 'int2', 'int3', 'int4', 'int5']))
+            'id', 'int1', 'int3', 'int5']))
 
     def test_save_to_none(self):
         """
