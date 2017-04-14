@@ -15,11 +15,11 @@ prebuilds:
   # to prebuild extensions
   - python setup.py doc
 versions:
+- name: 2.0
+  ref: 6593f18
 - name: 1.1
   ref: 1.1.0
 - name: 1.0
   ref: 1.0.0
-- name: 2.0.0
-  ref: 6593f18
 redirects:
   - \A\/(.*)/\Z: /\1.html
