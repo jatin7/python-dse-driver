@@ -11,13 +11,11 @@ sections:
     type: sphinx
     directory: docs
 versions:
+- name: 2.0
+  ref: 41dbbcd2
 - name: 1.1
   ref: 1.1.0
 - name: 1.0
   ref: 1.0.0
-- name: 2.0.0b3
-  ref: 6b2ce3ba4f
-- name: 2.0.0rc1
-  ref: 2.0.0rc1
 redirects:
   - \A\/(.*)/\Z: /\1.html
