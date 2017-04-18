@@ -1,13 +1,21 @@
 title: DataStax Enterprise Python Driver
 summary: DataStax Enterprise Python Driver Documentation
 output: docs/_build/
+checks:
+  external_links:
+    exclude:
+    - 'http://aka.ms/vcpython27'
 sections:
   - title: N/A
     prefix: /
     type: sphinx
     directory: docs
 versions:
-  - name: 1.1
-    ref: 1.1.0
-  - name: 1.0
-    ref: 1.0.0
+- name: 2.0
+  ref: 41dbbcd2
+- name: 1.1
+  ref: 1.1.0
+- name: 1.0
+  ref: 1.0.0
+redirects:
+  - \A\/(.*)/\Z: /\1.html

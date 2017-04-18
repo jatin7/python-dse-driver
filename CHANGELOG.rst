@@ -1,3 +1,47 @@
+2.0.0
+=====
+
+Release merged in changes from cassandra-driver 3.9.0
+
+Bug Fixes
+---------
+* DateRange Parse Error (PYTHON-729)
+* MontonicTimestampGenerator.__init__ ignores class defaults (PYTHON-728)
+* metadata.get_host returning None unexpectedly (PYTHON-709)
+* Sockets associated with sessions not getting cleaned up on session.shutdown() (PYTHON-673)
+
+Other
+-----
+* Write documentation examples for DSE 2.0 features (PYTHON-732)
+
+2.0.0rc1
+========
+
+Release merged in changes from cassandra-driver 3.8.1 (PYTHON-712)
+
+Bug Fixes
+--------
+* Migrate DateRange and DateRangeBound off namedtuple implementations (PYTHON-701)
+* Add missing rich comparisons for some custom types (PYTHON-714)
+* Fix Comparisons for DateRange util types (PYTHON-718)
+
+Other
+-----
+* Remove support for Cassandra 2.0 and below (PYTHON-681)
+
+2.0.0b3
+=======
+February 13, 2017
+
+Features
+--------
+* Support DSE DateRange type (PYTHON-668)
+* RLAC CQL output for materialized views (PYTHON-682)
+
+Bug Fixes
+---------
+* DSE_V1 protocol should not include all of protocol v5 (PYTHON-694)
+
 1.1.0
 =====
 November 2, 2016
@@ -11,7 +55,6 @@ Features
 September 13, 2016
 
 Release upgrading to cassandra-driver 3.7.0
-
 
 1.0.3
 =====

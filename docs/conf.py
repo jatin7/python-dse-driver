@@ -49,8 +49,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'DataStax Enterprise Extension for the DataStax Python Cassandra Driver'
-copyright = u'2016, DataStax'
+project = u'DataStax Enterprise Driver'
+copyright = u'2013-2016 DataStax'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -190,7 +190,7 @@ htmlhelp_basename = 'DSEDriverdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'cassandra-driver-dse.tex', u'DSE Driver Extension Documentation', u'DataStax', 'manual'),
+    ('index', 'dse-driver.tex', u'DataStax Enterprise Driver Documentation', u'DataStax', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -222,6 +222,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'cassandra-driver-dse', u'DSE Driver Extension Documentation',
+    ('index', 'dse-driver', u'DataStax Enterprise Driver Documentation',
      [u'Adam Holmberg'], 1)
 ]

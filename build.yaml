@@ -9,34 +9,59 @@ python:
 os:
   - ubuntu/trusty64
 cassandra:
+  - dse-4.8
   - dse-5.0
+  - dse-5.1
+env:
+  EVENT_LOOP_MANAGER:
+    - libev
+  CYTHON:
+    - CYTHON
+    - NO_CYTHON
 build:
   - script: |
       export JAVA_HOME=$CCM_JAVA_HOME
       export PATH=$JAVA_HOME/bin:$PATH
-      # install master branch of driver.
-      pushd ./
-      echo "installing ccm"
-      cd $HOME/ccm
-      sudo python setup.py install
-      cd $HOME
-      git clone https://github.com/datastax/python-driver.git
-      cd python-driver
-      sudo pip install -r requirements.txt
-      echo "installing python driver master"
-      sudo python setup.py install --no-cython
-      export PYTHONPATH="${PYTHONPATH}:$HOME/python-driver/tests"
-      popd
+
+      sudo python /home/jenkins/ccm/setup.py install
       # Install dependencies
-      echo "installing python driver dse dependencies"
-      sudo pip install -r test-requirements.txt
-      sudo pip install nose-ignore-docstring
-       echo "installing python driver dse"
-      sudo python setup.py install
-      ECHO $PYTHONPATH
-      echo "==========RUNNING DSE TESTS INTEGRATION TESTS=========="
-      DSE_VERSION=$CCM_VERSION DSE_DRIVER_PERMIT_UNSUPPORTED_CORE=True ADS_HOME=$HOME/ nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=unit_results.xml tests/dsetest/unit/ || true
-      DSE_VERSION=$CCM_VERSION DSE_DRIVER_PERMIT_UNSUPPORTED_CORE=True ADS_HOME=$HOME/ nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=integration_results.xml tests/dsetest/integration/ || true
+      if [[ $EVENT_LOOP_MANAGER == 'libev' ]]; then
+        sudo apt-get install -y libev4 libev-dev
+      fi
+      echo "Installing test-requirements.txt"
+      pip install -r test-requirements.txt
+      pip install nose-ignore-docstring
+      FORCE_CYTHON=False
+      if [[ $CYTHON == 'CYTHON' ]]; then
+        FORCE_CYTHON=True
+        pip install cython
+        pip install numpy
+        # Install the driver & compile C extensions
+        python setup.py build_ext --inplace
+      else
+        # Install the driver & compile C extensions with no cython
+        python setup.py build_ext --inplace --no-cython
+      fi
+
+      echo "==========RUNNING UNIT TESTS==============="
+      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=unit_results.xml tests/unit/ || true
+
+      echo "==========RUNNING CQLENGINE TESTS=========="
+      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=cqle_results.xml tests/integration/cqlengine/ || true
+
+      echo "==========RUNNING STANDARD INTEGRATION TESTS=========="
+      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=standard_results.xml tests/integration/standard/ || true
+
+      if ! [[ $CCM_VERSION == *"4.8"* ]]; then
+        echo "==========RUNNING DSE INTEGRATION TESTS=========="
+        CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_VERSION ADS_HOME=$HOME/ nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=dse_results.xml tests/integration/advanced/ || true
+      fi
+      
+      echo "==========RUNNING LONG INTEGRATION TESTS=========="
+      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=long_results.xml tests/integration/long/ || true
 
   - xunit:
     - "*_results.xml"
+
+
+

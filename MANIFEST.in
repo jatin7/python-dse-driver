@@ -1,1 +1,7 @@
+include setup.py README.rst MANIFEST.in LICENSE ez_setup.py
 include setup.py README.rst MANIFEST.in ez_setup.py
+include dse/cmurmur3.c
+include dse/io/libevwrapper.c
+include dse/*.pyx
+include dse/*.pxd
+include dse/*.h

@@ -6,8 +6,8 @@
 # You may obtain a copy of the License at
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
-from cassandra import ConsistencyLevel
-from cassandra.query import SimpleStatement
+from dse import ConsistencyLevel
+from dse.query import SimpleStatement
 
 import json
 import six
@@ -17,10 +17,10 @@ _graph_options = (
     ('graph_name', 'name of the targeted graph.', 'graph-name'),
     ('graph_source', 'choose the graph traversal source, configured on the server side.', 'graph-source'),
     ('graph_language', 'the language used in the queries (default "gremlin-groovy")', 'graph-language'),
-    ('graph_read_consistency_level', '''read `cassanddra.ConsistencyLevel <http://datastax.github.io/python-driver/api/cassandra.html#cassandra.ConsistencyLevel>`_ for graph queries (if distinct from session default).
-Setting this overrides the native `Statement.consistency_level <http://datastax.github.io/python-driver/api/cassandra/query.html#cassandra.query.Statement.consistency_level>`_ for read operations from Cassandra persistence''', 'graph-read-consistency'),
-    ('graph_write_consistency_level', '''write `cassandra.ConsistencyLevel <http://datastax.github.io/python-driver/api/cassandra.html#cassandra.ConsistencyLevel>`_ for graph queries (if distinct from session default).
-Setting this overrides the native `Statement.consistency_level <http://datastax.github.io/python-driver/api/cassandra/query.html#cassandra.query.Statement.consistency_level>`_ for write operations to Cassandra persistence.''', 'graph-write-consistency')
+    ('graph_read_consistency_level', '''read `dse.ConsistencyLevel <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse.html#dse.ConsistencyLevel>`_ for graph queries (if distinct from session default).
+Setting this overrides the native `Statement.consistency_level <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/query.html#dse.query.Statement.consistency_level>`_ for read operations from Cassandra persistence''', 'graph-read-consistency'),
+    ('graph_write_consistency_level', '''write `dse.ConsistencyLevel <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse.html#dse.ConsistencyLevel>`_ for graph queries (if distinct from session default).
+Setting this overrides the native `Statement.consistency_level <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/query.html#dse.query.Statement.consistency_level>`_ for write operations to Cassandra persistence.''', 'graph-write-consistency')
 )
 
 # this is defined by the execution profile attribute, not in graph options
@@ -124,7 +124,7 @@ for opt in _graph_options:
 class SimpleGraphStatement(SimpleStatement):
     """
     Simple graph statement for :meth:`.Session.execute_graph`.
-    Takes the same parameters as `cassandra.query.SimpleStatement <http://datastax.github.io/python-driver/api/cassandra/query.html#cassandra.query.SimpleStatement>`_
+    Takes the same parameters as `dse.query.SimpleStatement <http://docs.datastax.com/en/developer/python-driver-dse/latest/api/dse/query.html#dse.query.SimpleStatement>`_
     """
     def __init__(self, *args, **kwargs):
         super(SimpleGraphStatement, self).__init__(*args, **kwargs)

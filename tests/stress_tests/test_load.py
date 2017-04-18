@@ -1,0 +1,48 @@
+# Copyright 2016 DataStax, Inc.
+#
+# Licensed under the DataStax DSE Driver License;
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+# http://www.datastax.com/terms/datastax-dse-driver-license-terms
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest  # noqa
+
+import gc
+
+from dse.cqlengine import columns
+from dse.cqlengine.models import Model
+from dse.cqlengine.management import sync_table
+
+from tests.integration.cqlengine.base import BaseCassEngTestCase
+
+
+class LoadTests(BaseCassEngTestCase):
+
+    def test_lots_of_queries(self):
+        import resource
+        import objgraph
+
+        class LoadTest(Model):
+            k = columns.Integer(primary_key=True)
+            v = columns.Integer()
+
+        sync_table(LoadTest)
+        gc.collect()
+        objgraph.show_most_common_types()
+
+        print("Starting...")
+
+        for i in range(1000000):
+            if i % 25000 == 0:
+                # print memory statistic
+                print("Memory usage: %s" % (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+
+            LoadTest.create(k=i, v=i)
+
+        objgraph.show_most_common_types()
+
+        raise Exception("you shouldn't be here")

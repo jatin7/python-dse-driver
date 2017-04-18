@@ -18,6 +18,11 @@ tests/integration/ccm
 setuptools*.tar.gz
 setuptools*.egg
 
+dse/*.c
+!dse/cmurmur3.c
+dse/*.html
+tests/unit/cython/bytesio_testhelper.c
+
 # OSX
 .DS_Store
 
