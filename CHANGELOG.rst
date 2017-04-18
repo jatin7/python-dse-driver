@@ -1,3 +1,19 @@
+2.0.0
+=====
+
+Release merged in changes from cassandra-driver 3.9.0
+
+Bug Fixes
+---------
+* DateRange Parse Error (PYTHON-729)
+* MontonicTimestampGenerator.__init__ ignores class defaults (PYTHON-728)
+* metadata.get_host returning None unexpectedly (PYTHON-709)
+* Sockets associated with sessions not getting cleaned up on session.shutdown() (PYTHON-673)
+
+Other
+-----
+* Write documentation examples for DSE 2.0 features (PYTHON-732)
+
 2.0.0rc1
 ========
 
