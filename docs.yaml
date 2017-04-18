@@ -16,7 +16,7 @@ prebuilds:
   - python setup.py doc
 versions:
 - name: 2.0
-  ref: 6593f18
+  ref: 41dbbcd2
 - name: 1.1
   ref: 1.1.0
 - name: 1.0

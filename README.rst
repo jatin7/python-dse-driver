@@ -24,6 +24,8 @@ Features
 * DSE Geometric type serialization
 * DSE PlainText and GSSAPI authentication
 
+A fluent API extension for DSE Graph is available in the ``dse-graph`` package. For more information, see `the documentation here <http://docs.datastax.com/en/developer/python-dse-graph/>`_.
+
 Installation
 ------------
 Installation through pip is recommended::
