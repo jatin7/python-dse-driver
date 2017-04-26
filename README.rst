@@ -62,7 +62,7 @@ you can use `freenode's web-based client <http://webchat.freenode.net/?channels=
 
 License
 -------
-Copyright 2016 DataStax
+Copyright 2016-2017 DataStax
 
 Licensed under the DataStax DSE Driver License;
 you may not use this software except in compliance with the License.
