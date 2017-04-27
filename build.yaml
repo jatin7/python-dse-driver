@@ -3,15 +3,62 @@ schedules:
     schedule: per_commit
     branches:
       include: [master, /python.*/]
+    env_vars: |
+      EVENT_LOOP_MANAGER='libev'
+    matrix:
+      exclude:
+        - python: [3.4, 3.6]
+
+  nightly_libev:
+    schedule: nightly
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='libev'
+
+  nightly_gevent:
+    schedule: nightly
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='gevent'
+    matrix:
+      exclude:
+        - python: [3.4, 3.6]
+
+  nightly_eventlet:
+    schedule: nightly
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='eventlet'
+
+  nightly_async:
+    schedule: nightly
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='async'
+
+  nightly_twister:
+    schedule: nightly
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='twisted'
+
 python:
   - 2.7
   - 3.4
+  - 3.5
+  - 3.6
+
 os:
   - ubuntu/trusty64
 cassandra:
-  - dse-4.8
-  - dse-5.0
-  - dse-5.1
+  - 'dse-4.8'
+  - 'dse-5.0'
+  - 'dse-5.1'
 env:
   EVENT_LOOP_MANAGER:
     - libev
