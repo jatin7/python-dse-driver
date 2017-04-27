@@ -11,15 +11,14 @@ Feedback Requested
 
 Features
 --------
-* `Synchronous <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster.html#dse.cluster.Session.execute>`_ and `Asynchronous <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster.html#dse.cluster.Session.execute_async>`_ APIs
-* `Simple, Prepared, and Batch statements <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/query.html#dse.query.Statement>`_
+* `Synchronous <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster/#dse.cluster.Session.execute>`_ and `Asynchronous <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster/#dse.cluster.Session.execute_async>`_ APIs
+* `Simple, Prepared, and Batch statements <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/query/#dse.query.Statement>`_
 * Asynchronous IO, parallel execution, request pipelining
-* `Connection pooling <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/cluster.html#dse.cluster.Cluster.get_core_connections_per_host>`_
 * Automatic node discovery
-* `Automatic reconnection <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies.html#reconnecting-to-dead-hosts>`_
-* Configurable `load balancing <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies.html#load-balancing>`_ and `retry policies <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies.html#retrying-failed-operations>`_
-* `Concurrent execution utilities <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/concurrent.html>`_
-* `Object mapper <http://docs.datastax.com/en/developer/python-dse-driver/latest/object_mapper.html>`_
+* `Automatic reconnection <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies/#reconnecting-to-dead-hosts>`_
+* Configurable `load balancing <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies/#load-balancing>`_ and `retry policies <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/policies/#retrying-failed-operations>`_
+* `Concurrent execution utilities <http://docs.datastax.com/en/developer/python-dse-driver/latest/api/dse/concurrent>`_
+* `Object mapper <http://docs.datastax.com/en/developer/python-dse-driver/latest/object_mapper>`_
 * DSE Graph execution API
 * DSE Geometric type serialization
 * DSE PlainText and GSSAPI authentication
