@@ -6,6 +6,32 @@
 # You may obtain a copy of the License at
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
+import os
+
+from dse.io.geventreactor import GeventConnection
+from dse.io.libevreactor import LibevConnection
+from dse.io.asyncorereactor import AsyncoreConnection
+from dse.io.eventletreactor import EventletConnection
+from dse.io.twistedreactor import TwistedConnection
+
+EVENT_LOOP_MANAGER = os.getenv('EVENT_LOOP_MANAGER', "libev")
+if EVENT_LOOP_MANAGER == "gevent":
+    import gevent.monkey
+    gevent.monkey.patch_all()
+    connection_class = GeventConnection
+elif EVENT_LOOP_MANAGER == "eventlet":
+    from eventlet import monkey_patch
+    monkey_patch()
+    connection_class = EventletConnection
+elif EVENT_LOOP_MANAGER == "async":
+    connection_class = AsyncoreConnection
+elif EVENT_LOOP_MANAGER == "twisted":
+    connection_class = TwistedConnection
+else:
+    connection_class = LibevConnection
+
+from dse.cluster import Cluster
+Cluster.connection_class = connection_class
 
 try:
     import unittest2 as unittest
@@ -13,7 +39,6 @@ except ImportError:
     import unittest  # noqa
 from packaging.version import Version
 import logging
-import os
 import socket
 import sys
 import time
@@ -25,7 +50,6 @@ from itertools import groupby
 
 from dse import OperationTimedOut, ReadTimeout, ReadFailure, WriteTimeout, WriteFailure, AlreadyExists,\
     InvalidRequest
-from dse.cluster import Cluster
 from dse.protocol import ConfigurationException
 from dse import ProtocolVersion
 

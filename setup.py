@@ -386,7 +386,7 @@ def run_setup(extensions):
         else:
             sys.stderr.write("Bypassing Cython setup requirement\n")
 
-    dependencies = ['six >=1.6',
+    dependencies = ['six >=1.9',
                     'geomet>=0.1,<0.2']
 
     if not PY3:

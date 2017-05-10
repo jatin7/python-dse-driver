@@ -1478,7 +1478,7 @@ class Cluster(object):
         open, attempt to open connections until that number is met.
         """
         for session in self.sessions:
-            for pool in session._pools.values():
+            for pool in tuple(session._pools.values()):
                 pool.ensure_core_connections()
 
     @staticmethod
@@ -2152,7 +2152,7 @@ class Session(object):
         Intended for internal use only.
         """
         futures = []
-        for host in self._pools.keys():
+        for host in tuple(self._pools.keys()):
             if host != excluded_host and host.is_up:
                 future = ResponseFuture(self, PrepareMessage(query=query), None, self.cluster._default_timeout)
 
@@ -2197,7 +2197,7 @@ class Session(object):
             future.cancel()
         wait_futures(self._initial_connect_futures)
 
-        for pool in list(self._pools.values()):
+        for pool in tuple(self._pools.values()):
             pool.shutdown()
 
     def __enter__(self):
@@ -2345,7 +2345,7 @@ class Session(object):
             if not remaining_callbacks:
                 callback(host_errors)
 
-        for pool in self._pools.values():
+        for pool in tuple(self._pools.values()):
             pool._set_keyspace_for_all_conns(keyspace, pool_finished_setting_keyspace)
 
     def user_type_registered(self, keyspace, user_type, klass):
@@ -2386,7 +2386,7 @@ class Session(object):
             return self.cluster.executor.submit(fn, *args, **kwargs)
 
     def get_pool_state(self):
-        return dict((host, pool.get_state()) for host, pool in self._pools.items())
+        return dict((host, pool.get_state()) for host, pool in tuple(self._pools.items()))
 
     def get_pools(self):
         return self._pools.values()
@@ -3733,8 +3733,15 @@ class ResponseFuture(object):
         details from Cassandra. If the trace is not available after `max_wait`,
         :exc:`dse.query.TraceUnavailable` will be raised.
 
+        If the ResponseFuture is not done (async execution) and you try to retrieve the trace,
+        :exc:`cassandra.query.TraceUnavailable` will be raised.
+
         `query_cl` is the consistency level used to poll the trace tables.
         """
+        if self._final_result is _NOT_SET and self._final_exception is None:
+            raise TraceUnavailable(
+                "Trace information was not available. The ResponseFuture is not done.")
+
         if self._query_traces:
             return self._get_query_trace(len(self._query_traces) - 1, max_wait, query_cl)
 
