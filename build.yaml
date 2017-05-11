@@ -1,3 +1,4 @@
+
 schedules:
   commit:
     schedule: per_commit
@@ -15,7 +16,6 @@ schedules:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='libev'
-
   nightly_gevent:
     schedule: nightly
     branches:
@@ -32,21 +32,18 @@ schedules:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='eventlet'
-
   nightly_async:
     schedule: nightly
     branches:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='async'
-
   nightly_twister:
     schedule: nightly
     branches:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='twisted'
-
 python:
   - 2.7
   - 3.4
@@ -69,7 +66,6 @@ build:
   - script: |
       export JAVA_HOME=$CCM_JAVA_HOME
       export PATH=$JAVA_HOME/bin:$PATH
-
       sudo python /home/jenkins/ccm/setup.py install
       # Install dependencies
       if [[ $EVENT_LOOP_MANAGER == 'libev' ]]; then
@@ -89,26 +85,22 @@ build:
         # Install the driver & compile C extensions with no cython
         python setup.py build_ext --inplace --no-cython
       fi
-
       echo "==========RUNNING UNIT TESTS==============="
-      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=unit_results.xml tests/unit/ || true
+      EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_VERSION VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=unit_results.xml tests/unit/ || true
 
       echo "==========RUNNING CQLENGINE TESTS=========="
-      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=cqle_results.xml tests/integration/cqlengine/ || true
+      EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=cqle_results.xml tests/integration/cqlengine/ || true
 
       echo "==========RUNNING STANDARD INTEGRATION TESTS=========="
-      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=standard_results.xml tests/integration/standard/ || true
+      EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=standard_results.xml tests/integration/standard/ || true
 
       if ! [[ $CCM_VERSION == *"4.8"* ]]; then
         echo "==========RUNNING DSE INTEGRATION TESTS=========="
-        CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_VERSION ADS_HOME=$HOME/ nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=dse_results.xml tests/integration/advanced/ || true
+        EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_VERSION ADS_HOME=$HOME/ VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=dse_results.xml tests/integration/advanced/ || true
       fi
       
       echo "==========RUNNING LONG INTEGRATION TESTS=========="
-      CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=long_results.xml tests/integration/long/ || true
+      EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_CASSANDRA_VERSION VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=long_results.xml tests/integration/long/ || true
 
   - xunit:
     - "*_results.xml"
-
-
-
