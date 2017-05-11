@@ -18,7 +18,7 @@ except ImportError:
 
 import datetime
 
-from cassandra.util import Date, Time, Duration
+from dse.util import Date, Time, Duration
 
 
 class DateTests(unittest.TestCase):
