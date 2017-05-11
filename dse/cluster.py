@@ -66,7 +66,7 @@ from dse.policies import (TokenAwarePolicy, DCAwareRoundRobinPolicy, SimpleConvi
 from dse.hosts import (Host, _ReconnectionHandler, _HostReconnectionHandler,
                        HostConnection, NoConnectionsAvailable)
 from dse.query import (SimpleStatement, PreparedStatement, BoundStatement,
-                       BatchStatement, bind_params, QueryTrace, HostTargetingStatement,
+                       BatchStatement, bind_params, QueryTrace, TraceUnavailable, HostTargetingStatement,
                        named_tuple_factory, dict_factory, tuple_factory, FETCH_SIZE_UNSET)
 from dse.timestamps import MonotonicTimestampGenerator
 
