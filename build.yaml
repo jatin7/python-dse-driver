@@ -10,13 +10,14 @@ schedules:
       exclude:
         - python: [3.4, 3.6]
 
-  nightly_libev:
+  weekly_libev:
     schedule: nightly
     branches:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='libev'
-  nightly_gevent:
+
+  weekly_gevent:
     schedule: nightly
     branches:
       include: [master]
@@ -24,21 +25,23 @@ schedules:
       EVENT_LOOP_MANAGER='gevent'
     matrix:
       exclude:
-        - python: [3.4, 3.6]
+        - python: [3.4, 3.5, 3.6]
 
-  nightly_eventlet:
+  weekly_eventlet:
     schedule: nightly
     branches:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='eventlet'
-  nightly_async:
+
+  weekly_async:
     schedule: nightly
     branches:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='async'
-  nightly_twister:
+
+  weekly_twister:
     schedule: nightly
     branches:
       include: [master]
@@ -52,25 +55,27 @@ python:
 
 os:
   - ubuntu/trusty64
+
 cassandra:
   - 'dse-4.8'
   - 'dse-5.0'
   - 'dse-5.1'
+
 env:
-  EVENT_LOOP_MANAGER:
-    - libev
   CYTHON:
     - CYTHON
     - NO_CYTHON
+
 build:
   - script: |
       export JAVA_HOME=$CCM_JAVA_HOME
       export PATH=$JAVA_HOME/bin:$PATH
-      sudo python /home/jenkins/ccm/setup.py install
+      export PYTHONPATH=""
+
+      pip install git+https://github.com/pcmanus/ccm.git
       # Install dependencies
-      if [[ $EVENT_LOOP_MANAGER == 'libev' ]]; then
-        sudo apt-get install -y libev4 libev-dev
-      fi
+      sudo apt-get install -y libev4 libev-dev
+
       echo "Installing test-requirements.txt"
       pip install -r test-requirements.txt
       pip install nose-ignore-docstring
