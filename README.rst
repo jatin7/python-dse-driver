@@ -1,9 +1,9 @@
 DataStax Enterprise Python Driver
 =================================
 
-A modern, `feature-rich <https://github.com/datastax/python-driver#features>`_ and highly-tunable Python client library for DataStax Enterprise (3.1+) using exclusively Cassandra's binary protocol and Cassandra Query Language v3.
+A modern, `feature-rich <https://github.com/datastax/python-driver#features>`_ and highly-tunable Python client library for DataStax Enterprise (4.7+) using exclusively Cassandra's binary protocol and Cassandra Query Language v3.
 
-The driver supports Python 2.7, 3.3, and 3.4.
+The driver supports Python 2.7, 3.3, 3.4, 3.5, and 3.6.
 
 Feedback Requested
 ------------------
