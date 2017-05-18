@@ -1,9 +1,8 @@
-
 schedules:
   commit_master:
     schedule: per_commit
     branches:
-      include: [master]
+      include: [master, /python.*/]
     env_vars: |
       EVENT_LOOP_MANAGER='libev'
     matrix:
@@ -47,7 +46,6 @@ schedules:
       include: [master]
     env_vars: |
       EVENT_LOOP_MANAGER='twisted'
-
 
 python:
   - 2.7
