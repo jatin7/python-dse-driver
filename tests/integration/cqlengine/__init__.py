@@ -40,7 +40,6 @@ def setup_package():
 def teardown_package():
     connection.unregister_connection("default")
 
-
 def is_prepend_reversed():
     # do we have https://issues.apache.org/jira/browse/CASSANDRA-8733 ?
     ver, _ = get_server_versions()

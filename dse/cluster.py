@@ -1308,10 +1308,8 @@ class Cluster(object):
         """
         if self.is_shutdown:
             return
-
         with host.lock:
             was_up = host.is_up
-
             # ignore down signals if we have open pools to the host
             # this is to avoid closing pools when a control connection host became isolated
             if self._discount_down_events and self.profile_manager.distance(host) != HostDistance.IGNORED:
@@ -3020,7 +3018,7 @@ class ControlConnection(object):
         c = getattr(self, '_connection', None)
         return [c] if c else []
 
-    def return_connection(self, connection):
+    def return_connection(self, connection, mark_host_down=False):  # noqa
         if connection is self._connection and (connection.is_defunct or connection.is_closed):
             self.reconnect()
 
@@ -3206,7 +3204,6 @@ class ResponseFuture(object):
         self.message = message
         self.query = query
         self.timeout = timeout
-        self._time_remaining = timeout
         self._retry_policy = retry_policy
         self._metrics = metrics
         self.prepared_statement = prepared_statement
@@ -3220,6 +3217,12 @@ class ResponseFuture(object):
         self._spec_execution_plan = speculative_execution_plan or self._spec_execution_plan
         self.attempted_hosts = []
         self._start_timer()
+
+    @property
+    def _time_remaining(self):
+        if self.timeout is None:
+            return None
+        return (self._start_time + self.timeout) - time.time()
 
     def _start_timer(self):
         if self._timer is None:
@@ -3251,8 +3254,6 @@ class ResponseFuture(object):
         self._timer = None
         if not self._event.is_set():
             if self._time_remaining is not None:
-                elapsed = time.time() - self._start_time
-                self._time_remaining -= elapsed
                 if self._time_remaining <= 0:
                     self._on_timeout()
                     return
@@ -3588,9 +3589,11 @@ class ResponseFuture(object):
 
         if isinstance(response, ResultMessage):
             if response.kind == RESULT_KIND_PREPARED:
-                # result metadata is the only thing that could have changed from an alter
                 if self.prepared_statement:
-                    self.prepared_statement.result_metadata = response.bind_metadata
+                    # result metadata is the only thing that could have
+                    # changed from an alter
+                    _, _, _, result_metadata = response.results
+                    self.prepared_statement.result_metadata = result_metadata
 
                 # use self._query to re-use the same host and
                 # at the same time properly borrow the connection
