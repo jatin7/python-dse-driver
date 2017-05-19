@@ -35,7 +35,7 @@ from dse.cqlengine.columns import (UserDefinedType, Map, List, Set, Tuple,
 from dse.cqlengine.connection import execute
 from dse.cqlengine.management import sync_table, drop_table
 from dse.cqlengine.models import Model, ValidationError
-from cassandra.cqlengine.usertype import UserType
+from dse.cqlengine.usertype import UserType
 from dse import util
 
 from tests.integration import PROTOCOL_VERSION, CASSANDRA_VERSION, greaterthanorequalcass30, greaterthanorequalcass3_10
