@@ -15,11 +15,10 @@ try:
 except ImportError:
     import unittest  # noqa
 import logging
-from dse import ConsistencyLevel, Unavailable, InvalidRequest, ProtocolVersion
+from dse import ConsistencyLevel, Unavailable, InvalidRequest, ProtocolVersion, cluster
 from dse.query import (PreparedStatement, BoundStatement, SimpleStatement,
                        BatchStatement, BatchType, dict_factory, TraceUnavailable)
 
-import dse.cluster
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
@@ -33,7 +32,7 @@ import re
 def setup_module():
     use_singledc(start=False)
     ccm_cluster = get_cluster()
-    ccm_cluster.clear()
+    #ccm_cluster.clear()
     # This is necessary because test_too_many_statements may
     # timeout otherwise
     config_options = {'write_request_timeout_in_ms': '20000'}
@@ -457,8 +456,11 @@ class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
         """
         white_list = ForcedHostSwitchPolicy()
         clus = Cluster(
-            load_balancing_policy=white_list,
-            protocol_version=PROTOCOL_VERSION, prepare_on_all_hosts=False, reprepare_on_up=False)
+            execution_profiles={
+                EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=white_list)},
+            protocol_version=PROTOCOL_VERSION,
+            prepare_on_all_hosts=False,
+            reprepare_on_up=False)
         self.addCleanup(clus.shutdown)
 
         session = clus.connect(wait_for_all_pools=True)
@@ -483,8 +485,10 @@ class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
         """
         white_list = ForcedHostSwitchPolicy()
         clus = Cluster(
-            load_balancing_policy=white_list,
-            protocol_version=PROTOCOL_VERSION, prepare_on_all_hosts=False,
+            execution_profiles={
+                EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=white_list)},
+            protocol_version=PROTOCOL_VERSION,
+            prepare_on_all_hosts=False,
             reprepare_on_up=False)
         self.addCleanup(clus.shutdown)
 
@@ -502,7 +506,8 @@ class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
         batch_statement = BatchStatement(consistency_level=ConsistencyLevel.ONE)
         batch_statement.add(insert_statement, (1, 2))
         session.execute(batch_statement)
-        select_results = session.execute("SELECT * FROM %s WHERE k = 1" % table)
+        select_results = session.execute("SELECT * FROM %s WHERE k = 1" % table,
+                                         consistency_level=ConsistencyLevel.ALL)
         first_row = select_results[0][:2]
         self.assertEqual((1, 2), first_row)
 
@@ -519,8 +524,10 @@ class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
         """
         white_list = ForcedHostSwitchPolicy()
         clus = Cluster(
-            load_balancing_policy=white_list,
-            protocol_version=PROTOCOL_VERSION, prepare_on_all_hosts=False,
+            execution_profiles={
+                EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=white_list)},
+            protocol_version=PROTOCOL_VERSION,
+            prepare_on_all_hosts=False,
             reprepare_on_up=False)
         self.addCleanup(clus.shutdown)
 

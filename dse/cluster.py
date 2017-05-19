@@ -3590,10 +3590,7 @@ class ResponseFuture(object):
         if isinstance(response, ResultMessage):
             if response.kind == RESULT_KIND_PREPARED:
                 if self.prepared_statement:
-                    # result metadata is the only thing that could have
-                    # changed from an alter
-                    _, _, _, result_metadata = response.results
-                    self.prepared_statement.result_metadata = result_metadata
+                    self.prepared_statement.result_metadata = response.bind_metadata
 
                 # use self._query to re-use the same host and
                 # at the same time properly borrow the connection
