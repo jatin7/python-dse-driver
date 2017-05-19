@@ -31,7 +31,7 @@ from dse.cqlengine.columns import Boolean
 from dse.cqlengine.columns import Decimal
 from dse.cqlengine.columns import Inet
 from dse.cqlengine.columns import (UserDefinedType, Map, List, Set, Tuple,
-                                   Double, Duration)
+                                   Double, Duration, Time)
 from dse.cqlengine.connection import execute
 from dse.cqlengine.management import sync_table, drop_table
 from dse.cqlengine.models import Model, ValidationError
