@@ -9,21 +9,21 @@
 import os
 
 EVENT_LOOP_MANAGER = os.getenv('EVENT_LOOP_MANAGER', "libev")
-if EVENT_LOOP_MANAGER == "gevent":
+if "gevent" in EVENT_LOOP_MANAGER:
     import gevent.monkey
     gevent.monkey.patch_all()
     from dse.io.geventreactor import GeventConnection
     connection_class = GeventConnection
-elif EVENT_LOOP_MANAGER == "eventlet":
+elif "eventlet" in EVENT_LOOP_MANAGER:
     from eventlet import monkey_patch
     monkey_patch()
 
     from dse.io.eventletreactor import EventletConnection
     connection_class = EventletConnection
-elif EVENT_LOOP_MANAGER == "async":
+elif "async" in EVENT_LOOP_MANAGER:
     from dse.io.asyncorereactor import AsyncoreConnection
     connection_class = AsyncoreConnection
-elif EVENT_LOOP_MANAGER == "twisted":
+elif "twisted" in EVENT_LOOP_MANAGER:
     from dse.io.twistedreactor import TwistedConnection
     connection_class = TwistedConnection
 else:
@@ -263,6 +263,8 @@ greaterthancass21 = unittest.skipUnless(CASSANDRA_VERSION >= '2.2', 'Cassandra v
 greaterthanorequalcass30 = unittest.skipUnless(CASSANDRA_VERSION >= '3.0', 'Cassandra version 3.0 or greater required')
 greaterthanorequalcass31 = unittest.skipUnless(CASSANDRA_VERSION >= '3.1', 'Cassandra version 3.1 or greater required')
 greaterthanorequalcass36 = unittest.skipUnless(CASSANDRA_VERSION >= '3.6', 'Cassandra version 3.6 or greater required')
+greaterthanorequalcass3_10 = unittest.skipUnless(CASSANDRA_VERSION >= '3.10', 'Cassandra version 3.10 or greater required')
+greaterthanorequalcass3_11 = unittest.skipUnless(CASSANDRA_VERSION >= '3.11', 'Cassandra version 3.10 or greater required')
 lessthancass30 = unittest.skipUnless(CASSANDRA_VERSION < '3.0', 'Cassandra version less then 3.0 required')
 
 greaterthanorequaldse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION >= '5.1', "DSE 5.1 or greater required for this test")

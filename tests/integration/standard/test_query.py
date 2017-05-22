@@ -15,11 +15,10 @@ try:
 except ImportError:
     import unittest  # noqa
 import logging
-from dse import ConsistencyLevel, Unavailable, InvalidRequest, ProtocolVersion
+from dse import ConsistencyLevel, Unavailable, InvalidRequest, ProtocolVersion, cluster
 from dse.query import (PreparedStatement, BoundStatement, SimpleStatement,
                        BatchStatement, BatchType, dict_factory, TraceUnavailable)
 
-import dse.cluster
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
@@ -33,7 +32,7 @@ import re
 def setup_module():
     use_singledc(start=False)
     ccm_cluster = get_cluster()
-    ccm_cluster.clear()
+    #ccm_cluster.clear()
     # This is necessary because test_too_many_statements may
     # timeout otherwise
     config_options = {'write_request_timeout_in_ms': '20000'}
@@ -401,17 +400,14 @@ class PreparedStatementTests(unittest.TestCase):
 class ForcedHostSwitchPolicy(RoundRobinPolicy):
 
     def make_query_plan(self, working_keyspace=None, query=None):
-        if query is not None and "SELECT *" in str(query):
-            if hasattr(self, 'counter'):
-                self.counter += 1
-            else:
-                self.counter = 0
-            index = self.counter % 3
-            a = list(self._live_hosts)
-            value = [a[index]]
-            return value
+        if hasattr(self, 'counter'):
+            self.counter += 1
         else:
-            return list(self._live_hosts)
+            self.counter = 0
+        index = self.counter % 3
+        a = list(self._live_hosts)
+        value = [a[index]]
+        return value
 
 
 class PreparedStatementMetadataTest(unittest.TestCase):
@@ -457,24 +453,111 @@ class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
         @since 3.4.0
         @jira_ticket PYTHON-556
         @expected_result queries will have to re-prepared on hosts that aren't the control connection
-        # """
-        with Cluster(protocol_version=PROTOCOL_VERSION, prepare_on_all_hosts=False, reprepare_on_up=False,
-                     execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=ForcedHostSwitchPolicy())}) as cluster:
-            session = cluster.connect(wait_for_all_pools=True)
-            mock_handler = MockLoggingHandler()
-            logger = logging.getLogger(dse.cluster.__name__)
-            logger.addHandler(mock_handler)
-            self.assertGreaterEqual(len(cluster.metadata.all_hosts()), 3)
-            select_statement = session.prepare("SELECT * FROM system.local")
-            reponse_first = session.execute(select_statement)
-            reponse_second = session.execute(select_statement)
-            reponse_third = session.execute(select_statement)
+        """
+        white_list = ForcedHostSwitchPolicy()
+        clus = Cluster(
+            execution_profiles={
+                EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=white_list)},
+            protocol_version=PROTOCOL_VERSION,
+            prepare_on_all_hosts=False,
+            reprepare_on_up=False)
+        self.addCleanup(clus.shutdown)
 
-            self.assertEqual(len({reponse_first.response_future.attempted_hosts[0],
-                                  reponse_second.response_future.attempted_hosts[0],
-                                  reponse_third.response_future.attempted_hosts[0]}), 3)
+        session = clus.connect(wait_for_all_pools=True)
+        mock_handler = MockLoggingHandler()
+        logger = logging.getLogger(cluster.__name__)
+        logger.addHandler(mock_handler)
+        select_statement = session.prepare("SELECT * FROM system.local")
+        session.execute(select_statement)
+        session.execute(select_statement)
+        session.execute(select_statement)
+        self.assertEqual(2, mock_handler.get_message_count('debug', "Re-preparing"))
 
-            self.assertEqual(2, mock_handler.get_message_count('debug', "Re-preparing"))
+    def test_prepare_batch_statement(self):
+        """
+        Test to validate a prepared statement used inside a batch statement is correctly handled
+        by the driver
+
+        @since 3.10
+        @jira_ticket PYTHON-706
+        @expected_result queries will have to re-prepared on hosts that aren't the control connection
+        and the batch statement will be sent.
+        """
+        white_list = ForcedHostSwitchPolicy()
+        clus = Cluster(
+            execution_profiles={
+                EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=white_list)},
+            protocol_version=PROTOCOL_VERSION,
+            prepare_on_all_hosts=False,
+            reprepare_on_up=False)
+        self.addCleanup(clus.shutdown)
+
+        table = "test3rf.%s" % self._testMethodName.lower()
+
+        session = clus.connect(wait_for_all_pools=True)
+
+        session.execute("DROP TABLE IF EXISTS %s" % table)
+        session.execute("CREATE TABLE %s (k int PRIMARY KEY, v int )" % table)
+
+        insert_statement = session.prepare("INSERT INTO %s (k, v) VALUES  (?, ?)" % table)
+
+        # This is going to query a host where the query
+        # is not prepared
+        batch_statement = BatchStatement(consistency_level=ConsistencyLevel.ONE)
+        batch_statement.add(insert_statement, (1, 2))
+        session.execute(batch_statement)
+        select_results = session.execute(SimpleStatement("SELECT * FROM %s WHERE k = 1" % table,
+                                         consistency_level=ConsistencyLevel.ALL))
+        first_row = select_results[0][:2]
+        self.assertEqual((1, 2), first_row)
+
+    def test_prepare_batch_statement_after_alter(self):
+        """
+        Test to validate a prepared statement used inside a batch statement is correctly handled
+        by the driver. The metadata might be updated when a table is altered. This tests combines
+        queries not being prepared and an update of the prepared statement metadata
+
+        @since 3.10
+        @jira_ticket PYTHON-706
+        @expected_result queries will have to re-prepared on hosts that aren't the control connection
+        and the batch statement will be sent.
+        """
+        white_list = ForcedHostSwitchPolicy()
+        clus = Cluster(
+            execution_profiles={
+                EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=white_list)},
+            protocol_version=PROTOCOL_VERSION,
+            prepare_on_all_hosts=False,
+            reprepare_on_up=False)
+        self.addCleanup(clus.shutdown)
+
+        table = "test3rf.%s" % self._testMethodName.lower()
+
+        session = clus.connect(wait_for_all_pools=True)
+
+        session.execute("DROP TABLE IF EXISTS %s" % table)
+        session.execute("CREATE TABLE %s (k int PRIMARY KEY, a int, b int, d int)" % table)
+        insert_statement = session.prepare("INSERT INTO %s (k, b, d) VALUES  (?, ?, ?)" % table)
+
+        # Altering the table might trigger an update in the insert metadata
+        session.execute("ALTER TABLE %s ADD c int" % table)
+
+        values_to_insert = [(1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 6)]
+
+        # We query the three hosts in order (due to the ForcedHostSwitchPolicy)
+        # the first three queries will have to be repreapred and the rest should
+        # work as normal batch prepared statements
+        for i in range(10):
+            value_to_insert = values_to_insert[i % len(values_to_insert)]
+            batch_statement = BatchStatement(consistency_level=ConsistencyLevel.ONE)
+            batch_statement.add(insert_statement, value_to_insert)
+            session.execute(batch_statement)
+
+        select_results = session.execute("SELECT * FROM %s" % table)
+        expected_results = [(1, None, 2, None, 3), (2, None, 3, None, 4),
+             (3, None, 4, None, 5), (4, None, 5, None, 6)]
+        
+        self.assertEqual(set(expected_results), set(select_results._current_rows))
 
 
 class PrintStatementTests(unittest.TestCase):

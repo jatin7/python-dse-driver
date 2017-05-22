@@ -121,8 +121,8 @@ def vints_unpack(term):  # noqa
 def vints_pack(values):
     revbytes = bytearray()
     values = [int(v) for v in values[::-1]]
-    for v in values:
-        v = encode_zig_zag(v)
+    for value in values:
+        v = encode_zig_zag(value)
         if v < 128:
             revbytes.append(v)
         else:
@@ -135,6 +135,9 @@ def vints_pack(values):
                 num_bits -= 8
                 revbytes.append(v & 0xff)
                 v >>= 8
+
+            if num_extra_bytes > 8:
+                raise ValueError('Value %d is too big and cannot be encoded as vint' % value)
 
             # We can now store the last bits in the first byte
             n = 8 - num_extra_bytes
