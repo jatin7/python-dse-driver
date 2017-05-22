@@ -32,7 +32,7 @@ import re
 def setup_module():
     use_singledc(start=False)
     ccm_cluster = get_cluster()
-    #ccm_cluster.clear()
+    ccm_cluster.clear()
     # This is necessary because test_too_many_statements may
     # timeout otherwise
     config_options = {'write_request_timeout_in_ms': '20000'}
