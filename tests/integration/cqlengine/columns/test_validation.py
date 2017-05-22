@@ -38,7 +38,7 @@ from dse.cqlengine.models import Model, ValidationError
 from dse.cqlengine.usertype import UserType
 from dse import util
 
-from tests.integration import PROTOCOL_VERSION, CASSANDRA_VERSION, greaterthanorequalcass30, greaterthanorequalcass3_10
+from tests.integration import PROTOCOL_VERSION, CASSANDRA_VERSION, greaterthanorequalcass30, greaterthanorequalcass3_11
 from tests.integration.cqlengine.base import BaseCassEngTestCase
 
 
@@ -349,7 +349,7 @@ class TestBoolean(DataType, BaseCassEngTestCase):
         )
         super(TestBoolean, cls).setUpClass()
 
-@greaterthanorequalcass3_10
+@greaterthanorequalcass3_11
 class TestDuration(DataType, BaseCassEngTestCase):
     @classmethod
     def setUpClass(cls):

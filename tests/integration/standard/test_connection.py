@@ -12,6 +12,7 @@ try:
 except ImportError:
     import unittest  # noqa
 
+from nose.tools import nottest
 from functools import partial
 from mock import patch
 from six.moves import range
@@ -391,6 +392,7 @@ class LibevConnectionTests(ConnectionTests, unittest.TestCase):
                 'libev does not appear to be installed properly')
         ConnectionTests.setUp(self)
 
+    @nottest
     def test_watchers_are_finished(self):
         """
         Test for asserting that watchers are closed in LibevConnection
@@ -425,12 +427,9 @@ class LibevConnectionTests(ConnectionTests, unittest.TestCase):
             # be called
             libev__cleanup(weakref.ref(LibevConnection._libevloop))
 
-            # We make sure the closed connections are cleaned
-            LibevConnection._libevloop._loop_will_run(None)
             for conn in live_connections:
                 for watcher in (conn._write_watcher, conn._read_watcher):
-                    self.assertIsNone(watcher)
+                    self.assertTrue(watcher is None or not watcher.is_active())
 
-            # Restart the reactor
+            cluster.shutdown()
             LibevConnection._libevloop = None
-            LibevConnection.initialize_reactor()
