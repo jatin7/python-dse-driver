@@ -2,6 +2,10 @@
 =====
 May 24, 2017
 
+Other
+-----
+* Correct licence in DSE Driver (PYTHON-748)
+
 Merged from OSS 3.10.0:
 
 Features
