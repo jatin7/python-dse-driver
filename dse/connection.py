@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -1081,7 +1081,7 @@ class ConnectionHeartbeat(Thread):
                 for connection, owner, exc in failed_connections:
                     self._raise_if_stopped()
                     connection.defunct(exc)
-                    owner.return_connection(connection)
+                    owner.return_connection(connection, mark_host_down=True)
             except self.ShutdownException:
                 pass
             except Exception:
@@ -1106,8 +1106,6 @@ class Timer(object):
     def __init__(self, timeout, callback):
         self.end = time.time() + timeout
         self.callback = callback
-        if timeout < 0:
-            self.callback()
 
     def __lt__(self, other):
         return self.end < other.end

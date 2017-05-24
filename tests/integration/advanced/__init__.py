@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
             "varint1": ["Varint()", 2147483647],
             "bigint1": ["Bigint()", MAX_LONG],
             "bigint2": ["Bigint()", MIN_LONG],
-            "bigint2": ["Bigint()", ZERO_LONG],
+            "bigint3": ["Bigint()", ZERO_LONG],
             "int1": ["Int()", 100],
             "float1": ["Float()", .5],
             "double1": ["Double()", .3415681],

@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -992,6 +992,9 @@ class Time(object):
             datetime.time(hour=self.hour, minute=self.minute, second=self.second,
                           microsecond=self.nanosecond // Time.MICRO) == other
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __lt__(self, other):
         if not isinstance(other, Time):
             return NotImplemented
@@ -1082,6 +1085,9 @@ class Date(object):
             return self.date() == other
         except Exception:
             return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __lt__(self, other):
         if not isinstance(other, Date):

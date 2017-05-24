@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ import logging
 import sys
 import socket
 import platform
+import os
 
 log = logging.getLogger()
 log.setLevel('DEBUG')
@@ -42,4 +43,8 @@ def is_gevent_monkey_patched():
 def is_monkey_patched():
     return is_gevent_monkey_patched() or is_eventlet_monkey_patched()
 
+MONKEY_PATCH_LOOP = bool(os.getenv('MONKEY_PATCH_LOOP', False))
+
 notwindows = unittest.skipUnless(not "Windows" in platform.system(), "This test is not adequate for windows")
+notpypy = unittest.skipUnless(not platform.python_implementation() == 'PyPy', "This tests is not suitable for pypy")
+notmonkeypatch = unittest.skipUnless(MONKEY_PATCH_LOOP, "Skipping this test because monkey patching is required")

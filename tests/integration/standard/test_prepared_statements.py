@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -385,7 +385,7 @@ class PreparedStatementTests(unittest.TestCase):
         with self.assertRaises(InvalidRequest):
             self.session.execute(prepared, [0])
 
-    # TODO revisit this test
+    # TODO revisit this test, it on hold now due to CASSANDRA-10786
     @unittest.skip
     def test_invalidated_result_metadata(self):
         """

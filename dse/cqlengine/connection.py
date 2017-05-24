@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -339,7 +339,6 @@ def execute(query, params=None, consistency_level=None, timeout=NOT_SET, connect
         query = SimpleStatement(str(query), consistency_level=consistency_level, fetch_size=query.fetch_size)
     elif isinstance(query, six.string_types):
         query = SimpleStatement(query, consistency_level=consistency_level)
-
     log.debug(format_log_context(query.query_string, connection=connection))
 
     result = conn.session.execute(query, params, timeout=timeout)

@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ def setup_package():
 
 def teardown_package():
     connection.unregister_connection("default")
-
 
 def is_prepend_reversed():
     # do we have https://issues.apache.org/jira/browse/CASSANDRA-8733 ?

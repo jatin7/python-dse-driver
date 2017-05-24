@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ class NullHandler(logging.Handler):
 
 logging.getLogger('dse').addHandler(NullHandler())
 
-__version_info__ = (2, 0, 0)
+__version_info__ = (2, 1, 0)
 __version__ = '.'.join(map(str, __version_info__))
 
 

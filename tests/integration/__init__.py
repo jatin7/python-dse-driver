@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -6,6 +6,32 @@
 # You may obtain a copy of the License at
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
+import os
+
+EVENT_LOOP_MANAGER = os.getenv('EVENT_LOOP_MANAGER', "libev")
+if "gevent" in EVENT_LOOP_MANAGER:
+    import gevent.monkey
+    gevent.monkey.patch_all()
+    from dse.io.geventreactor import GeventConnection
+    connection_class = GeventConnection
+elif "eventlet" in EVENT_LOOP_MANAGER:
+    from eventlet import monkey_patch
+    monkey_patch()
+
+    from dse.io.eventletreactor import EventletConnection
+    connection_class = EventletConnection
+elif "async" in EVENT_LOOP_MANAGER:
+    from dse.io.asyncorereactor import AsyncoreConnection
+    connection_class = AsyncoreConnection
+elif "twisted" in EVENT_LOOP_MANAGER:
+    from dse.io.twistedreactor import TwistedConnection
+    connection_class = TwistedConnection
+else:
+    from dse.io.libevreactor import LibevConnection
+    connection_class = LibevConnection
+
+from dse.cluster import Cluster
+Cluster.connection_class = connection_class
 
 try:
     import unittest2 as unittest
@@ -13,7 +39,6 @@ except ImportError:
     import unittest  # noqa
 from packaging.version import Version
 import logging
-import os
 import socket
 import sys
 import time
@@ -25,7 +50,6 @@ from itertools import groupby
 
 from dse import OperationTimedOut, ReadTimeout, ReadFailure, WriteTimeout, WriteFailure, AlreadyExists,\
     InvalidRequest
-from dse.cluster import Cluster
 from dse.protocol import ConfigurationException
 from dse import ProtocolVersion
 
@@ -239,6 +263,8 @@ greaterthancass21 = unittest.skipUnless(CASSANDRA_VERSION >= '2.2', 'Cassandra v
 greaterthanorequalcass30 = unittest.skipUnless(CASSANDRA_VERSION >= '3.0', 'Cassandra version 3.0 or greater required')
 greaterthanorequalcass31 = unittest.skipUnless(CASSANDRA_VERSION >= '3.1', 'Cassandra version 3.1 or greater required')
 greaterthanorequalcass36 = unittest.skipUnless(CASSANDRA_VERSION >= '3.6', 'Cassandra version 3.6 or greater required')
+greaterthanorequalcass3_10 = unittest.skipUnless(CASSANDRA_VERSION >= '3.10', 'Cassandra version 3.10 or greater required')
+greaterthanorequalcass3_11 = unittest.skipUnless(CASSANDRA_VERSION >= '3.11', 'Cassandra version 3.10 or greater required')
 lessthancass30 = unittest.skipUnless(CASSANDRA_VERSION < '3.0', 'Cassandra version less then 3.0 required')
 
 greaterthanorequaldse51 = unittest.skipUnless(DSE_VERSION and DSE_VERSION >= '5.1', "DSE 5.1 or greater required for this test")

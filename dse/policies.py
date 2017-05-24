@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -559,9 +559,17 @@ class ExponentialReconnectionPolicy(ReconnectionPolicy):
         self.max_attempts = max_attempts
 
     def new_schedule(self):
-        i = 0
+        i, overflowed = 0, False
         while self.max_attempts is None or i < self.max_attempts:
-            yield min(self.base_delay * (2 ** i), self.max_delay)
+            if overflowed:
+                yield self.max_delay
+            else:
+                try:
+                    yield min(self.base_delay * (2 ** i), self.max_delay)
+                except OverflowError:
+                    overflowed = True
+                    yield self.max_delay
+
             i += 1
 
 

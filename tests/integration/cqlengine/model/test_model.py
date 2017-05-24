@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ from dse.cqlengine import models
 from dse.cqlengine.models import Model, ModelDefinitionException
 from uuid import uuid1
 from tests.integration import pypy
+from tests.integration.cqlengine.base import TestQueryUpdateModel
 
 class TestModel(unittest.TestCase):
     """ Tests the non-io functionality of models """
@@ -168,7 +169,7 @@ class BuiltInAttributeConflictTest(unittest.TestCase):
                 my_primary_key = columns.Integer(primary_key=True)
                 filter = columns.Text()
 
-@pypy
+
 class ModelOverWriteTest(unittest.TestCase):
 
     def test_model_over_write(self):
@@ -202,3 +203,19 @@ class ModelOverWriteTest(unittest.TestCase):
         DerivedTimeModel.create(uuid=uuid_value2, value="second")
         DerivedTimeModel.objects.filter(uuid=uuid_value)
 
+
+class TestColumnComparison(unittest.TestCase):
+    def test_comparison(self):
+        l = [TestQueryUpdateModel.partition.column,
+             TestQueryUpdateModel.cluster.column,
+             TestQueryUpdateModel.count.column,
+             TestQueryUpdateModel.text.column,
+             TestQueryUpdateModel.text_set.column,
+             TestQueryUpdateModel.text_list.column,
+             TestQueryUpdateModel.text_map.column]
+
+        self.assertEqual(l, sorted(l))
+        self.assertNotEqual(TestQueryUpdateModel.partition.column, TestQueryUpdateModel.cluster.column)
+        self.assertLessEqual(TestQueryUpdateModel.partition.column, TestQueryUpdateModel.cluster.column)
+        self.assertGreater(TestQueryUpdateModel.cluster.column, TestQueryUpdateModel.partition.column)
+        self.assertGreaterEqual(TestQueryUpdateModel.cluster.column, TestQueryUpdateModel.partition.column)

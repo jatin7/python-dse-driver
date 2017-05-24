@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -8,7 +8,10 @@
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
 from dse.cython_deps import HAVE_CYTHON, HAVE_NUMPY
-from tests.integration import VERIFY_CYTHON
+try:
+    from tests.integration import VERIFY_CYTHON
+except ImportError:
+    VERIFY_CYTHON = False
 
 try:
     import unittest2 as unittest

@@ -10,9 +10,15 @@ sections:
     prefix: /
     type: sphinx
     directory: docs
+prebuilds:
+  # different versions do different pre-build steps, so we run `setup.py doc`
+  # to prebuild extensions
+  - python setup.py doc
 versions:
+- name: 2.1
+  ref: c3efe38a
 - name: 2.0
-  ref: 41dbbcd2
+  ref: 2.0.0-doc
 - name: 1.1
   ref: 1.1.0
 - name: 1.0

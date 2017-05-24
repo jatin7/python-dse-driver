@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -13,19 +13,10 @@ from dse.cqlengine import ValidationError
 from dse.cqlengine.models import Model
 from dse.cqlengine.management import sync_table, drop_table
 from dse.cqlengine import columns
+
 from tests.integration.cqlengine import is_prepend_reversed
-from tests.integration.cqlengine.base import BaseCassEngTestCase
+from tests.integration.cqlengine.base import BaseCassEngTestCase, TestQueryUpdateModel
 from tests.integration.cqlengine import execute_count
-
-class TestQueryUpdateModel(Model):
-
-    partition = columns.UUID(primary_key=True, default=uuid4)
-    cluster = columns.Integer(primary_key=True)
-    count = columns.Integer(required=False)
-    text = columns.Text(required=False, index=True)
-    text_set = columns.Set(columns.Text, required=False)
-    text_list = columns.List(columns.Text, required=False)
-    text_map = columns.Map(columns.Text, columns.Text, required=False)
 
 
 class QueryUpdateTests(BaseCassEngTestCase):

@@ -1,4 +1,4 @@
-# Copyright 2016 DataStax, Inc.
+# Copyright 2016-2017 DataStax, Inc.
 #
 # Licensed under the DataStax DSE Driver License;
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,20 @@ except ImportError:
 import sys
 
 from dse.cqlengine.connection import get_session
+from dse.cqlengine.models import Model
+from dse.cqlengine import columns
 
+from uuid import uuid4
+
+class TestQueryUpdateModel(Model):
+
+    partition = columns.UUID(primary_key=True, default=uuid4)
+    cluster = columns.Integer(primary_key=True)
+    count = columns.Integer(required=False)
+    text = columns.Text(required=False, index=True)
+    text_set = columns.Set(columns.Text, required=False)
+    text_list = columns.List(columns.Text, required=False)
+    text_map = columns.Map(columns.Text, columns.Text, required=False)
 
 class BaseCassEngTestCase(unittest.TestCase):
 
