@@ -1,8 +1,3 @@
-schedules:
-  commit:
-    schedule: per_commit
-    branches:
-      include: [master, /python.*/, dse-5.0]
 python:
   - 2.7
   - 3.4
