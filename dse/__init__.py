@@ -17,7 +17,7 @@ class NullHandler(logging.Handler):
 
 logging.getLogger('dse').addHandler(NullHandler())
 
-__version_info__ = (1, 1, 1)
+__version_info__ = (1, 1, 1, 'post0')
 __version__ = '.'.join(map(str, __version_info__))
 
 _core_driver_target_version = '3.10'
