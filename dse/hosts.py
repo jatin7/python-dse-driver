@@ -303,6 +303,7 @@ class HostConnection(object):
     host = None
     host_distance = None
     is_shutdown = False
+    shutdown_on_error = False
 
     _session = None
     _connection = None
@@ -363,12 +364,22 @@ class HostConnection(object):
         with self._stream_available_condition:
             self._stream_available_condition.notify()
 
-        if (connection.is_defunct or connection.is_closed) and not connection.signaled_error:
-            log.debug("Defunct or closed connection (%s) returned to pool, potentially "
-                      "marking host %s as down", id(connection), self.host)
-            is_down = self._session.cluster.signal_connection_failure(
-                self.host, connection.last_error, is_host_addition=False)
-            connection.signaled_error = True
+        if connection.is_defunct or connection.is_closed:
+            if connection.signaled_error and not self.shutdown_on_error:
+                return
+
+            is_down = False
+            if not connection.signaled_error:
+                log.debug("Defunct or closed connection (%s) returned to pool, potentially "
+                          "marking host %s as down", id(connection), self.host)
+                is_down = self._session.cluster.signal_connection_failure(
+                    self.host, connection.last_error, is_host_addition=False)
+                connection.signaled_error = True
+
+            if self.shutdown_on_error and not is_down:
+                is_down = True
+                self._session.cluster.on_down(self.host, is_host_addition=False)
+
             if is_down:
                 self.shutdown()
             else:
@@ -380,6 +391,10 @@ class HostConnection(object):
                     self._session.submit(self._replace, connection)
 
     def _replace(self, connection):
+        with self._lock:
+            if self.is_shutdown:
+                return
+
         log.debug("Replacing connection (%s) to %s", id(connection), self.host)
         try:
             conn = self._session.cluster.connection_factory(self.host.address)

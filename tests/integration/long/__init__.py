@@ -7,6 +7,11 @@
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest  # noqa
+
+try:
     from ccmlib import common
 except ImportError as e:
     raise unittest.SkipTest('ccm is a dependency for integration tests:', e)
