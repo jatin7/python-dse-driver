@@ -22,7 +22,7 @@ from dse.query import (PreparedStatement, BoundStatement, SimpleStatement,
 from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.policies import HostDistance, RoundRobinPolicy
 from tests.unit.cython.utils import notcython
-from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, BasicSharedKeyspaceUnitTestCaseWTable, get_server_versions, \
+from tests.integration import use_singledc, PROTOCOL_VERSION, BasicSharedKeyspaceUnitTestCase, get_server_versions, \
     greaterthanprotocolv3, MockLoggingHandler, get_supported_protocol_versions, notpy3, local, get_cluster, setup_keyspace
 from tests import notwindows
 
@@ -441,7 +441,7 @@ class PreparedStatementMetadataTest(unittest.TestCase):
             cluster.shutdown()
 
 
-class PreparedStatementArgTest(BasicSharedKeyspaceUnitTestCaseWTable):
+class PreparedStatementArgTest(unittest.TestCase):
 
     def test_prepare_on_all_hosts(self):
         """

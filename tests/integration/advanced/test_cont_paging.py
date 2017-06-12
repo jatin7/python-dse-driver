@@ -7,7 +7,7 @@
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
-from tests.integration import use_singledc, greaterthanorequaldse51, BasicSharedKeyspaceUnitTestCaseWTable, DSE_VERSION
+from tests.integration import use_singledc, greaterthanorequaldse51, BasicSharedKeyspaceUnitTestCaseRF3WM, DSE_VERSION
 
 import logging
 log = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def setup_module():
 
 
 @greaterthanorequaldse51
-class ContPagingTests(BasicSharedKeyspaceUnitTestCaseWTable):
+class ContPagingTests(BasicSharedKeyspaceUnitTestCaseRF3WM):
 
     @classmethod
     def setUpClass(cls):

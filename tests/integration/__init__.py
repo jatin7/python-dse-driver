@@ -177,10 +177,8 @@ def set_default_dse_ip():
 
 def get_default_protocol():
 
-    if Version(CASSANDRA_VERSION) >= Version('3.10') and DSE_VERSION:
-        return ProtocolVersion.DSE_V1
     if Version(CASSANDRA_VERSION) >= Version('3.10'):
-        return 5
+        return ProtocolVersion.DSE_V1
     if Version(CASSANDRA_VERSION) >= Version('2.2'):
         return 4
     elif Version(CASSANDRA_VERSION) >= Version('2.1'):
@@ -743,7 +741,7 @@ class BasicSharedKeyspaceUnitTestCaseRF3WM(BasicSharedKeyspaceUnitTestCase):
     """
     @classmethod
     def setUpClass(self):
-        self.common_setup(3, True, True, True)
+        self.common_setup(3, True, True, metrics_enabled=True)
 
 
 class BasicSharedKeyspaceUnitTestCaseWFunctionTable(BasicSharedKeyspaceUnitTestCase):
