@@ -61,10 +61,64 @@ unparsed. :func:`.graph.graph_result_row_factory` returns parsed, but unmodified
 unlike :func:`.graph.graph_object_row_factory`, which sheds some as attributes and properties are unpacked). These results
 also provide convenience methods for converting to known types (:meth:`~.Result.as_vertex`, :meth:`~.Result.as_edge`, :meth:`~.Result.as_path`).
 
+Vertex and Edge properties are never unpacked since their types are unknown. If you know your graph schema and want to
+deserialize properties, use the :class:`.GraphSON1TypeDeserializer`. It provides convenient methods to deserialize by types (e.g.
+deserialize_date, deserialize_uuid, deserialize_polygon etc.) Example::
+
+    # ...
+    from dse.graph import GraphSON1TypeDeserializer
+
+    row = session.execute_graph("g.V().toList()")[0]
+    value = row.properties['my_property_key'][0].value  # accessing the VertexProperty value
+    value = GraphSON1TypeDeserializer.deserialize_timestamp(value)
+
+    print value  # 2017-06-26 08:27:05
+    print type(value)  # <type 'datetime.datetime'>
+
+
 Named parameters are passed in a dict to :meth:`.cluster.Session.execute_graph`::
 
     result_set = session.execute_graph('[a, b]', {'a': 1, 'b': 2}, execution_profile=EXEC_PROFILE_GRAPH_SYSTEM_DEFAULT)
     [r.value for r in result_set]  # [1, 2]
+
+The following python types can be passed as named parameters and will be serialized
+automatically to their graph representation:
+
+==========   ================
+DSE Graph    Python
+==========   ================
+boolean      bool
+bigint       long, int (PY3)
+int          int
+smallint     int
+varint       int
+float        float
+double       double
+uuid         uuid.UUID
+Decimal      Decimal
+inet         str
+timestamp    datetime.datetime
+date         datetime.date
+time         datetime.time
+point        Point
+linestring   LineString
+polygon      Polygon
+blob         bytearray, buffer (PY2), memoryview (PY3), bytes (PY3)
+==========   ================
+
+Example::
+
+    s.execute_graph("""
+      g.addV('all_types').
+      property('blob', blob_value).
+      property('timestamp', timestamp_value).
+      property('polygon', polygon_value).toList()
+    """, {
+      'timestamp_value': datetime.datetime.now(),
+      'blob_value': bytearray('hello world'),
+      'polygon_value': Polygon(((30, 10), (40, 40), (20, 40), (10, 20), (30, 10)))
+    })
+
 
 As with all Execution Profile parameters, graph options can be set in the cluster default (as shown in the first example)
 or specified per execution::

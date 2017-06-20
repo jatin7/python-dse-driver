@@ -4,6 +4,7 @@
 Features
 --------
 * Implement serializers for the Graph String API (PYTHON-778)
+* Provide deserializers for GraphSON types (PYTHON-782)
 
 Merged from OSS master (pre-3.11):
 

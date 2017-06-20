@@ -18,17 +18,37 @@ import six
 from dse.util import Polygon, Point, LineString
 
 
-class TextSerializer(object):
+class _GraphSONTypeType(type):
+    """GraphSONType metaclass, required to create a class property."""
 
-    @staticmethod
-    def serialize(value):
+    @property
+    def graphson_type_id(cls):
+        return "{0}:{1}".format(cls.prefix, cls.type_id)
+
+
+@six.add_metaclass(_GraphSONTypeType)
+class GraphSONType(object):
+    """Represent a serializable GraphSON type"""
+
+    prefix = 'g'
+    type_id = None
+
+    @classmethod
+    def serialize(cls, value):
         return six.text_type(value)
 
+    @classmethod
+    def deserialize(cls, value):
+        return value
 
-class InstantSerializer(object):
 
-    @staticmethod
-    def serialize(value):
+class InstantType(GraphSONType):
+
+    prefix = 'gx'
+    type_id = 'Instant'
+
+    @classmethod
+    def serialize(cls, value):
         if isinstance(value, datetime.datetime):
             value = datetime.datetime(*value.utctimetuple()[:7])
         else:
@@ -37,54 +57,151 @@ class InstantSerializer(object):
 
         return value
 
-
-class BlobSerializer(object):
-
-    @staticmethod
-    def serialize(value):
-        value = base64.b64encode(value)
-        if six.PY3:
-            value = value.decode('utf-8')
-        return value
+    @classmethod
+    def deserialize(cls, value):
+        try:
+            d = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%fZ')
+        except ValueError:
+            d = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
+        return d
 
 
-class DateSerializer(object):
+class LocalDateType(GraphSONType):
     FORMAT = '%Y-%m-%d'
+
+    prefix = 'gx'
+    type_id = 'LocalDate'
 
     @classmethod
     def serialize(cls, value):
         return value.strftime(cls.FORMAT)
 
+    @classmethod
+    def deserialize(cls, value):
+        try:
+            return datetime.datetime.strptime(value, cls.FORMAT).date()
+        except ValueError:
+            # negative date
+            return value
 
-class TimeSerializer(object):
+
+class LocalTimeType(GraphSONType):
     FORMATS = [
         '%H:%M',
         '%H:%M:%S',
         '%H:%M:%S.%f'
     ]
 
+    prefix = 'gx'
+    type_id = 'LocalTime'
+
     @classmethod
     def serialize(cls, value):
         return value.strftime(cls.FORMATS[2])
 
+    @classmethod
+    def deserialize(cls, value):
+        dt = None
+        for f in cls.FORMATS:
+            try:
+                dt = datetime.datetime.strptime(value, f)
+                break
+            except ValueError:
+                continue
 
-class GraphSONSerializer(object):
+        if dt is None:
+            raise ValueError('Unable to decode LocalTime: {0}'.format(value))
+
+        return dt.time()
+
+
+class BlobType(GraphSONType):
+
+    prefix = 'dse'
+    type_id = 'blob'
+
+    @classmethod
+    def serialize(cls, value):
+        value = base64.b64encode(value)
+        if six.PY3:
+            value = value.decode('utf-8')
+        return value
+
+    @classmethod
+    def deserialize(cls, value):
+        return bytearray(base64.b64decode(value))
+
+
+class UUIDType(GraphSONType):
+
+    type_id = 'UUID'
+
+    @classmethod
+    def deserialize(cls, value):
+        return uuid.UUID(value)
+
+
+class BigDecimalType(GraphSONType):
+
+    prefix = 'gx'
+    type_id = 'BigDecimal'
+
+    @classmethod
+    def deserialize(cls, value):
+        return Decimal(value)
+
+
+class PointType(GraphSONType):
+
+    prefix = 'dse'
+    type_id = 'Point'
+
+    @classmethod
+    def deserialize(cls, value):
+        return Point.from_wkt(value)
+
+
+class LineStringType(GraphSONType):
+
+    prefix = 'dse'
+    type_id = 'LineString'
+
+    @classmethod
+    def deserialize(cls, value):
+        return LineString.from_wkt(value)
+
+
+class PolygonType(GraphSONType):
+
+    prefix = 'dse'
+    type_id = 'Polygon'
+
+    @classmethod
+    def deserialize(cls, value):
+        return Polygon.from_wkt(value)
+
+
+class GraphSON1TypeSerializer(object):
     # When we fall back to a superclass's serializer, we iterate over this map.
     # We want that iteration order to be consistent, so we use an OrderedDict,
     # not a dict.
+    """
+    Serialize python objects to graphson types.
+    """
+
     _serializers = OrderedDict([
-        (bytearray, BlobSerializer),
-        (Decimal, TextSerializer),
+        (bytearray, BlobType),
+        (Decimal, BigDecimalType),
         # datetime comes before date because it's a date subclass; we want
         # datetime subclasses to serialze with datetime's serializer
-        (datetime.datetime, InstantSerializer),
-        (datetime.date, DateSerializer),
-        (datetime.time, TimeSerializer),
-        # datetime.timedelta: ...
-        (uuid.UUID, TextSerializer),
-        (Polygon, TextSerializer),
-        (Point, TextSerializer),
-        (LineString, TextSerializer)
+        (datetime.datetime, InstantType),
+        (datetime.date, LocalDateType),
+        (datetime.time, LocalTimeType),
+        #datetime.timedelta: ...
+        (uuid.UUID, UUIDType),
+        (Polygon, PolygonType),
+        (Point, PointType),
+        (LineString, LineStringType)
     ])
 
     @classmethod
@@ -94,7 +211,9 @@ class GraphSONSerializer(object):
     @classmethod
     def serialize(cls, value):
         """
-        Serialize a Python value to graphson.
+        Serialize a python object to graphson.
+
+        :param value: The python object to serialize.
         """
 
         # The serializer matching logic is as follow:
@@ -116,7 +235,84 @@ class GraphSONSerializer(object):
 
 
 if six.PY2:
-    GraphSONSerializer.register(buffer, BlobSerializer)
+    GraphSON1TypeSerializer.register(buffer, BlobType)
 else:
-    GraphSONSerializer.register(memoryview, BlobSerializer)
-    GraphSONSerializer.register(bytes, BlobSerializer)
+    GraphSON1TypeSerializer.register(memoryview, BlobType)
+    GraphSON1TypeSerializer.register(bytes, BlobType)
+
+
+class GraphSON1TypeDeserializer(object):
+    """
+    Deserialize graphson1 types to python objects.
+    """
+
+    _deserializers = {
+        t.graphson_type_id: t
+        for t in [UUIDType, BigDecimalType, InstantType, BlobType, PointType,
+                  LineStringType, PolygonType, LocalDateType, LocalTimeType]
+    }
+
+    @classmethod
+    def deserialize(cls, type_id, value):
+        """
+        Deserialize a `type_id` value to a python object.
+
+        :param type_id: The graphson type_id. e.g. 'gx:Instant'
+        :param value: The graphson value to deserialize.
+        """
+        try:
+            return cls._deserializers[type_id].deserialize(value)
+        except KeyError:
+            raise ValueError('Invalid `type_id` specified')
+
+    @classmethod
+    def deserialize_date(cls, value):
+        return cls._deserializers[LocalDateType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_time(cls, value):
+        return cls._deserializers[LocalTimeType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_timestamp(cls, value):
+        return cls._deserializers[InstantType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_int(cls, value):
+        return long(value)
+
+    @classmethod
+    def deserialize_bigint(cls, value):
+        if six.PY3:
+            return cls.deserialize_int(value)
+        return long(value)
+
+    @classmethod
+    def deserialize_double(cls, value):
+        return float(value)
+
+    deserialize_float = deserialize_double
+
+    @classmethod
+    def deserialize_uuid(cls, value):
+        return cls._deserializers[UUIDType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_decimal(cls, value):
+        return cls._deserializers[BigDecimalType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_blob(cls, value):
+        return cls._deserializers[BlobType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_point(cls, value):
+        return cls._deserializers[PointType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_linestring(cls, value):
+        return cls._deserializers[LineStringType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_polygon(cls, value):
+        return cls._deserializers[PolygonType.graphson_type_id].deserialize(value)

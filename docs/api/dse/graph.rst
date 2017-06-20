@@ -51,3 +51,34 @@
 
 .. autoclass:: Path
    :members:
+
+.. autoclass:: GraphSON1TypeSerializer
+   :members:
+
+.. autoclass:: GraphSON1TypeDeserializer
+
+   .. automethod:: deserialize_date
+
+   .. automethod:: deserialize_timestamp
+
+   .. automethod:: deserialize_time
+
+   .. automethod:: deserialize_int
+
+   .. automethod:: deserialize_bigint
+
+   .. automethod:: deserialize_double
+
+   .. automethod:: deserialize_float
+
+   .. automethod:: deserialize_uuid
+
+   .. automethod:: deserialize_blob
+
+   .. automethod:: deserialize_decimal
+
+   .. automethod:: deserialize_point
+
+   .. automethod:: deserialize_linestring
+
+   .. automethod:: deserialize_polygon
