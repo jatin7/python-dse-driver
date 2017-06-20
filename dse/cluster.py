@@ -44,7 +44,9 @@ from dse import ProtocolVersion
 from dse.cqltypes import UserType
 from dse.encoder import Encoder
 from dse.auth import _proxy_execute_key
-from dse.graph import GraphOptions, SimpleGraphStatement, graph_object_row_factory, _request_timeout_key
+from dse.graph import GraphOptions, SimpleGraphStatement, graph_object_row_factory
+from dse.graph.query import _request_timeout_key
+from dse.graph import GraphSONSerializer
 from dse.protocol import (QueryMessage, ResultMessage,
                           ErrorMessage, ReadTimeoutErrorMessage,
                           WriteTimeoutErrorMessage,
@@ -1950,7 +1952,13 @@ class Session(object):
     def _transform_params(self, parameters):
         if not isinstance(parameters, dict):
             raise ValueError('The parameters must be a dictionary. Unnamed parameters are not allowed.')
-        return [json.dumps(parameters).encode('utf-8')]
+
+        # Serialize python types to graphson
+        serialized_parameters = {
+            p: GraphSONSerializer.serialize(v)
+            for p, v in six.iteritems(parameters)
+        }
+        return [json.dumps(serialized_parameters).encode('utf-8')]
 
     def _target_analytics_master(self, future):
         future._start_timer()
