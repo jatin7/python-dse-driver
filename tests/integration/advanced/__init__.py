@@ -22,6 +22,8 @@ from uuid import UUID
 from decimal import Decimal
 from ccmlib import common
 import datetime
+import six
+
 from dse.cluster import Cluster, EXEC_PROFILE_GRAPH_DEFAULT, EXEC_PROFILE_GRAPH_ANALYTICS_DEFAULT
 
 from tests.integration import PROTOCOL_VERSION, DSE_VERSION, get_server_versions, BasicKeyspaceUnitTestCase, \
@@ -30,6 +32,8 @@ from tests.integration import use_singledc, use_single_node, wait_for_node_socke
 from dse.protocol import ServerError
 from dse.util import Point, LineString, Polygon
 from dse.graph import Edge, Vertex, Path
+from dse.graph import GraphSON1TypeDeserializer
+
 home = expanduser('~')
 
 
@@ -49,32 +53,60 @@ if sys.version_info < (3, 0):
     MIN_LONG = long(MIN_LONG)
     ZERO_LONG = long(ZERO_LONG)
 
-TYPE_MAP = {"point1": ["Point()", Point(.5, .13)],
-            "point2": ["Point()", Point(-5, .0)],
-            "linestring1": ["Linestring()", LineString(((1.0, 2.0), (3.0, 4.0), (-89.0, 90.0)))],
-            "polygon1": ["Polygon()", Polygon([(10.0, 10.0), (80.0, 10.0), (80., 88.0), (10., 89.0), (10., 10.0)], [[(20., 20.0), (20., 30.0), (30., 30.0), (30., 20.0), (20., 20.0)], [(40., 20.0), (40., 30.0), (50., 30.0), (50., 20.0), (40., 20.0)]])],
-            "smallint1": ["Smallint()", 1],
-            "varint1": ["Varint()", 2147483647],
-            "bigint1": ["Bigint()", MAX_LONG],
-            "bigint2": ["Bigint()", MIN_LONG],
-            "bigint3": ["Bigint()", ZERO_LONG],
-            "int1": ["Int()", 100],
-            "float1": ["Float()", .5],
-            "double1": ["Double()", .3415681],
-            "uuid1": ["Uuid()", UUID('12345678123456781234567812345678')],
-            "decimal1": ["Decimal()", Decimal(10)],
-            "duration1": ["Duration()", datetime.timedelta(milliseconds=1)],
-            "inet1": ["Inet()", "127.0.0.1"],
-            "blob": ["Blob()",  bytearray(b"Hello World")],
-            "timestamp": ["Timestamp()", datetime.datetime.now().replace(microsecond=0)]
+deserializers = GraphSON1TypeDeserializer()._deserializers
+
+TYPE_MAP = {"point1": ["Point()", Point(.5, .13), GraphSON1TypeDeserializer.deserialize_point],
+            "point2": ["Point()", Point(-5, .0), GraphSON1TypeDeserializer.deserialize_point],
+
+            "linestring1": ["Linestring()", LineString(((1.0, 2.0), (3.0, 4.0), (-89.0, 90.0))),
+                                GraphSON1TypeDeserializer.deserialize_linestring],
+            "polygon1": ["Polygon()", Polygon([(10.0, 10.0), (80.0, 10.0), (80., 88.0), (10., 89.0), (10., 10.0)],
+                                              [[(20., 20.0), (20., 30.0), (30., 30.0), (30., 20.0), (20., 20.0)],
+                                               [(40., 20.0), (40., 30.0), (50., 30.0), (50., 20.0), (40., 20.0)]]),
+                                GraphSON1TypeDeserializer.deserialize_polygon],
+            "smallint1": ["Smallint()", 1, GraphSON1TypeDeserializer.deserialize_smallint],
+            "varint1": ["Varint()", 2147483647, GraphSON1TypeDeserializer.deserialize_varint],
+
+            "bigint1": ["Bigint()", MAX_LONG, GraphSON1TypeDeserializer.deserialize_bigint],
+            "bigint2": ["Bigint()", MIN_LONG, GraphSON1TypeDeserializer.deserialize_bigint],
+            "bigint3": ["Bigint()", ZERO_LONG, GraphSON1TypeDeserializer.deserialize_bigint],
+
+            "int1": ["Int()", 100, GraphSON1TypeDeserializer.deserialize_int],
+            "float1": ["Float()", .5, GraphSON1TypeDeserializer.deserialize_float],
+            "double1": ["Double()", .3415681, GraphSON1TypeDeserializer.deserialize_double],
+            "uuid1": ["Uuid()", UUID('12345678123456781234567812345678'), GraphSON1TypeDeserializer.deserialize_uuid],
+            "decimal1": ["Decimal()", Decimal(10), GraphSON1TypeDeserializer.deserialize_decimal],
+            "inet1": ["Inet()", "127.0.0.1", GraphSON1TypeDeserializer.deserialize_inet],
+
+            "blob1": ["Blob()",  bytearray(b"Hello World"), GraphSON1TypeDeserializer.deserialize_blob],
+
+            "timestamp1": ["Timestamp()", datetime.datetime.now().replace(microsecond=0),
+                                GraphSON1TypeDeserializer.deserialize_timestamp],
+            "timestamp2": ["Timestamp()", datetime.datetime.max.replace(microsecond=0),
+                                GraphSON1TypeDeserializer.deserialize_timestamp],
+
+            "duration1": ["Duration()", datetime.timedelta(1, 16, 0),
+                                GraphSON1TypeDeserializer.deserialize_duration],
+            "duration2": ["Duration()", datetime.timedelta(days=1, seconds=16, milliseconds=15),
+                                GraphSON1TypeDeserializer.deserialize_duration],
             }
 
-if DSE_VERSION >= "5.1":
-    TYPE_MAP["datetime1"]= ["Date()", datetime.date.today()]
-    TYPE_MAP["time1"] = ["Time()", datetime.time(12, 6, 12, 444)]
-    TYPE_MAP["time2"] = ["Time()", datetime.time(12, 6, 12)]
-    TYPE_MAP["time3"] = ["Time()", datetime.time(12, 6)]
 
+if six.PY2:
+    TYPE_MAP["blob3"] = ["Blob()",  buffer(b"Hello World"), GraphSON1TypeDeserializer.deserialize_blob]
+
+else:
+    TYPE_MAP["blob4"] = ["Blob()", bytes(b"Hello World Again"), GraphSON1TypeDeserializer.deserialize_blob]
+    TYPE_MAP["blob5"] = ["Blob()", memoryview(b"And Again Hello World"), GraphSON1TypeDeserializer.deserialize_blob]
+
+if DSE_VERSION >= "5.1":
+    TYPE_MAP["datetime1"]= ["Date()", datetime.date.today(), GraphSON1TypeDeserializer.deserialize_date]
+    TYPE_MAP["time1"] = ["Time()", datetime.time(12, 6, 12, 444), GraphSON1TypeDeserializer.deserialize_time]
+    TYPE_MAP["time2"] = ["Time()", datetime.time(12, 6, 12), GraphSON1TypeDeserializer.deserialize_time]
+    TYPE_MAP["time3"] = ["Time()", datetime.time(12, 6), GraphSON1TypeDeserializer.deserialize_time]
+    TYPE_MAP["time4"] = ["Time()", datetime.time.min, GraphSON1TypeDeserializer.deserialize_time]
+    TYPE_MAP["time5"] = ["Time()", datetime.time.max, GraphSON1TypeDeserializer.deserialize_time]
+    TYPE_MAP["blob2"] = ["Blob()", bytearray(b"AKDLIElksadlaswqA" * 100000), GraphSON1TypeDeserializer.deserialize_blob]
 
 def find_spark_master(session):
 
@@ -108,8 +140,8 @@ def wait_for_spark_workers(num_of_expected_workers, timeout):
     return match
 
 
-def use_single_node_with_graph(start=True):
-    use_single_node(start=start, workloads=['graph'])
+def use_single_node_with_graph(start=True, options={}):
+    use_single_node(start=start, workloads=['graph'], options=options)
 
 
 def use_single_node_with_graph_and_spark(start=True):

@@ -171,10 +171,11 @@ class DurationType(GraphSONType):
 
     @classmethod
     def serialize(cls, value):
-        total_seconds = value.total_seconds()
+        total_seconds = int(value.total_seconds())
         days, total_seconds =  divmod(total_seconds, cls._seconds_in_day)
         hours, total_seconds = divmod(total_seconds, cls._seconds_in_hour)
         minutes, total_seconds = divmod(total_seconds, cls._seconds_in_minute)
+        total_seconds += value.microseconds / 1e6
 
         return cls._duration_format.format(
             days=int(days), hours=int(hours), minutes=int(minutes), seconds=total_seconds
@@ -324,7 +325,11 @@ class GraphSON1TypeDeserializer(object):
 
     @classmethod
     def deserialize_int(cls, value):
-        return long(value)
+        return int(value)
+
+    deserialize_smallint = deserialize_int
+
+    deserialize_varint = deserialize_int
 
     @classmethod
     def deserialize_bigint(cls, value):
@@ -361,3 +366,7 @@ class GraphSON1TypeDeserializer(object):
     @classmethod
     def deserialize_polygon(cls, value):
         return cls._deserializers[PolygonType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_inet(cls, value):
+        return value
