@@ -9,9 +9,9 @@ Releasing
   * When in doubt, follow PEP 440 versioning
 * Add the new version in ``docs.yaml``
 
-* Commit the changelog and version changes
+* Commit the changelog and version changes, e.g. ``git commit -m'version 1.0.0'``
 * Tag the release.  For example: ``git tag -a 1.0.0 -m 'version 1.0.0'``
-* Push the commit and tag: ``git push --tags origin master``
+* Push the tag and new ``master``: ``git push origin 1.0.0 ; git push origin master``
 * For a GA release, upload the package to pypi::
 
     python setup.py register
@@ -54,18 +54,19 @@ To build the docs, run::
 
     python setup.py doc
 
-To upload the docs, checkout the ``gh-pages`` branch (it's usually easier to
-clone a second copy of this repo and leave it on that branch) and copy the entire
+To upload the docs, checkout the ``gh-pages`` branch and copy the entire
 contents all of ``docs/_build/X.Y.Z/*`` into the root of the ``gh-pages`` branch
 and then push that branch to github.
 
 For example::
 
+    git checkout 1.0.0
     python setup.py doc
-    cp -R docs/_build/1.0.0-beta1/* ~/python-driver-docs/
-    cd ~/python-driver-docs
-    git add --all
-    git commit -m 'Update docs'
+    git checkout gh-pages
+    cp -R docs/_build/1.0.0/* .
+    git add --update  # add modified files
+    # Also make sure to add any new documentation files!
+    git commit -m 'Update docs (version 1.0.0)'
     git push origin gh-pages
 
 If docs build includes errors, those errors may not show up in the next build unless

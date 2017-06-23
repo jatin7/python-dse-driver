@@ -1,3 +1,16 @@
+2.2.0
+=====
+Merged from OSS master (pre-3.11):
+
+Bug Fixes
+---------
+* is_idempotent flag is not propagated from PreparedStatement to BoundStatement (PYTHON-736)
+* Fix asyncore hang on exit (PYTHON-767)
+
+Other
+-----
+* Bump Cython dependency version to 0.25.2 (PYTHON-754)
+
 2.1.0
 =====
 May 24, 2017
