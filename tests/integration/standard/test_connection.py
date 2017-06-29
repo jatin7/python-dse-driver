@@ -26,7 +26,7 @@ from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import QueryMessage
 from dse.policies import WhiteListRoundRobinPolicy, HostStateListener
 
-from tests import is_monkey_patched
+from tests import is_monkey_patched, notwindows
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_node, DSE_IP, local
 
 try:
@@ -351,6 +351,9 @@ class ConnectionTests(object):
         for t in threads:
             t.join()
 
+    # We skip this one for windows because the clock is not as
+    # granular as in linux
+    @notwindows
     def test_connect_timeout(self):
         # Underlying socket implementations don't always throw a socket timeout even with min float
         # This can be timing sensitive, added retry to ensure failure occurs if it can

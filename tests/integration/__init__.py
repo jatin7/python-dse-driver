@@ -26,6 +26,7 @@ elif "async" in EVENT_LOOP_MANAGER:
 elif "twisted" in EVENT_LOOP_MANAGER:
     from dse.io.twistedreactor import TwistedConnection
     connection_class = TwistedConnection
+
 else:
     from dse.io.libevreactor import LibevConnection
     connection_class = LibevConnection

@@ -2,8 +2,9 @@ Releasing
 =========
 * Run the tests and ensure they all pass
 * Update CHANGELOG.rst
-* Update the version in ``dse/__init__.py``
-
+  * Check for any missing entries
+  * Add today's date to the release section
+* Update the version in ``cassandra/__init__.py``
   * For beta releases, use a version like ``(2, 1, '0b1')``
   * For release candidates, use a version like ``(2, 1, '0rc1')``
   * When in doubt, follow PEP 440 versioning
@@ -37,6 +38,9 @@ Releasing
     * test and push updated branch to origin
 
 * Update the JIRA versions: https://datastax-oss.atlassian.net/plugins/servlet/project-config/PYTHON/versions
+
+  * add release dates and set version as "released"
+
 * Make an announcement on the mailing list
 
 Building the Docs
