@@ -80,7 +80,7 @@ class GraphSONSerializer(object):
         (datetime.datetime, InstantSerializer),
         (datetime.date, DateSerializer),
         (datetime.time, TimeSerializer),
-        #datetime.timedelta: ...
+        # datetime.timedelta: ...
         (uuid.UUID, TextSerializer),
         (Polygon, TextSerializer),
         (Point, TextSerializer),
