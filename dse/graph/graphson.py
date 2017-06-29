@@ -69,9 +69,14 @@ class TimeSerializer(object):
 
 
 class GraphSONSerializer(object):
+    # When we fall back to a superclass's serializer, we iterate over this map.
+    # We want that iteration order to be consistent, so we use an OrderedDict,
+    # not a dict.
     _serializers = OrderedDict([
         (bytearray, BlobSerializer),
         (Decimal, TextSerializer),
+        # datetime comes before date because it's a date subclass; we want
+        # datetime subclasses to serialze with datetime's serializer
         (datetime.datetime, InstantSerializer),
         (datetime.date, DateSerializer),
         (datetime.time, TimeSerializer),
