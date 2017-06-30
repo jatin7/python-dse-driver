@@ -1,5 +1,10 @@
 2.2.0
 =====
+
+Features
+--------
+* Implement serializers for the Graph String API (PYTHON-778)
+
 Merged from OSS master (pre-3.11):
 
 Features

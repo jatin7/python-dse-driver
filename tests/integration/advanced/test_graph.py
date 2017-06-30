@@ -25,7 +25,8 @@ from dse.cluster import NoHostAvailable
 
 from dse.cluster import EXEC_PROFILE_GRAPH_DEFAULT, GraphExecutionProfile, Cluster
 from dse.graph import (SimpleGraphStatement, graph_object_row_factory, single_object_row_factory,\
-                       graph_result_row_factory, Result, Edge, Vertex, Path, GraphOptions, _graph_options)
+                       graph_result_row_factory, Result, Edge, Vertex, Path, GraphOptions)
+from dse.graph.query import _graph_options
 from dse.util import SortedSet
 
 from tests.integration.advanced import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT,\

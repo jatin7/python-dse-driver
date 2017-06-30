@@ -18,8 +18,9 @@ import six
 
 from dse.policies import RetryPolicy
 from dse.graph import (SimpleGraphStatement, GraphOptions, Result, VertexProperty,
-                       _graph_options, graph_result_row_factory, single_object_row_factory,
+                       graph_result_row_factory, single_object_row_factory,
                        Vertex, Edge, Path)
+from dse.graph.query import _graph_options
 
 
 class GraphResultTests(unittest.TestCase):
