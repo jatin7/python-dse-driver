@@ -63,6 +63,8 @@
 
    .. automethod:: deserialize_time
 
+   .. automethod:: deserialize_duration
+
    .. automethod:: deserialize_int
 
    .. automethod:: deserialize_bigint

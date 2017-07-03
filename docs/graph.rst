@@ -100,6 +100,7 @@ inet         str
 timestamp    datetime.datetime
 date         datetime.date
 time         datetime.time
+duration     datetime.timedelta
 point        Point
 linestring   LineString
 polygon      Polygon

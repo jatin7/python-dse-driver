@@ -10,6 +10,7 @@
 import datetime
 import base64
 import uuid
+import re
 from decimal import Decimal
 from collections import OrderedDict
 
@@ -151,6 +152,46 @@ class BigDecimalType(GraphSONType):
         return Decimal(value)
 
 
+class DurationType(GraphSONType):
+
+    prefix = 'gx'
+    type_id = 'Duration'
+
+    _duration_regex = re.compile(r"""
+        ^P((?P<days>\d+)D)?
+        T((?P<hours>\d+)H)?
+        ((?P<minutes>\d+)M)?
+        ((?P<seconds>[0-9.]+)S)?$
+    """, re.VERBOSE)
+    _duration_format = "P{days}DT{hours}H{minutes}M{seconds}S"
+
+    _seconds_in_minute = 60
+    _seconds_in_hour = 60 * _seconds_in_minute
+    _seconds_in_day = 24 * _seconds_in_hour
+
+    @classmethod
+    def serialize(cls, value):
+        total_seconds = value.total_seconds()
+        days, total_seconds =  divmod(total_seconds, cls._seconds_in_day)
+        hours, total_seconds = divmod(total_seconds, cls._seconds_in_hour)
+        minutes, total_seconds = divmod(total_seconds, cls._seconds_in_minute)
+
+        return cls._duration_format.format(
+            days=int(days), hours=int(hours), minutes=int(minutes), seconds=total_seconds
+        )
+
+    @classmethod
+    def deserialize(cls, value):
+        duration = cls._duration_regex.match(value)
+        if duration is None:
+            raise ValueError('Invalid duration: {0}'.format(value))
+
+        duration = {k: float(v) if v is not None else 0
+                    for k, v in six.iteritems(duration.groupdict())}
+        return datetime.timedelta(days=duration['days'], hours=duration['hours'],
+                                  minutes=duration['minutes'], seconds=duration['seconds'])
+
+
 class PointType(GraphSONType):
 
     prefix = 'dse'
@@ -197,7 +238,7 @@ class GraphSON1TypeSerializer(object):
         (datetime.datetime, InstantType),
         (datetime.date, LocalDateType),
         (datetime.time, LocalTimeType),
-        #datetime.timedelta: ...
+        (datetime.timedelta, DurationType),
         (uuid.UUID, UUIDType),
         (Polygon, PolygonType),
         (Point, PointType),
@@ -249,7 +290,7 @@ class GraphSON1TypeDeserializer(object):
     _deserializers = {
         t.graphson_type_id: t
         for t in [UUIDType, BigDecimalType, InstantType, BlobType, PointType,
-                  LineStringType, PolygonType, LocalDateType, LocalTimeType]
+                  LineStringType, PolygonType, LocalDateType, LocalTimeType, DurationType]
     }
 
     @classmethod
@@ -276,6 +317,10 @@ class GraphSON1TypeDeserializer(object):
     @classmethod
     def deserialize_timestamp(cls, value):
         return cls._deserializers[InstantType.graphson_type_id].deserialize(value)
+
+    @classmethod
+    def deserialize_duration(cls, value):
+        return cls._deserializers[DurationType.graphson_type_id].deserialize(value)
 
     @classmethod
     def deserialize_int(cls, value):
