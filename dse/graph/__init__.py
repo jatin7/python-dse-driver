@@ -14,4 +14,4 @@ from dse.graph.query import (
     graph_object_row_factory, single_object_row_factory,
     graph_result_row_factory
 )
-from dse.graph.graphson import GraphSONSerializer
+from dse.graph.graphson import GraphSON1TypeSerializer, GraphSON1TypeDeserializer

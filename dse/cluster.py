@@ -46,7 +46,7 @@ from dse.encoder import Encoder
 from dse.auth import _proxy_execute_key
 from dse.graph import GraphOptions, SimpleGraphStatement, graph_object_row_factory
 from dse.graph.query import _request_timeout_key
-from dse.graph import GraphSONSerializer
+from dse.graph import GraphSON1TypeSerializer
 from dse.protocol import (QueryMessage, ResultMessage,
                           ErrorMessage, ReadTimeoutErrorMessage,
                           WriteTimeoutErrorMessage,
@@ -1967,7 +1967,7 @@ class Session(object):
 
         # Serialize python types to graphson
         serialized_parameters = {
-            p: GraphSONSerializer.serialize(v)
+            p: GraphSON1TypeSerializer.serialize(v)
             for p, v in six.iteritems(parameters)
         }
         return [json.dumps(serialized_parameters).encode('utf-8')]
