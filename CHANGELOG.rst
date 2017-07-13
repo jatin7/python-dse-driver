@@ -12,6 +12,7 @@ Merged from OSS master (pre-3.11):
 Features
 --------
 * Add idle_heartbeat_timeout cluster option to tune how long to wait for heartbeat responses. (PYTHON-762)
+* Add HostFilterPolicy (PYTHON-761)
 
 Bug Fixes
 ---------
@@ -21,11 +22,17 @@ Bug Fixes
 * Installation doesn't always fall back to no cython in Windows (PYTHON-763)
 * Avoid to replace a connection that is supposed to shutdown (PYTHON-772)
 * request_ids may not be returned to the pool (PYTHON-739)
+* Fix murmur3 on big-endian systems (PYTHON-653)
+* Ensure unused connections are closed if a Session is deleted by the GC (PYTHON-774)
 
 Other
 -----
 * Bump Cython dependency version to 0.25.2 (PYTHON-754)
 * Fix DeprecationWarning when using lz4 (PYTHON-769)
+
+Other
+-----
+* Deprecate WhiteListRoundRobinPolicy (PYTHON-759)
 
 2.1.0
 =====
