@@ -407,7 +407,7 @@ def run_setup(extensions):
         url='http://docs.datastax.com/en/developer/python-dse-driver/',
         author='Tyler Hobbs',
         author_email='tyler@datastax.com',
-        packages=['dse', 'dse.io', 'dse.cqlengine'],
+        packages=['dse', 'dse.io', 'dse.cqlengine', 'dse.graph'],
         keywords='cassandra,cql,orm,dse,graph',
         include_package_data=True,
         install_requires=dependencies,
