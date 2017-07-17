@@ -632,8 +632,11 @@ class LoadBalancingPolicyTests(unittest.TestCase):
         use_singledc()
         keyspace = 'test_white_list'
 
-        cluster = Cluster(('127.0.0.2',), protocol_version=PROTOCOL_VERSION, topology_event_refresh_window=0, status_event_refresh_window=0,
-                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy((IP_FORMAT % 2,)))})
+        cluster = Cluster(('127.0.0.2',), protocol_version=PROTOCOL_VERSION,
+                          topology_event_refresh_window=0, status_event_refresh_window=0,
+                          execution_profiles={EXEC_PROFILE_DEFAULT:
+                                                  ExecutionProfile(load_balancing_policy=
+                                                                   WhiteListRoundRobinPolicy((IP_FORMAT % 2,)))})
         session = cluster.connect()
         self._wait_for_nodes_up([1, 2, 3])
 
@@ -672,10 +675,10 @@ class LoadBalancingPolicyTests(unittest.TestCase):
         )
         cluster = Cluster(
             (IP_FORMAT % 1,),
-            load_balancing_policy=hfp,
             protocol_version=PROTOCOL_VERSION,
             topology_event_refresh_window=0,
-            status_event_refresh_window=0
+            status_event_refresh_window=0,
+            execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=hfp)}
         )
         self.addCleanup(cluster.shutdown)
         session = cluster.connect()

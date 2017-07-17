@@ -1243,7 +1243,7 @@ class WhiteListRoundRobinPolicyTest(unittest.TestCase):
             self.assertEqual(len(caught_warnings), 1)
             warning_message = caught_warnings[-1]
             self.assertEqual(warning_message.category, DeprecationWarning)
-            self.assertIn('4.0', warning_message.message.args[0])
+            self.assertIn('3.0', warning_message.message.args[0])
 
 
 class AddressTranslatorTest(unittest.TestCase):
