@@ -304,8 +304,8 @@ def use_singledc(start=True, workloads=[]):
     use_cluster(CLUSTER_NAME, [3], start=start, workloads=workloads)
 
 
-def use_single_node(start=True, workloads=[]):
-    use_cluster(SINGLE_NODE_CLUSTER_NAME, [1], start=start, workloads=workloads)
+def use_single_node(start=True, workloads=[], options={}):
+    use_cluster(SINGLE_NODE_CLUSTER_NAME, [1], start=start, workloads=workloads, options=options)
 
 
 def remove_cluster():
@@ -351,7 +351,7 @@ def start_cluster_wait_for_up(cluster):
         wait_for_node_socket(node, 120)
     log.debug("Binary port are open")
 
-def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
+def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[], options={}):
     set_default_dse_ip()
 
     global CCM_CLUSTER
@@ -375,6 +375,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
             log.debug("Found existing CCM cluster, {0}; clearing.".format(cluster_name))
             CCM_CLUSTER.clear()
             CCM_CLUSTER.set_install_dir(**CCM_KWARGS)
+            CCM_CLUSTER.set_configuration_options(options)
         except Exception:
             ex_type, ex, tb = sys.exc_info()
             log.warn("{0}: {1} Backtrace: {2}".format(ex_type.__name__, ex, traceback.extract_tb(tb)))
@@ -396,6 +397,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
                 config_options = {"initial_spark_worker_resources": 0.1}
                 CCM_CLUSTER.set_dse_configuration_options(config_options)
             common.switch_cluster(path, cluster_name)
+            CCM_CLUSTER.set_configuration_options(options)
             CCM_CLUSTER.populate(nodes, ipformat=ipformat)
     try:
         jvm_args = []
