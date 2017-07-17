@@ -7,8 +7,8 @@
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 import os
+from tests import EVENT_LOOP_MANAGER
 
-EVENT_LOOP_MANAGER = os.getenv('EVENT_LOOP_MANAGER', "libev")
 if "gevent" in EVENT_LOOP_MANAGER:
     import gevent.monkey
     gevent.monkey.patch_all()
@@ -109,15 +109,6 @@ def _tuple_version(version_string):
 
 
 USE_CASS_EXTERNAL = bool(os.getenv('USE_CASS_EXTERNAL', False))
-
-# If set to to true this will force the Cython tests to run regardless of whether they are installed
-cython_env = os.getenv('VERIFY_CYTHON', "False")
-
-
-VERIFY_CYTHON = False
-
-if(cython_env == 'True'):
-    VERIFY_CYTHON = True
 
 default_cassandra_version = '2.2.0'
 

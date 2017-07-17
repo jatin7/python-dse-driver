@@ -14,8 +14,9 @@ from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.concurrent import execute_concurrent_with_args
 from dse.protocol import ProtocolHandler, LazyProtocolHandler, NumpyProtocolHandler
 from dse.cython_deps import HAVE_CYTHON, HAVE_NUMPY
-from tests.integration import use_singledc, PROTOCOL_VERSION, drop_keyspace_shutdown_cluster, \
-    VERIFY_CYTHON, BasicSharedKeyspaceUnitTestCase, execute_with_retry_tolerant, greaterthancass21
+from tests import VERIFY_CYTHON
+from tests.integration import use_singledc, PROTOCOL_VERSION, drop_keyspace_shutdown_cluster\
+    , BasicSharedKeyspaceUnitTestCase, execute_with_retry_tolerant, greaterthancass21
 from tests.integration.datatype_utils import update_datatypes
 from tests.integration.standard.utils import (
     create_table_with_all_types, get_all_primitive_params, get_primitive_datatypes)
