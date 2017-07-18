@@ -68,6 +68,7 @@ Other
 
 2.0.0
 =====
+April 18, 2017
 
 Release merged in changes from cassandra-driver 3.9.0
 
@@ -84,6 +85,7 @@ Other
 
 2.0.0rc1
 ========
+March 15, 2017
 
 Release merged in changes from cassandra-driver 3.8.1 (PYTHON-712)
 
