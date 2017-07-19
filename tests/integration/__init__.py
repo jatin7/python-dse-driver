@@ -109,6 +109,8 @@ def _tuple_version(version_string):
 
 
 USE_CASS_EXTERNAL = bool(os.getenv('USE_CASS_EXTERNAL', False))
+KEEP_TEST_CLUSTER = bool(os.getenv('KEEP_TEST_CLUSTER', False))
+
 
 default_cassandra_version = '2.2.0'
 
@@ -309,7 +311,7 @@ def use_single_node(start=True, workloads=[], options={}):
 
 
 def remove_cluster():
-    if USE_CASS_EXTERNAL:
+    if USE_CASS_EXTERNAL or KEEP_TEST_CLUSTER:
         return
 
     global CCM_CLUSTER
@@ -432,7 +434,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[], op
 
 
 def teardown_package():
-    if USE_CASS_EXTERNAL:
+    if USE_CASS_EXTERNAL or KEEP_TEST_CLUSTER:
         return
     # when multiple modules are run explicitly, this runs between them
     # need to make sure CCM_CLUSTER is properly cleared for that case

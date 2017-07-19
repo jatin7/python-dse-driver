@@ -7,7 +7,10 @@
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 
-import struct, time, logging, sys, traceback
+import logging
+import struct
+import sys
+import traceback
 
 from dse import ConsistencyLevel, Unavailable, OperationTimedOut, ReadTimeout, ReadFailure, \
     WriteTimeout, WriteFailure
@@ -15,7 +18,8 @@ from dse.cluster import Cluster, NoHostAvailable, ExecutionProfile, EXEC_PROFILE
 from dse.concurrent import execute_concurrent_with_args
 from dse.metadata import murmur3
 from dse.policies import (RoundRobinPolicy, DCAwareRoundRobinPolicy,
-                          TokenAwarePolicy, WhiteListRoundRobinPolicy)
+                          TokenAwarePolicy, WhiteListRoundRobinPolicy,
+                          HostFilterPolicy)
 from dse.query import SimpleStatement
 
 from tests.integration import use_singledc, use_multidc, remove_cluster, PROTOCOL_VERSION
@@ -35,7 +39,7 @@ log = logging.getLogger(__name__)
 class LoadBalancingPolicyTests(unittest.TestCase):
 
     def setUp(self):
-        remove_cluster() # clear ahead of test so it doesn't use one left in unknown state
+        remove_cluster()  # clear ahead of test so it doesn't use one left in unknown state
         self.coordinator_stats = CoordinatorStats()
         self.prepared = None
         self.probe_cluster = None
@@ -101,7 +105,7 @@ class LoadBalancingPolicyTests(unittest.TestCase):
             query_string = 'SELECT * FROM %s.cf WHERE k = ?' % keyspace
             if not self.prepared or self.prepared.query_string != query_string:
                 self.prepared = session.prepare(query_string)
-                self.prepared.consistency_level=consistency_level
+                self.prepared.consistency_level = consistency_level
             for i in range(count):
                 tries = 0
                 while True:
@@ -504,7 +508,7 @@ class LoadBalancingPolicyTests(unittest.TestCase):
 
         self.coordinator_stats.reset_counts()
         stop(2)
-        self._wait_for_nodes_down([2],cluster)
+        self._wait_for_nodes_down([2], cluster)
 
         self._query(session, keyspace)
 
@@ -628,8 +632,11 @@ class LoadBalancingPolicyTests(unittest.TestCase):
         use_singledc()
         keyspace = 'test_white_list'
 
-        cluster = Cluster(('127.0.0.2',), protocol_version=PROTOCOL_VERSION, topology_event_refresh_window=0, status_event_refresh_window=0,
-                          execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy((IP_FORMAT % 2,)))})
+        cluster = Cluster(('127.0.0.2',), protocol_version=PROTOCOL_VERSION,
+                          topology_event_refresh_window=0, status_event_refresh_window=0,
+                          execution_profiles={EXEC_PROFILE_DEFAULT:
+                                                  ExecutionProfile(load_balancing_policy=
+                                                                   WhiteListRoundRobinPolicy((IP_FORMAT % 2,)))})
         session = cluster.connect()
         self._wait_for_nodes_up([1, 2, 3])
 
@@ -657,3 +664,37 @@ class LoadBalancingPolicyTests(unittest.TestCase):
             pass
         finally:
             cluster.shutdown()
+
+    def test_black_list_with_host_filter_policy(self):
+        use_singledc()
+        keyspace = 'test_black_list_with_hfp'
+        ignored_address = (IP_FORMAT % 2)
+        hfp = HostFilterPolicy(
+            child_policy=RoundRobinPolicy(),
+            predicate=lambda host: host.address != ignored_address
+        )
+        cluster = Cluster(
+            (IP_FORMAT % 1,),
+            protocol_version=PROTOCOL_VERSION,
+            topology_event_refresh_window=0,
+            status_event_refresh_window=0,
+            execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=hfp)}
+        )
+        self.addCleanup(cluster.shutdown)
+        session = cluster.connect()
+        self._wait_for_nodes_up([1, 2, 3])
+
+        self.assertNotIn(ignored_address, [h.address for h in hfp.make_query_plan()])
+
+        create_schema(cluster, session, keyspace)
+        self._insert(session, keyspace)
+        self._query(session, keyspace)
+
+        self.coordinator_stats.assert_query_count_equals(self, 1, 6)
+        self.coordinator_stats.assert_query_count_equals(self, 2, 0)
+        self.coordinator_stats.assert_query_count_equals(self, 3, 6)
+
+        # policy should not allow reconnecting to ignored host
+        force_stop(2)
+        self._wait_for_nodes_down([2])
+        self.assertFalse(cluster.metadata._hosts[ignored_address].is_currently_reconnecting())

@@ -190,6 +190,8 @@ class MetricsNamespaceTest(BasicSharedKeyspaceUnitTestCaseRF3WM):
                            execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(retry_policy=FallthroughRetryPolicy())})
         cluster2.connect(self.ks_name, wait_for_all_pools=True)
 
+        self.assertEqual(len(cluster2.metadata.all_hosts()), 3)
+
         query = SimpleStatement("SELECT * FROM {0}.{0}".format(self.ks_name), consistency_level=ConsistencyLevel.ALL)
         self.session.execute(query)
 
