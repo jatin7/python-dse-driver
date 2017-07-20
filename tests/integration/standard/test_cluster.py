@@ -995,8 +995,11 @@ class ClusterTests(unittest.TestCase):
         @test_category metadata
         """
         queried_hosts = set()
+        tap_profile = ExecutionProfile(
+            load_balancing_policy=TokenAwarePolicy(RoundRobinPolicy())
+        )
         with Cluster(protocol_version=PROTOCOL_VERSION,
-                     load_balancing_policy=TokenAwarePolicy(RoundRobinPolicy())) as cluster:
+                     execution_profiles={EXEC_PROFILE_DEFAULT: tap_profile}) as cluster:
             session = cluster.connect()
             session.execute('''
                     CREATE TABLE test1rf.table_with_big_key (
@@ -1012,12 +1015,15 @@ class ClusterTests(unittest.TestCase):
                 queried_hosts = self._assert_replica_queried(result.get_query_trace(), only_replicas=True)
                 last_i = i
 
+        hfp_profile = ExecutionProfile(
+            load_balancing_policy=HostFilterPolicy(RoundRobinPolicy(),
+                     predicate=lambda host: host.address != only_replica)
+        )
         only_replica = queried_hosts.pop()
         available_hosts = [host for host in ["127.0.0.1", "127.0.0.2", "127.0.0.3"] if host != only_replica]
         with Cluster(contact_points=available_hosts,
                      protocol_version=PROTOCOL_VERSION,
-                     load_balancing_policy=HostFilterPolicy(RoundRobinPolicy(),
-                     predicate=lambda host: host.address != only_replica)) as cluster:
+                     execution_profiles={EXEC_PROFILE_DEFAULT: tap_profile}) as cluster:
 
             session = cluster.connect()
             prepared = session.prepare("""SELECT * from test1rf.table_with_big_key

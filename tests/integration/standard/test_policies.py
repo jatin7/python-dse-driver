@@ -15,7 +15,7 @@ except ImportError:
     import unittest  # noqa
 
 from dse import OperationTimedOut
-from dse.cluster import Cluster, ExecutionProfile
+from dse.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.connection import Connection
 from dse.query import SimpleStatement
 from dse.policies import ConstantSpeculativeExecutionPolicy, RoundRobinPolicy, HostFilterPolicy, SimpleConvictionPolicy
@@ -62,8 +62,10 @@ class HostFilterPolicyTests(unittest.TestCase):
         all_hosts = {Host("127.0.0.{}".format(i), SimpleConvictionPolicy) for i in (1, 2, 3)}
 
         predicate = lambda host: host.address == contact_point if external_event else True
-        cluster = Cluster((contact_point,), load_balancing_policy=HostFilterPolicy(RoundRobinPolicy(),
-                                                                                 predicate=predicate),
+        hfp = ExecutionProfile(
+            load_balancing_policy=HostFilterPolicy(RoundRobinPolicy(), predicate=predicate)
+        )
+        cluster = Cluster((contact_point,), execution_profiles={EXEC_PROFILE_DEFAULT: hfp},
                           protocol_version=PROTOCOL_VERSION, topology_event_refresh_window=0,
                           status_event_refresh_window=0)
         session = cluster.connect(wait_for_all_pools=True)
