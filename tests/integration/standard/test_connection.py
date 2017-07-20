@@ -24,7 +24,8 @@ from dse import ConsistencyLevel, OperationTimedOut
 from dse.cluster import NoHostAvailable, ConnectionShutdown, Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import QueryMessage
-from dse.policies import WhiteListRoundRobinPolicy, HostStateListener
+from dse.policies import HostFilterPolicy, RoundRobinPolicy, HostStateListener
+
 
 from tests import is_monkey_patched, notwindows
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_node, DSE_IP, local
@@ -44,9 +45,15 @@ class ConnectionTimeoutTest(unittest.TestCase):
 
     def setUp(self):
         self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
-                               execution_profiles=
-                               {EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=
-                                                                       WhiteListRoundRobinPolicy([DSE_IP]))})
+                                   execution_profiles=
+                                   {EXEC_PROFILE_DEFAULT: ExecutionProfile(
+                                       load_balancing_policy=HostFilterPolicy(
+                                            RoundRobinPolicy(), predicate=lambda host: host.address == DSE_IP
+                                       )
+                                   )
+                                   }
+                               )
+
         self.session = self.cluster.connect()
 
     def tearDown(self):

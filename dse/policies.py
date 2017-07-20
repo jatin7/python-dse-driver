@@ -480,6 +480,10 @@ class HostFilterPolicy(LoadBalancingPolicy):
             load_balancing_policy=blacklist_filter_policy,
         )
 
+    See the note in the :meth:`.make_query_plan` documentation for a caveat on
+    how wrapping ordering polices (e.g. :class:`.RoundRobinPolicy`) may break
+    desirable properties of the wrapped policy.
+
     Please note that whitelist and blacklist policies are not recommended for
     general, day-to-day use. You probably want something like
     :class:`.DCAwareRoundRobinPolicy`, which prefers a local DC but has
@@ -499,20 +503,16 @@ class HostFilterPolicy(LoadBalancingPolicy):
         self._predicate = predicate
 
     def on_up(self, host, *args, **kwargs):
-        if self.predicate(host):
-            return self._child_policy.on_up(host, *args, **kwargs)
+        return self._child_policy.on_up(host, *args, **kwargs)
 
     def on_down(self, host, *args, **kwargs):
-        if self.predicate(host):
-            return self._child_policy.on_down(host, *args, **kwargs)
+        return self._child_policy.on_down(host, *args, **kwargs)
 
     def on_add(self, host, *args, **kwargs):
-        if self.predicate(host):
-            return self._child_policy.on_add(host, *args, **kwargs)
+        return self._child_policy.on_add(host, *args, **kwargs)
 
     def on_remove(self, host, *args, **kwargs):
-        if self.predicate(host):
-            return self._child_policy.on_remove(host, *args, **kwargs)
+        return self._child_policy.on_remove(host, *args, **kwargs)
 
     @property
     def predicate(self):
@@ -540,18 +540,20 @@ class HostFilterPolicy(LoadBalancingPolicy):
             return HostDistance.IGNORED
 
     def populate(self, cluster, hosts):
-        self._child_policy.populate(
-            cluster=cluster,
-            hosts=[h for h in hosts if self.predicate(h)]
-        )
+        self._child_policy.populate(cluster=cluster, hosts=hosts)
 
     def make_query_plan(self, working_keyspace=None, query=None):
         """
         Defers to the child policy's
-        :meth:`.LoadBalancingPolicy.make_query_plan`. Since host changes (up,
-        down, addition, and removal) have not been propagated to the child
-        policy, the child policy will only ever return policies for which
-        :meth:`.predicate(host)` was truthy when that change occurred.
+        :meth:`.LoadBalancingPolicy.make_query_plan` and filters the results.
+
+        Note that this filtering may break desirable properties of the wrapped
+        policy in some cases. For instance, imagine if you configure this
+        policy to filter out ``host2``, and to wrap a round-robin policy that
+        rotates through three hosts in the order ``host1, host2, host3``,
+        ``host2, host3, host1``, ``host3, host1, host2``, repeating. This
+        policy will yield ``host1, host3``, ``host3, host1``, ``host3, host1``,
+        disproportionately favoring ``host3``.
         """
         child_qp = self._child_policy.make_query_plan(
             working_keyspace=working_keyspace, query=query
