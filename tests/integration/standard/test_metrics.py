@@ -9,7 +9,7 @@
 
 import time
 
-from dse.policies import WhiteListRoundRobinPolicy, FallthroughRetryPolicy
+from dse.policies import HostFilterPolicy, RoundRobinPolicy, FallthroughRetryPolicy
 
 try:
     import unittest2 as unittest
@@ -25,6 +25,8 @@ from tests.integration import get_cluster, get_node, use_singledc, PROTOCOL_VERS
 from greplin import scales
 from tests.integration import BasicSharedKeyspaceUnitTestCaseRF3WM, BasicExistingKeyspaceUnitTestCase, DSE_IP, local
 
+import pprint as pp
+
 def setup_module():
     use_singledc()
 
@@ -34,8 +36,15 @@ class MetricsTests(unittest.TestCase):
     def setUp(self):
         contact_point = ['127.0.0.2']
         self.cluster = Cluster(contact_points=contact_point, metrics_enabled=True, protocol_version=PROTOCOL_VERSION,
-                               execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(contact_point),
-                                                                                          retry_policy=FallthroughRetryPolicy())})
+                               execution_profiles=
+                                   {EXEC_PROFILE_DEFAULT:
+                                       ExecutionProfile(
+                                           load_balancing_policy=HostFilterPolicy(
+                                                RoundRobinPolicy(), lambda host: host.address in contact_point),
+                                           retry_policy=FallthroughRetryPolicy()
+                                       )
+                                   }
+                               )
         self.session = self.cluster.connect("test3rf", wait_for_all_pools=True)
 
     def tearDown(self):

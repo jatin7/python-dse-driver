@@ -666,6 +666,15 @@ class LoadBalancingPolicyTests(unittest.TestCase):
             cluster.shutdown()
 
     def test_black_list_with_host_filter_policy(self):
+        """
+        Test to validate removing certain hosts from the query plan with
+        HostFilterPolicy
+        @since 3.8
+        @jira_ticket PYTHON-961
+        @expected_result the excluded hosts are ignored
+
+        @test_category policy
+        """
         use_singledc()
         keyspace = 'test_black_list_with_hfp'
         ignored_address = (IP_FORMAT % 2)
@@ -690,9 +699,15 @@ class LoadBalancingPolicyTests(unittest.TestCase):
         self._insert(session, keyspace)
         self._query(session, keyspace)
 
-        self.coordinator_stats.assert_query_count_equals(self, 1, 6)
+        # RoundRobin doesn't provide a gurantee on the order of the hosts
+        # so we will have that for 127.0.0.1 and 127.0.0.3 the count for one
+        # will be 4 and for the other 8
+        first_node_count = self.coordinator_stats.get_query_count(1)
+        third_node_count = self.coordinator_stats.get_query_count(3)
+        self.assertEqual(first_node_count + third_node_count, 12)
+        self.assertTrue(first_node_count == 8 or first_node_count == 4)
+
         self.coordinator_stats.assert_query_count_equals(self, 2, 0)
-        self.coordinator_stats.assert_query_count_equals(self, 3, 6)
 
         # policy should not allow reconnecting to ignored host
         force_stop(2)

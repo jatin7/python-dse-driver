@@ -17,8 +17,31 @@ There are some important changes in the 2.0 release of the DSE python driver:
 
 .. code-block:: python
 
-    from cassandra.cluster import NoHostAvailable
+    from dse.cluster import NoHostAvailable
     from dse.cluster import Cluster
+    results = session.execute("SELECT * FROM system.local")
+    row_list = list(results)
+
+For backward compatability, :class:`~.ResultSet` supports indexing. When
+accessed at an index, a `~.ResultSet` object will materialize all its pages:
+
+.. code-block:: python
+
+    results = session.execute("SELECT * FROM system.local")
+    first_result = results[0]  # materializes results, fetching all pages
+
+This can send requests and load (possibly large) results into memory, so
+`~.ResultSet` will log a warning on implicit materialization.
+
+Trace information is not attached to executed Statements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`PYTHON-318 <https://datastax-oss.atlassian.net/browse/PYTHON-318>`_
+
+Previously trace data was attached to Statements if tracing was enabled. This
+could lead to confusion if the same statement was used for multiple executions.
+
+Now, trace data is associated with the ``ResponseFuture`` and ``ResultSet``
+returned for each query:
 
     cluster = Cluster()
     try:
