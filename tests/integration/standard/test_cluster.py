@@ -1023,7 +1023,7 @@ class ClusterTests(unittest.TestCase):
         available_hosts = [host for host in ["127.0.0.1", "127.0.0.2", "127.0.0.3"] if host != only_replica]
         with Cluster(contact_points=available_hosts,
                      protocol_version=PROTOCOL_VERSION,
-                     execution_profiles={EXEC_PROFILE_DEFAULT: tap_profile}) as cluster:
+                     execution_profiles={EXEC_PROFILE_DEFAULT: hfp_profile}) as cluster:
 
             session = cluster.connect()
             prepared = session.prepare("""SELECT * from test1rf.table_with_big_key
