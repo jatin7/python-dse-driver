@@ -9,7 +9,7 @@
 
 from dse.cython_deps import HAVE_CYTHON, HAVE_NUMPY
 try:
-    from tests.integration import VERIFY_CYTHON
+    from tests import VERIFY_CYTHON
 except ImportError:
     VERIFY_CYTHON = False
 

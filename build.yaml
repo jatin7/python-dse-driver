@@ -9,6 +9,44 @@ schedules:
       exclude:
         - python: [3.4, 3.6]
 
+  weekly_libev:
+    schedule: 0 10 * * 6
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='libev'
+
+  weekly_gevent:
+    schedule: 0 14 * * 6
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='gevent'
+    matrix:
+      exclude:
+        - python: [3.4, 3.5, 3.6]
+
+  weekly_eventlet:
+    schedule: 0 18 * * 6
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='eventlet'
+
+  weekly_async:
+    schedule: 0 10 * * 7
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='async'
+
+  weekly_twister:
+    schedule: 0 14 * * 7
+    branches:
+      include: [master]
+    env_vars: |
+      EVENT_LOOP_MANAGER='twisted'
+
 python:
   - 2.7
   - 3.4
@@ -53,6 +91,15 @@ build:
       fi
       echo "==========RUNNING UNIT TESTS==============="
       EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER CASSANDRA_DIR=$CCM_INSTALL_DIR DSE_VERSION=$CCM_VERSION VERIFY_CYTHON=$FORCE_CYTHON nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=unit_results.xml tests/unit/ || true
+
+      # Run the unit tests, this is not done in travis because
+      # it takes too much time for the whole matrix to build with cython
+      if [[ $CYTHON == 'CYTHON' ]]; then
+        EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER VERIFY_CYTHON=1 nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=cqle_results.xml tests/unit/ || true
+        MONKEY_PATCH_LOOP=1 EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER VERIFY_CYTHON=1 nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=cqle_results.xml tests/unit/io/test_eventletreactor.py || true
+        MONKEY_PATCH_LOOP=1 EVENT_LOOP_MANAGER=$EVENT_LOOP_MANAGER VERIFY_CYTHON=1 nosetests -s -v --logging-format="[%(levelname)s] %(asctime)s %(thread)d: %(message)s" --with-ignore-docstrings --with-xunit --xunit-file=cqle_results.xml tests/unit/io/test_geventreactor.py || true
+
+      fi
 
       echo "Running with event loop manager: $EVENT_LOOP_MANAGER"
       echo "==========RUNNING CQLENGINE TESTS=========="

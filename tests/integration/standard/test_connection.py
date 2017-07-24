@@ -12,7 +12,6 @@ try:
 except ImportError:
     import unittest  # noqa
 
-from nose.tools import nottest
 from functools import partial
 from mock import patch
 from six.moves import range
@@ -25,9 +24,10 @@ from dse import ConsistencyLevel, OperationTimedOut
 from dse.cluster import NoHostAvailable, ConnectionShutdown, Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
 from dse.io.asyncorereactor import AsyncoreConnection
 from dse.protocol import QueryMessage
-from dse.policies import WhiteListRoundRobinPolicy, HostStateListener
+from dse.policies import HostFilterPolicy, RoundRobinPolicy, HostStateListener
 
-from tests import is_monkey_patched
+
+from tests import is_monkey_patched, notwindows
 from tests.integration import use_singledc, PROTOCOL_VERSION, get_node, DSE_IP, local
 
 try:
@@ -45,9 +45,15 @@ class ConnectionTimeoutTest(unittest.TestCase):
 
     def setUp(self):
         self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
-                               execution_profiles=
-                               {EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=
-                                                                       WhiteListRoundRobinPolicy([DSE_IP]))})
+                                   execution_profiles=
+                                   {EXEC_PROFILE_DEFAULT: ExecutionProfile(
+                                       load_balancing_policy=HostFilterPolicy(
+                                            RoundRobinPolicy(), predicate=lambda host: host.address == DSE_IP
+                                       )
+                                   )
+                                   }
+                               )
+
         self.session = self.cluster.connect()
 
     def tearDown(self):
@@ -352,6 +358,9 @@ class ConnectionTests(object):
         for t in threads:
             t.join()
 
+    # We skip this one for windows because the clock is not as
+    # granular as in linux
+    @notwindows
     def test_connect_timeout(self):
         # Underlying socket implementations don't always throw a socket timeout even with min float
         # This can be timing sensitive, added retry to ensure failure occurs if it can
@@ -391,45 +400,3 @@ class LibevConnectionTests(ConnectionTests, unittest.TestCase):
             raise unittest.SkipTest(
                 'libev does not appear to be installed properly')
         ConnectionTests.setUp(self)
-
-    @nottest
-    def test_watchers_are_finished(self):
-        """
-        Test for asserting that watchers are closed in LibevConnection
-
-        It will open a connection to the Cluster and then abruptly clean it simulating,
-        a process termination without calling cluster.shutdown(), which would trigger
-        LibevConnection._libevloop._cleanup. Then it will check the watchers have been closed
-        Finally it will restore the LibevConnection reactor so it doesn't affect
-        the rest of the tests
-
-        @since 3.10
-        @jira_ticket PYTHON-747
-        @expected_result the watchers are closed
-
-        @test_category connection
-        """
-
-        # conn._write_watcher and conn._read_watcher will be closed
-        # when the request is finished so it may not be _cleanup the
-        # one who ends up cleaning them everytime.
-        for _ in range(10):
-            cluster = Cluster(connection_class=LibevConnection)
-            session = cluster.connect(wait_for_all_pools=True)
-
-            session.execute_async("SELECT * FROM system.local LIMIT 1")
-            # We have to make a copy because the connections shouldn't
-            # be alive when we verify them
-            live_connections = set(LibevConnection._libevloop._live_conns)
-
-            # This simulates the process ending without cluster.shutdown()
-            # being called, then with atexit _cleanup for libevreactor would
-            # be called
-            libev__cleanup(weakref.ref(LibevConnection._libevloop))
-
-            for conn in live_connections:
-                for watcher in (conn._write_watcher, conn._read_watcher):
-                    self.assertTrue(watcher is None or not watcher.is_active())
-
-            cluster.shutdown()
-            LibevConnection._libevloop = None

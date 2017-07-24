@@ -7,8 +7,8 @@
 #
 # http://www.datastax.com/terms/datastax-dse-driver-license-terms
 import os
+from tests import EVENT_LOOP_MANAGER
 
-EVENT_LOOP_MANAGER = os.getenv('EVENT_LOOP_MANAGER', "libev")
 if "gevent" in EVENT_LOOP_MANAGER:
     import gevent.monkey
     gevent.monkey.patch_all()
@@ -26,6 +26,7 @@ elif "async" in EVENT_LOOP_MANAGER:
 elif "twisted" in EVENT_LOOP_MANAGER:
     from dse.io.twistedreactor import TwistedConnection
     connection_class = TwistedConnection
+
 else:
     from dse.io.libevreactor import LibevConnection
     connection_class = LibevConnection
@@ -108,15 +109,8 @@ def _tuple_version(version_string):
 
 
 USE_CASS_EXTERNAL = bool(os.getenv('USE_CASS_EXTERNAL', False))
+KEEP_TEST_CLUSTER = bool(os.getenv('KEEP_TEST_CLUSTER', False))
 
-# If set to to true this will force the Cython tests to run regardless of whether they are installed
-cython_env = os.getenv('VERIFY_CYTHON', "False")
-
-
-VERIFY_CYTHON = False
-
-if(cython_env == 'True'):
-    VERIFY_CYTHON = True
 
 default_cassandra_version = '2.2.0'
 
@@ -177,10 +171,8 @@ def set_default_dse_ip():
 
 def get_default_protocol():
 
-    if Version(CASSANDRA_VERSION) >= Version('3.10') and DSE_VERSION:
-        return ProtocolVersion.DSE_V1
     if Version(CASSANDRA_VERSION) >= Version('3.10'):
-        return 5
+        return ProtocolVersion.DSE_V1
     if Version(CASSANDRA_VERSION) >= Version('2.2'):
         return 4
     elif Version(CASSANDRA_VERSION) >= Version('2.1'):
@@ -314,12 +306,12 @@ def use_singledc(start=True, workloads=[]):
     use_cluster(CLUSTER_NAME, [3], start=start, workloads=workloads)
 
 
-def use_single_node(start=True, workloads=[]):
-    use_cluster(SINGLE_NODE_CLUSTER_NAME, [1], start=start, workloads=workloads)
+def use_single_node(start=True, workloads=[], options={}):
+    use_cluster(SINGLE_NODE_CLUSTER_NAME, [1], start=start, workloads=workloads, options=options)
 
 
 def remove_cluster():
-    if USE_CASS_EXTERNAL:
+    if USE_CASS_EXTERNAL or KEEP_TEST_CLUSTER:
         return
 
     global CCM_CLUSTER
@@ -361,7 +353,7 @@ def start_cluster_wait_for_up(cluster):
         wait_for_node_socket(node, 120)
     log.debug("Binary port are open")
 
-def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
+def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[], options={}):
     set_default_dse_ip()
 
     global CCM_CLUSTER
@@ -385,6 +377,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
             log.debug("Found existing CCM cluster, {0}; clearing.".format(cluster_name))
             CCM_CLUSTER.clear()
             CCM_CLUSTER.set_install_dir(**CCM_KWARGS)
+            CCM_CLUSTER.set_configuration_options(options)
         except Exception:
             ex_type, ex, tb = sys.exc_info()
             log.warn("{0}: {1} Backtrace: {2}".format(ex_type.__name__, ex, traceback.extract_tb(tb)))
@@ -406,6 +399,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
                 config_options = {"initial_spark_worker_resources": 0.1}
                 CCM_CLUSTER.set_dse_configuration_options(config_options)
             common.switch_cluster(path, cluster_name)
+            CCM_CLUSTER.set_configuration_options(options)
             CCM_CLUSTER.populate(nodes, ipformat=ipformat)
     try:
         jvm_args = []
@@ -440,7 +434,7 @@ def use_cluster(cluster_name, nodes, ipformat=None, start=True, workloads=[]):
 
 
 def teardown_package():
-    if USE_CASS_EXTERNAL:
+    if USE_CASS_EXTERNAL or KEEP_TEST_CLUSTER:
         return
     # when multiple modules are run explicitly, this runs between them
     # need to make sure CCM_CLUSTER is properly cleared for that case
@@ -554,11 +548,17 @@ def setup_keyspace(ipformat=None, wait=True):
             WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}'''
         execute_with_long_wait_retry(session, ddl)
 
-        ddl = '''
+        ddl_3f = '''
             CREATE TABLE test3rf.test (
                 k int PRIMARY KEY,
                 v int )'''
-        execute_with_long_wait_retry(session, ddl)
+        execute_with_long_wait_retry(session, ddl_3f)
+
+        ddl_1f = '''
+                    CREATE TABLE test1rf.test (
+                        k int PRIMARY KEY,
+                        v int )'''
+        execute_with_long_wait_retry(session, ddl_1f)
 
     except Exception:
         traceback.print_exc()
@@ -700,7 +700,7 @@ class BasicSharedKeyspaceUnitTestCase(BasicKeyspaceUnitTestCase):
         drop_keyspace_shutdown_cluster(cls.ks_name, cls.session, cls.cluster)
 
 
-class BasicSharedKeyspaceUnitTestCaseWTable(BasicSharedKeyspaceUnitTestCase):
+class BasicSharedKeyspaceUnitTestCaseRF1(BasicSharedKeyspaceUnitTestCase):
     """
     This is basic unit test case that can be leveraged to scope a keyspace to a specific test class.
     creates a keyspace named after the testclass with a rf of 1, and a table named after the class
@@ -720,16 +720,6 @@ class BasicSharedKeyspaceUnitTestCaseRF2(BasicSharedKeyspaceUnitTestCase):
         self.common_setup(2)
 
 
-class BasicSharedKeyspaceUnitTestCaseWTable(BasicSharedKeyspaceUnitTestCase):
-    """
-    This is basic unit test case that can be leveraged to scope a keyspace to a specific test class.
-    creates a keyspace named after the testc lass with a rf of 2, and a table named after the class
-    """
-    @classmethod
-    def setUpClass(self):
-        self.common_setup(3, True, True, metrics_enabled=True)
-
-
 class BasicSharedKeyspaceUnitTestCaseRF3(BasicSharedKeyspaceUnitTestCase):
     """
     This is basic unit test case that can be leveraged to scope a keyspace to a specific test class.
@@ -740,14 +730,14 @@ class BasicSharedKeyspaceUnitTestCaseRF3(BasicSharedKeyspaceUnitTestCase):
         self.common_setup(3)
 
 
-class BasicSharedKeyspaceUnitTestCaseRF3WTable(BasicSharedKeyspaceUnitTestCase):
+class BasicSharedKeyspaceUnitTestCaseRF3WM(BasicSharedKeyspaceUnitTestCase):
     """
     This is basic unit test case that can be leveraged to scope a keyspace to a specific test class.
-    creates a keyspace named after the test class with a rf of 3 and a table named after the class
+    creates a keyspace named after the test class with a rf of 3 with metrics enabled
     """
     @classmethod
     def setUpClass(self):
-        self.common_setup(3, True, True)
+        self.common_setup(3, True, True, metrics_enabled=True)
 
 
 class BasicSharedKeyspaceUnitTestCaseWFunctionTable(BasicSharedKeyspaceUnitTestCase):

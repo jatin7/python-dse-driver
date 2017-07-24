@@ -25,16 +25,21 @@ from dse.cluster import NoHostAvailable
 
 from dse.cluster import EXEC_PROFILE_GRAPH_DEFAULT, GraphExecutionProfile, Cluster
 from dse.graph import (SimpleGraphStatement, graph_object_row_factory, single_object_row_factory,\
-                       graph_result_row_factory, Result, Edge, Vertex, Path, GraphOptions, _graph_options)
+                       graph_result_row_factory, Result, Vertex, GraphOptions)
+from dse.graph.query import _graph_options
+from dse.graph.types import VertexProperty
 from dse.util import SortedSet
 
-from tests.integration.advanced import BasicGraphUnitTestCase, use_single_node_with_graph, use_singledc_wth_graph, generate_classic, generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, ALLOW_SCANS, MAKE_NON_STRICT,\
-    validate_classic_vertex, validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type, fetchCustomGeoType
+from tests.integration.advanced import BasicGraphUnitTestCase, use_single_node_with_graph, generate_classic, \
+    generate_line_graph, generate_multi_field_graph, generate_large_complex_graph, validate_classic_vertex, \
+    validate_classic_edge, validate_path_result_type, validate_line_edge, validate_generic_vertex_result_type, \
+    fetchCustomGeoType, generate_type_graph_schema, TYPE_MAP
 from tests.integration import PROTOCOL_VERSION, greaterthanorequaldse51, DSE_VERSION
 
 
 def setup_module():
-    use_single_node_with_graph()
+    options = {'realtime_evaluation_timeout' : 60000}
+    use_single_node_with_graph(options)
 
 
 class BasicGraphTest(BasicGraphUnitTestCase):
@@ -205,7 +210,7 @@ class BasicGraphTest(BasicGraphUnitTestCase):
 
     def test_consistency_passing(self):
         """
-        Test to validated that graph consistency levels are properly surfaced to the base dirver
+        Test to validated that graph consistency levels are properly surfaced to the base driver
 
         @since 1.0.0
         @jira_ticket PYTHON-509
@@ -469,6 +474,35 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         self.assertEqual(rs.response_future.row_factory, single_object_row_factory)
         self.assertEqual(json.loads(rs[0]), {'result': 123})
 
+    def test_all_types(self):
+        s = self.session
+        generate_type_graph_schema(s)
+
+        for key in TYPE_MAP.keys():
+            vertex_label = key
+            property_name = key + "value"
+            _, value, deserializer = TYPE_MAP[key]
+            s.execute_graph("g.addV('{0}').property('{1}', type_value)".format(vertex_label, property_name),
+                                        {'type_value' : value})
+            read_results = s.execute_graph("g.V().hasLabel('{0}')".format(vertex_label))
+            row = next(read_results.current_rows)
+
+            self.assertEqual(len(row.properties), 1)
+            self.assertEqual(len(list(row.properties.values())[0]), 1)
+            self.assertIsInstance(list(row.properties.values())[0][0], VertexProperty)
+
+            deserialized_value = deserializer(list(row.properties.values())[0][0].value)
+
+            self.assertEqual(deserialized_value, value)
+
+            self.assertRaises(StopIteration, next, read_results.current_rows)
+
+        prof = s.execution_profile_clone_update(EXEC_PROFILE_GRAPH_DEFAULT,
+                                       row_factory=graph_result_row_factory)
+        rs = self.session.execute_graph("g.V()", execution_profile=prof)
+        for result in rs:
+            self._validate_type(result)
+
     def _validate_type(self, vertex):
         out_vertex = "out_vertex"
         if DSE_VERSION >= "5.1":
@@ -477,11 +511,12 @@ class BasicGraphTest(BasicGraphUnitTestCase):
         for properties in vertex.properties.values():
             prop = properties[0]
             type_indicator = prop['id'][out_vertex]['~label']
-            if any(type_indicator.startswith(t) for t in ('int', 'short', 'long')):
+            if any(type_indicator.startswith(t) for t in ('int', 'short', 'long', 'bigint', 'decimal', 'smallint', 'varint')):
                 typ = six.integer_types
             elif any(type_indicator.startswith(t) for t in ('float', 'double')):
                 typ = float
-            elif any(type_indicator.startswith(t) for t in ('date', 'negdate', 'time')):
+            elif any(type_indicator.startswith(t) for t in ('duration', 'date', 'negdate', 'time',
+                                'blob', 'timestamp', 'point', 'linestring', 'polygon', 'inet', 'uuid')):
                 typ = six.text_type
             else:
                 pass

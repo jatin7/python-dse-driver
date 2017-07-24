@@ -26,12 +26,14 @@ from dse.concurrent import execute_concurrent
 from dse.hosts import Host
 from dse.policies import (RoundRobinPolicy, ExponentialReconnectionPolicy,
                           SimpleConvictionPolicy, HostDistance,
-                          WhiteListRoundRobinPolicy, AddressTranslator)
+                          AddressTranslator, HostFilterPolicy, TokenAwarePolicy)
 from dse.query import SimpleStatement, TraceUnavailable, tuple_factory
 
 
-from tests.integration import use_singledc, PROTOCOL_VERSION, get_server_versions, CASSANDRA_VERSION, DSE_VERSION, execute_until_pass, execute_with_long_wait_retry, get_node,\
-    MockLoggingHandler, get_unsupported_lower_protocol, get_unsupported_upper_protocol, protocolv5, local, DSE_IP
+from tests.integration import use_singledc, PROTOCOL_VERSION, CASSANDRA_VERSION, DSE_VERSION, execute_until_pass, \
+    execute_with_long_wait_retry, get_node, MockLoggingHandler, get_unsupported_lower_protocol, \
+    get_unsupported_upper_protocol, protocolv5, local, DSE_IP
+
 from tests.integration.util import assert_quiescent_pool_state
 import sys
 
@@ -189,13 +191,23 @@ class ClusterTests(unittest.TestCase):
 
         @test_category connection
         """
+        # Test with empty list
+        cluster = Cluster(protocol_version=PROTOCOL_VERSION)
         with self.assertRaises(NoHostAvailable):
-            Session(Cluster(protocol_version=PROTOCOL_VERSION), [])
+            Session(cluster, [])
+        cluster.shutdown()
+
+        # Test with only invalid
+        cluster = Cluster(protocol_version=PROTOCOL_VERSION)
         with self.assertRaises(NoHostAvailable):
-            Session(Cluster(protocol_version=PROTOCOL_VERSION), [Host("1.2.3.4", SimpleConvictionPolicy)])
-        session = Session(Cluster(protocol_version=PROTOCOL_VERSION), [Host(x, SimpleConvictionPolicy) for x in
+            Session(cluster, [Host("1.2.3.4", SimpleConvictionPolicy)])
+        cluster.shutdown()
+
+        # Test with valid and invalid hosts
+        cluster = Cluster(protocol_version=PROTOCOL_VERSION)
+        Session(cluster, [Host(x, SimpleConvictionPolicy) for x in
                                       ("127.0.0.1", "127.0.0.2", "1.2.3.4")])
-        session.shutdown()
+        cluster.shutdown()
 
     def test_protocol_negotiation(self):
         """
@@ -278,15 +290,15 @@ class ClusterTests(unittest.TestCase):
         session = cluster.connect()
         result = session.execute(
             """
-            INSERT INTO test3rf.test (k, v) VALUES (8889, 8889)
+            INSERT INTO test1rf.test (k, v) VALUES (8889, 8889)
             """)
         self.assertFalse(result)
 
-        result = session.execute("SELECT * FROM test3rf.test")
-        self.assertEqual([(8889, 8889)], result)
+        result = session.execute("SELECT * FROM test1rf.test")
+        self.assertEqual([(8889, 8889)], result, "Rows in ResultSet are {0}".format(result.current_rows))
 
         # test_connect_on_keyspace
-        session2 = cluster.connect('test3rf')
+        session2 = cluster.connect('test1rf')
         result2 = session2.execute("SELECT * FROM test")
         self.assertEqual(result, result2)
         cluster.shutdown()
@@ -415,13 +427,14 @@ class ClusterTests(unittest.TestCase):
 
     @local
     def test_refresh_schema_no_wait(self):
-
         contact_points = [DSE_IP]
         with Cluster(protocol_version=PROTOCOL_VERSION, max_schema_agreement_wait=10,
                      contact_points=contact_points,
                      execution_profiles=
                      {EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=
-                                                             WhiteListRoundRobinPolicy(contact_points))}) as cluster:
+                             HostFilterPolicy(
+                                 RoundRobinPolicy(), lambda host: host.address == DSE_IP
+                             ))}) as cluster:
             session = cluster.connect()
 
             schema_ver = session.execute("SELECT schema_version FROM system.local WHERE key='local'")[0][0]
@@ -547,19 +560,36 @@ class ClusterTests(unittest.TestCase):
         @test_category query
                 """
         cluster = Cluster(protocol_version=PROTOCOL_VERSION)
+        self.addCleanup(cluster.shutdown)
         session = cluster.connect()
 
         query = "SELECT * FROM system.local"
         statement = SimpleStatement(query)
-        future = session.execute_async(statement, trace=True)
-        future.result()
-        self.assertRaises(TraceUnavailable, future.get_query_trace, -1.0)
 
-        query = SimpleStatement("SELECT * FROM system.local")
-        future = session.execute_async(query, trace=True)
-        self.assertRaises(TraceUnavailable, future.get_query_trace, max_wait=120)
+        max_retry_count = 10
+        for i in range(max_retry_count):
+            future = session.execute_async(statement, trace=True)
+            future.result()
+            try:
+                result = future.get_query_trace(-1.0)
+                # In case the result has time to come back before this timeout due to a race condition
+                self.check_trace(result)
+            except TraceUnavailable:
+                break
+        else:
+            raise Exception("get_query_trace didn't raise TraceUnavailable after {} tries".format(max_retry_count))
 
-        cluster.shutdown()
+
+        for i in range(max_retry_count):
+            future = session.execute_async(statement, trace=True)
+            try:
+                result = future.get_query_trace(max_wait=120)
+                # In case the result has been set check the trace
+                self.check_trace(result)
+            except TraceUnavailable:
+                break
+        else:
+            raise Exception("get_query_trace didn't raise TraceUnavailable after {} tries".format(max_retry_count))
 
     def test_string_coverage(self):
         """
@@ -697,7 +727,11 @@ class ClusterTests(unittest.TestCase):
         @test_category config_profiles
         """
         query = "select release_version from system.local"
-        node1 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy([DSE_IP]))
+        node1 = ExecutionProfile(
+            load_balancing_policy=HostFilterPolicy(
+                RoundRobinPolicy(), lambda host: host.address == DSE_IP
+            )
+        )
         with Cluster(execution_profiles={'node1': node1}) as cluster:
             session = cluster.connect(wait_for_all_pools=True)
 
@@ -848,8 +882,16 @@ class ClusterTests(unittest.TestCase):
         @test_category config_profiles
         """
 
-        node1 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))
-        node2 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2']))
+        node1 = ExecutionProfile(
+            load_balancing_policy=HostFilterPolicy(
+                RoundRobinPolicy(), lambda host: host.address == "127.0.0.1"
+            )
+        )
+        node2 = ExecutionProfile(
+            load_balancing_policy=HostFilterPolicy(
+                RoundRobinPolicy(), lambda host: host.address == "127.0.0.2"
+            )
+        )
         with Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: node1, 'node2': node2}) as cluster:
             session = cluster.connect(wait_for_all_pools=True)
             pools = session.get_pool_state()
@@ -858,7 +900,11 @@ class ClusterTests(unittest.TestCase):
             self.assertEqual(set(h.address for h in pools), set(('127.0.0.1', '127.0.0.2')))
 
             # dynamically update pools on add
-            node3 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.3']))
+            node3 = ExecutionProfile(
+                load_balancing_policy=HostFilterPolicy(
+                    RoundRobinPolicy(), lambda host: host.address == "127.0.0.3"
+                )
+            )
             cluster.add_execution_profile('node3', node3)
             pools = session.get_pool_state()
             self.assertEqual(set(h.address for h in pools), set(('127.0.0.1', '127.0.0.2', '127.0.0.3')))
@@ -876,14 +922,22 @@ class ClusterTests(unittest.TestCase):
         """
         max_retry_count = 10
         for i in range(max_retry_count):
-            node1 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.1']))
+            node1 = ExecutionProfile(
+                load_balancing_policy=HostFilterPolicy(
+                    RoundRobinPolicy(), lambda host: host.address == "127.0.0.1"
+                )
+            )
             with Cluster(execution_profiles={EXEC_PROFILE_DEFAULT: node1}) as cluster:
                 session = cluster.connect(wait_for_all_pools=True)
                 pools = session.get_pool_state()
                 self.assertGreater(len(cluster.metadata.all_hosts()), 2)
                 self.assertEqual(set(h.address for h in pools), set(('127.0.0.1',)))
 
-                node2 = ExecutionProfile(load_balancing_policy=WhiteListRoundRobinPolicy(['127.0.0.2', '127.0.0.3']))
+                node2 = ExecutionProfile(
+                    load_balancing_policy=HostFilterPolicy(
+                        RoundRobinPolicy(), lambda host: host.address in ["127.0.0.2", "127.0.0.3"]
+                    )
+                )
 
                 start = time.time()
                 try:
@@ -925,6 +979,70 @@ class ClusterTests(unittest.TestCase):
                     self.assertAlmostEqual(start, end, 1)
             else:
                 raise Exception("session.execute didn't time out in {0} tries".format(max_retry_count))
+
+    def test_replicas_are_queried(self):
+        """
+        Test that replicas are queried first for TokenAwarePolicy. A table with RF 1
+        is created. All the queries should go to that replica when TokenAwarePolicy
+        is used.
+        Then using HostFilterPolicy the replica is excluded from the considered hosts.
+        By checking the trace we verify that there are no more replicas.
+
+        @since 3.5
+        @jira_ticket PYTHON-653
+        @expected_result the replicas are queried for HostFilterPolicy
+
+        @test_category metadata
+        """
+        queried_hosts = set()
+        tap_profile = ExecutionProfile(
+            load_balancing_policy=TokenAwarePolicy(RoundRobinPolicy())
+        )
+        with Cluster(protocol_version=PROTOCOL_VERSION,
+                     execution_profiles={EXEC_PROFILE_DEFAULT: tap_profile}) as cluster:
+            session = cluster.connect()
+            session.execute('''
+                    CREATE TABLE test1rf.table_with_big_key (
+                        k1 int,
+                        k2 int,
+                        k3 int,
+                        k4 int,
+                        PRIMARY KEY((k1, k2, k3), k4))''')
+            prepared = session.prepare("""SELECT * from test1rf.table_with_big_key
+                                          WHERE k1 = ? AND k2 = ? AND k3 = ? AND k4 = ?""")
+            for i in range(10):
+                result = session.execute(prepared, (i, i, i, i), trace=True)
+                queried_hosts = self._assert_replica_queried(result.get_query_trace(), only_replicas=True)
+                last_i = i
+
+        hfp_profile = ExecutionProfile(
+            load_balancing_policy=HostFilterPolicy(RoundRobinPolicy(),
+                     predicate=lambda host: host.address != only_replica)
+        )
+        only_replica = queried_hosts.pop()
+        available_hosts = [host for host in ["127.0.0.1", "127.0.0.2", "127.0.0.3"] if host != only_replica]
+        with Cluster(contact_points=available_hosts,
+                     protocol_version=PROTOCOL_VERSION,
+                     execution_profiles={EXEC_PROFILE_DEFAULT: hfp_profile}) as cluster:
+
+            session = cluster.connect()
+            prepared = session.prepare("""SELECT * from test1rf.table_with_big_key
+                                          WHERE k1 = ? AND k2 = ? AND k3 = ? AND k4 = ?""")
+            for _ in range(10):
+                result = session.execute(prepared, (last_i, last_i, last_i, last_i), trace=True)
+                self._assert_replica_queried(result.get_query_trace(), only_replicas=False)
+
+            session.execute('''DROP TABLE test1rf.table_with_big_key''')
+
+    def _assert_replica_queried(self, trace, only_replicas=True):
+        queried_hosts = set()
+        for row in trace.events:
+            queried_hosts.add(row.source)
+        if only_replicas:
+            self.assertEqual(len(queried_hosts), 1, "The hosts queried where {}".format(queried_hosts))
+        else:
+            self.assertGreater(len(queried_hosts), 1, "The host queried was {}".format(queried_hosts))
+        return queried_hosts
 
 
 class LocalHostAdressTranslator(AddressTranslator):
@@ -982,8 +1100,9 @@ class TestAddressTranslation(unittest.TestCase):
 
 @local
 class ContextManagementTest(unittest.TestCase):
-
-    load_balancing_policy = WhiteListRoundRobinPolicy([DSE_IP])
+    load_balancing_policy = HostFilterPolicy(
+        RoundRobinPolicy(), lambda host: host.address == DSE_IP
+    )
     cluster_kwargs = {'execution_profiles': {EXEC_PROFILE_DEFAULT: ExecutionProfile(load_balancing_policy=
                                                                                     load_balancing_policy)},
                       'schema_metadata_enabled': False,
@@ -1103,7 +1222,6 @@ class HostStateTest(unittest.TestCase):
 
 @local
 class DontPrepareOnIgnoredHostsTest(unittest.TestCase):
-
     ignored_addresses = ['127.0.0.3']
     ignore_node_3_policy = IgnoredHostPolicy(ignored_addresses)
 
@@ -1142,7 +1260,8 @@ class DontPrepareOnIgnoredHostsTest(unittest.TestCase):
 @local
 class DuplicateRpcTest(unittest.TestCase):
 
-    load_balancing_policy = WhiteListRoundRobinPolicy(['127.0.0.1'])
+    load_balancing_policy = HostFilterPolicy(RoundRobinPolicy(),
+                                             lambda host: host.address == "127.0.0.1")
 
     def setUp(self):
         self.cluster = Cluster(protocol_version=PROTOCOL_VERSION,
