@@ -1,5 +1,6 @@
 2.2.0
 =====
+July 24, 2017
 
 Features
 --------
@@ -7,7 +8,7 @@ Features
 * Provide deserializers for GraphSON types (PYTHON-782)
 * Add Graph DurationType support (PYTHON-607)
 
-Merged from OSS master (pre-3.11):
+Merged from OSS master (3.11.0):
 
 Features
 --------
@@ -30,10 +31,10 @@ Other
 -----
 * Bump Cython dependency version to 0.25.2 (PYTHON-754)
 * Fix DeprecationWarning when using lz4 (PYTHON-769)
-
-Other
------
 * Deprecate WhiteListRoundRobinPolicy (PYTHON-759)
+* Improve upgrade guide for materializing pages (PYTHON-464)
+* Documentation for time/date specifies timestamp inupt as microseconds (PYTHON-717)
+* Point to DSA Slack, not IRC, in docs index
 
 2.1.0
 =====
